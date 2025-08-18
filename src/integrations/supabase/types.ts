@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      platform_stats: {
+        Row: {
+          additional_metrics: Json | null
+          engagement_rate: number | null
+          follower_count: number | null
+          id: string
+          monthly_views: number | null
+          platform: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          additional_metrics?: Json | null
+          engagement_rate?: number | null
+          follower_count?: number | null
+          id?: string
+          monthly_views?: number | null
+          platform: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          additional_metrics?: Json | null
+          engagement_rate?: number | null
+          follower_count?: number | null
+          id?: string
+          monthly_views?: number | null
+          platform?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          role: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id: string
+          role?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          role?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       youtube_stats: {
         Row: {
           channel_id: string

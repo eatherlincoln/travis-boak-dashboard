@@ -1,0 +1,276 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Settings, LogOut, Save, ArrowLeft, Instagram, Youtube, Music } from 'lucide-react';
+import { Link } from 'react-router-dom';
+
+interface PlatformStats {
+  id: string;
+  platform: string;
+  follower_count: number;
+  monthly_views: number;
+  engagement_rate: number;
+  additional_metrics: any;
+}
+
+const Admin = () => {
+  const { user, signOut, loading: authLoading } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [stats, setStats] = useState<PlatformStats[]>([]);
+  const [editingStats, setEditingStats] = useState<{ [key: string]: PlatformStats }>({});
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/auth');
+    }
+  }, [user, authLoading, navigate]);
+
+  useEffect(() => {
+    if (user) {
+      fetchStats();
+    }
+  }, [user]);
+
+  const fetchStats = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('platform_stats')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      
+      setStats(data || []);
+      
+      // Initialize editing state
+      const editingState = {};
+      data?.forEach(stat => {
+        editingState[stat.platform] = { ...stat };
+      });
+      setEditingStats(editingState);
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load platform statistics",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const updatePlatformStats = async (platform: string) => {
+    if (!user || !editingStats[platform]) return;
+    
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('platform_stats')
+        .update({
+          follower_count: editingStats[platform].follower_count,
+          monthly_views: editingStats[platform].monthly_views,
+          engagement_rate: editingStats[platform].engagement_rate
+        })
+        .eq('user_id', user.id)
+        .eq('platform', platform);
+
+      if (error) throw error;
+
+      toast({
+        title: "Updated!",
+        description: `${platform} statistics updated successfully`
+      });
+      
+      await fetchStats();
+    } catch (error) {
+      console.error('Error updating stats:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update statistics",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateEditingValue = (platform: string, field: string, value: any) => {
+    setEditingStats(prev => ({
+      ...prev,
+      [platform]: {
+        ...prev[platform],
+        [field]: field === 'engagement_rate' ? parseFloat(value) : parseInt(value) || 0
+      }
+    }));
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
+
+  const getPlatformIcon = (platform: string) => {
+    switch (platform) {
+      case 'instagram':
+        return <Instagram className="h-5 w-5" />;
+      case 'youtube':
+        return <Youtube className="h-5 w-5" />;
+      case 'tiktok':
+        return <Music className="h-5 w-5" />;
+      default:
+        return <Settings className="h-5 w-5" />;
+    }
+  };
+
+  const getPlatformColor = (platform: string) => {
+    switch (platform) {
+      case 'instagram':
+        return 'bg-pink-500';
+      case 'youtube':
+        return 'bg-red-500';
+      case 'tiktok':
+        return 'bg-black';
+      default:
+        return 'bg-gray-500';
+    }
+  };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-wave flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-wave">
+      <div className="container mx-auto px-6 py-8">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-8">
+          <div className="flex items-center gap-4">
+            <Link 
+              to="/" 
+              className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to site
+            </Link>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
+              <p className="text-muted-foreground">Manage your platform statistics</p>
+            </div>
+          </div>
+          <Button variant="outline" onClick={handleSignOut}>
+            <LogOut className="mr-2 h-4 w-4" />
+            Sign Out
+          </Button>
+        </div>
+
+        {/* Platform Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {stats.map((stat) => (
+            <Card key={stat.platform} className="shadow-card border-border/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 capitalize">
+                  <div className={`p-2 rounded-lg ${getPlatformColor(stat.platform)} text-white`}>
+                    {getPlatformIcon(stat.platform)}
+                  </div>
+                  {stat.platform}
+                </CardTitle>
+                <CardDescription>
+                  Update your {stat.platform} statistics
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Followers</Label>
+                  <Input
+                    type="number"
+                    value={editingStats[stat.platform]?.follower_count || 0}
+                    onChange={(e) => updateEditingValue(stat.platform, 'follower_count', e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Monthly Views</Label>
+                  <Input
+                    type="number"
+                    value={editingStats[stat.platform]?.monthly_views || 0}
+                    onChange={(e) => updateEditingValue(stat.platform, 'monthly_views', e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Engagement Rate (%)</Label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    value={editingStats[stat.platform]?.engagement_rate || 0}
+                    onChange={(e) => updateEditingValue(stat.platform, 'engagement_rate', e.target.value)}
+                  />
+                </div>
+                <Button 
+                  onClick={() => updatePlatformStats(stat.platform)}
+                  disabled={loading}
+                  className="w-full"
+                >
+                  <Save className="mr-2 h-4 w-4" />
+                  {loading ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Quick Stats Overview */}
+        <Card className="mt-8 shadow-card border-border/50">
+          <CardHeader>
+            <CardTitle>Current Statistics Overview</CardTitle>
+            <CardDescription>Your latest platform numbers</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {stats.map((stat) => (
+                <div key={stat.platform} className="text-center p-4 bg-muted/30 rounded-lg">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    {getPlatformIcon(stat.platform)}
+                    <Badge variant="secondary" className="capitalize">
+                      {stat.platform}
+                    </Badge>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-2xl font-bold">{stat.follower_count.toLocaleString()}</p>
+                    <p className="text-sm text-muted-foreground">Followers</p>
+                    <p className="text-lg font-semibold">{stat.monthly_views.toLocaleString()}</p>
+                    <p className="text-sm text-muted-foreground">Monthly Views</p>
+                    <p className="text-lg font-semibold">{stat.engagement_rate}%</p>
+                    <p className="text-sm text-muted-foreground">Engagement</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default Admin;

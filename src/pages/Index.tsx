@@ -4,23 +4,31 @@ import { PlatformCard } from "@/components/PlatformCard";
 import { AudienceChart } from "@/components/AudienceChart";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Youtube, Instagram, Music, Users, Eye, TrendingUp, Play, Heart, Share, MessageCircle, ExternalLink, RotateCcw } from "lucide-react";
+import { Youtube, Instagram, Music, Users, Eye, TrendingUp, Play, Heart, Share, MessageCircle, ExternalLink, RotateCcw, Settings } from "lucide-react";
 import { useState } from "react";
 import heroImage from "/lovable-uploads/350aac33-19a1-4c3e-bac9-1e7258ac89b7.png";
 import { useYouTubeStats } from "@/hooks/useYouTubeStats";
+import { usePlatformStats } from "@/hooks/usePlatformStats";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
+import { Link } from "react-router-dom";
 
 const Index = () => {
   const { stats: youtubeStats, loading: youtubeLoading, refetch } = useYouTubeStats();
+  const { getPlatformStat } = usePlatformStats();
   const { toast } = useToast();
-  // Use real YouTube stats when available, fallback to hardcoded values
-  const youtubeFollowers = youtubeStats?.subscriber_count || 8800;
-  const youtubeViews = youtubeStats?.view_count || 847000;
   
-  // Total reach calculation with real YouTube data
-  const totalFollowers = 38700 + youtubeFollowers + 1410; // Instagram + YouTube + TikTok
-  const totalViews = youtubeViews + 228000 + 729656; // YouTube + TikTok 12-month + Instagram 90-day
+  // Get platform stats (will use manual stats if user is logged in, fallback to hardcoded)
+  const instagramStats = getPlatformStat('instagram');
+  const youtubeManualStats = getPlatformStat('youtube');
+  const tiktokStats = getPlatformStat('tiktok');
+  // Use real YouTube stats when available, otherwise use manual stats, then fallback to hardcoded values
+  const youtubeFollowers = youtubeStats?.subscriber_count || youtubeManualStats?.follower_count || 8800;
+  const youtubeViews = youtubeStats?.view_count || youtubeManualStats?.monthly_views || 847000;
+  
+  // Total reach calculation with all platform data
+  const totalFollowers = (instagramStats?.follower_count || 38700) + youtubeFollowers + (tiktokStats?.follower_count || 1410);
+  const totalViews = youtubeViews + (tiktokStats?.monthly_views || 228000) + (instagramStats?.monthly_views || 729656);
 
   // Video data for top performing content
   const topVideos = [
@@ -104,7 +112,7 @@ const Index = () => {
             <div className="flex gap-6 items-center">
               <a href="https://instagram.com/sheldonsimkus" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-primary-foreground/90 hover:text-primary-foreground transition-colors">
                 <img src="/lovable-uploads/502a8d59-4e94-4c4a-94c8-4e5f78e6decf.png" className="h-5 w-5" alt="Instagram" />
-                <span className="text-sm font-medium">38.7K</span>
+                <span className="text-sm font-medium">{((instagramStats?.follower_count || 38700) / 1000).toFixed(1)}K</span>
               </a>
               <a href="https://www.youtube.com/@sheldonsimkus" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-primary-foreground/90 hover:text-primary-foreground transition-colors">
                 <img src="/lovable-uploads/9aa87b25-88f0-439d-890a-7c2d475c22f5.png" className="h-5 w-5" alt="YouTube" />
@@ -112,10 +120,10 @@ const Index = () => {
               </a>
               <a href="https://www.tiktok.com/@sheldonsimkus" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-primary-foreground/90 hover:text-primary-foreground transition-colors">
                 <img src="/lovable-uploads/d3d646ba-e348-45c2-9a7b-d3f53ff73b4c.png" className="h-5 w-5" alt="TikTok" />
-                <span className="text-sm font-medium">1.4K</span>
+                <span className="text-sm font-medium">{((tiktokStats?.follower_count || 1410) / 1000).toFixed(1)}K</span>
               </a>
             </div>
-            <div className="mt-4">
+            <div className="mt-4 flex gap-2">
               <Button
                 variant="secondary"
                 size="sm"
@@ -129,6 +137,12 @@ const Index = () => {
                 <RotateCcw className={`mr-2 h-4 w-4 ${youtubeLoading ? 'animate-spin' : ''}`} />
                 Refresh stats
               </Button>
+              <Link to="/auth">
+                <Button variant="outline" size="sm">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Admin
+                </Button>
+              </Link>
             </div>
 
           </div>
@@ -172,13 +186,13 @@ const Index = () => {
           <PlatformCard
             platform="Instagram"
             handle="@sheldonsimkus"
-            followers="38.7K"
+            followers={`${((instagramStats?.follower_count || 38700) / 1000).toFixed(1)}K`}
             icon={<img src="/lovable-uploads/502a8d59-4e94-4c4a-94c8-4e5f78e6decf.png" className="h-6 w-6" alt="Instagram" />}
             accentColor="pink-500"
             metrics={[
-              { label: "30-Day Views", value: "233K" },
-              { label: "90-Day Views", value: "730K" },
-              { label: "Stories Engagement", value: "67%" },
+              { label: "30-Day Views", value: `${Math.round((instagramStats?.monthly_views || 730000) / 1000)}K` },
+              { label: "90-Day Views", value: `${Math.round((instagramStats?.monthly_views || 730000) * 3 / 1000)}K` },
+              { label: "Engagement Rate", value: `${instagramStats?.engagement_rate || 8.2}%` },
               { label: "Primary Audience", value: "AU (51%)" }
             ]}
             highlights={[
@@ -196,10 +210,10 @@ const Index = () => {
             icon={<img src="/lovable-uploads/9aa87b25-88f0-439d-890a-7c2d475c22f5.png" className="h-6 w-6" alt="YouTube" />}
             accentColor="red-500"
             metrics={[
-              { label: "Monthly Views", value: "86.8K", trend: "47.5%" },
+              { label: "Monthly Views", value: `${Math.round((youtubeManualStats?.monthly_views || 86800) / 1000)}K`, trend: "47.5%" },
               { label: "Monthly Subs", value: "+190", trend: "58%" },
               { label: "Avg Watch Time", value: "3.2 min" },
-              { label: "Avg Likes/Video", value: "1.2K" }
+              { label: "Engagement Rate", value: `${youtubeManualStats?.engagement_rate || 6.5}%` }
             ]}
             highlights={[
               "POV surf content performing exceptionally well",
@@ -212,13 +226,13 @@ const Index = () => {
           <PlatformCard
             platform="TikTok"
             handle="@sheldonsimkus"
-            followers="1.4K"
+            followers={`${((tiktokStats?.follower_count || 1410) / 1000).toFixed(1)}K`}
             icon={<img src="/lovable-uploads/d3d646ba-e348-45c2-9a7b-d3f53ff73b4c.png" className="h-6 w-6" alt="TikTok" />}
             accentColor="black"
             metrics={[
-              { label: "28-Day Views", value: "37K" },
-              { label: "12-Month Views", value: "228K" },
-              { label: "Total Likes", value: "31K" },
+              { label: "28-Day Views", value: `${Math.round((tiktokStats?.monthly_views || 37000) / 1000)}K` },
+              { label: "12-Month Views", value: `${Math.round((tiktokStats?.monthly_views || 37000) * 12 / 1000)}K` },
+              { label: "Engagement Rate", value: `${tiktokStats?.engagement_rate || 9.1}%` },
               { label: "For You %", value: "87.6%" }
             ]}
             highlights={[
