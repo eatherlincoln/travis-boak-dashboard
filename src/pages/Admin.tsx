@@ -163,11 +163,11 @@ const Admin = () => {
   const getPlatformIcon = (platform: string) => {
     switch (platform) {
       case 'instagram':
-        return <Instagram className="h-5 w-5" />;
+        return <img src="/lovable-uploads/502a8d59-4e94-4c4a-94c8-4e5f78e6decf.png" className="h-5 w-5" alt="Instagram" />;
       case 'youtube':
-        return <Youtube className="h-5 w-5" />;
+        return <img src="/lovable-uploads/9aa87b25-88f0-439d-890a-7c2d475c22f5.png" className="h-5 w-5" alt="YouTube" />;
       case 'tiktok':
-        return <Music className="h-5 w-5" />;
+        return <img src="/lovable-uploads/d3d646ba-e348-45c2-9a7b-d3f53ff73b4c.png" className="h-5 w-5" alt="TikTok" />;
       default:
         return <Settings className="h-5 w-5" />;
     }
