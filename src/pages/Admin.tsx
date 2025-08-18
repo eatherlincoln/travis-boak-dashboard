@@ -266,11 +266,11 @@ const Admin = () => {
   const getPlatformIcon = (platform: string) => {
     switch (platform) {
       case 'instagram':
-        return <img src="/lovable-uploads/502a8d59-4e94-4c4a-94c8-4e5f78e6decf.png" className="h-5 w-5" alt="Instagram" />;
+        return <Instagram className="h-5 w-5" />;
       case 'youtube':
-        return <img src="/lovable-uploads/9aa87b25-88f0-439d-890a-7c2d475c22f5.png" className="h-5 w-5" alt="YouTube" />;
+        return <Youtube className="h-5 w-5" />;
       case 'tiktok':
-        return <img src="/lovable-uploads/d3d646ba-e348-45c2-9a7b-d3f53ff73b4c.png" className="h-5 w-5" alt="TikTok" />;
+        return <Music className="h-5 w-5" />;
       default:
         return <Settings className="h-5 w-5" />;
     }
@@ -434,7 +434,9 @@ const Admin = () => {
           <Card className="shadow-card border-border/50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <img src="/lovable-uploads/502a8d59-4e94-4c4a-94c8-4e5f78e6decf.png" className="h-5 w-5" alt="Instagram" />
+                <div className="p-2 rounded-lg bg-pink-500 text-white">
+                  <Instagram className="h-5 w-5" />
+                </div>
                 Instagram Demographics
               </CardTitle>
               <CardDescription>
