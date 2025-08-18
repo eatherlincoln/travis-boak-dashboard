@@ -3,13 +3,37 @@ import { MetricCard } from "@/components/MetricCard";
 import { PlatformCard } from "@/components/PlatformCard";
 import { AudienceChart } from "@/components/AudienceChart";
 import { Badge } from "@/components/ui/badge";
-import { Youtube, Instagram, Music, Users, Eye, TrendingUp, Play, Heart, Share, MessageCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Youtube, Instagram, Music, Users, Eye, TrendingUp, Play, Heart, Share, MessageCircle, ExternalLink } from "lucide-react";
+import { useState } from "react";
 import heroImage from "/lovable-uploads/350aac33-19a1-4c3e-bac9-1e7258ac89b7.png";
 
 const Index = () => {
   // Total reach calculation
   const totalFollowers = 38700 + 8800 + 1410; // Instagram + YouTube + TikTok
   const totalViews = 847000 + 228000 + 729656; // YouTube 12-month + TikTok 12-month + Instagram 90-day
+
+  // Video data for top performing content
+  const topVideos = [
+    {
+      title: "POV Snapper Rocks – First Swell",
+      platform: "YouTube",
+      views: "116K views",
+      videoId: "dQw4w9WgXcQ" // Replace with actual YouTube video ID
+    },
+    {
+      title: "POV Best of Snapper Rocks", 
+      platform: "YouTube",
+      views: "54K views",
+      videoId: "dQw4w9WgXcQ" // Replace with actual YouTube video ID
+    },
+    {
+      title: "Cyclone Alfred at Double Island",
+      platform: "YouTube", 
+      views: "54K views",
+      videoId: "dQw4w9WgXcQ" // Replace with actual YouTube video ID
+    }
+  ];
 
   // Audience data for Instagram (primary platform)
   const audienceData = {
@@ -182,27 +206,43 @@ const Index = () => {
                 Top Performing Content
               </h3>
               <div className="space-y-4">
-                <div className="bg-muted/30 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2">POV Snapper Rocks – First Swell</h4>
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>YouTube</span>
-                    <span>116K views</span>
-                  </div>
-                </div>
-                <div className="bg-muted/30 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2">POV Best of Snapper Rocks</h4>
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>YouTube</span>
-                    <span>54K views</span>
-                  </div>
-                </div>
-                <div className="bg-muted/30 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2">Cyclone Alfred at Double Island</h4>
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>YouTube</span>
-                    <span>54K views</span>
-                  </div>
-                </div>
+                {topVideos.map((video, index) => (
+                  <Dialog key={index}>
+                    <DialogTrigger asChild>
+                      <div className="bg-muted/30 p-4 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors group">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-medium mb-2 group-hover:text-primary transition-colors">
+                              {video.title}
+                            </h4>
+                            <div className="flex justify-between text-sm text-muted-foreground">
+                              <span>{video.platform}</span>
+                              <span>{video.views}</span>
+                            </div>
+                          </div>
+                          <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors ml-3" />
+                        </div>
+                      </div>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl w-[90vw]">
+                      <DialogHeader>
+                        <DialogTitle>{video.title}</DialogTitle>
+                      </DialogHeader>
+                      <div className="aspect-video w-full">
+                        <iframe
+                          width="100%"
+                          height="100%"
+                          src={`https://www.youtube.com/embed/${video.videoId}`}
+                          title={video.title}
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          className="rounded-lg"
+                        />
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                ))}
               </div>
               <div className="mt-4 p-3 bg-primary/10 rounded-lg">
                 <p className="text-sm text-primary">
