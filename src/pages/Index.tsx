@@ -213,7 +213,7 @@ const Index = () => {
             <CardContent className="p-6">
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <Play className="h-5 w-5 text-primary" />
-                Top Performing Content
+                Top Performing YouTube Content
               </h3>
               <div className="grid grid-cols-2 gap-3">
                 {topVideos.map((video, index) => (
