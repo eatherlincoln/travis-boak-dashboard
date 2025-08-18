@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { TrendingUp, TrendingDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface PlatformCardProps {
@@ -54,7 +55,16 @@ export function PlatformCard({
               <div className="flex items-center gap-2">
                 <p className="font-semibold">{metric.value}</p>
                 {metric.trend && (
-                  <span className="text-xs text-success">+{metric.trend}</span>
+                  <span className={cn(
+                    "text-xs font-medium flex items-center gap-1",
+                    metric.trend.startsWith('+') ? "text-green-600" : "text-red-600"
+                  )}>
+                    {metric.trend.startsWith('+') ? 
+                      <TrendingUp className="h-3 w-3" /> : 
+                      <TrendingDown className="h-3 w-3" />
+                    }
+                    {metric.trend}
+                  </span>
                 )}
               </div>
             </div>
