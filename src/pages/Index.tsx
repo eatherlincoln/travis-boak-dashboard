@@ -94,15 +94,15 @@ const Index = () => {
             {/* Social Media Icons and Followers */}
             <div className="flex gap-6 items-center">
               <div className="flex items-center gap-2 text-primary-foreground/90">
-                <Instagram className="h-5 w-5 text-white" />
+                <img src="/lovable-uploads/502a8d59-4e94-4c4a-94c8-4e5f78e6decf.png" className="h-5 w-5" alt="Instagram" />
                 <span className="text-sm font-medium">38.7K</span>
               </div>
               <div className="flex items-center gap-2 text-primary-foreground/90">
-                <Youtube className="h-5 w-5 text-white" />
+                <img src="/lovable-uploads/9aa87b25-88f0-439d-890a-7c2d475c22f5.png" className="h-5 w-5" alt="YouTube" />
                 <span className="text-sm font-medium">8.8K</span>
               </div>
               <div className="flex items-center gap-2 text-primary-foreground/90">
-                <img src="/lovable-uploads/4039f0b3-214a-41b2-923e-5d0ce7f8a79e.png" className="h-5 w-5" alt="TikTok" />
+                <img src="/lovable-uploads/d3d646ba-e348-45c2-9a7b-d3f53ff73b4c.png" className="h-5 w-5" alt="TikTok" />
                 <span className="text-sm font-medium">1.4K</span>
               </div>
             </div>
@@ -148,7 +148,7 @@ const Index = () => {
             platform="Instagram"
             handle="@sheldonsimkus"
             followers="38.7K"
-            icon={<Instagram className="h-6 w-6 text-pink-500" />}
+            icon={<img src="/lovable-uploads/502a8d59-4e94-4c4a-94c8-4e5f78e6decf.png" className="h-6 w-6" alt="Instagram" />}
             accentColor="pink-500"
             metrics={[
               { label: "30-Day Views", value: "233K" },
@@ -168,7 +168,7 @@ const Index = () => {
             platform="YouTube"
             handle="@sheldonsimkus"
             followers="8.8K"
-            icon={<Youtube className="h-6 w-6 text-red-500" />}
+            icon={<img src="/lovable-uploads/9aa87b25-88f0-439d-890a-7c2d475c22f5.png" className="h-6 w-6" alt="YouTube" />}
             accentColor="red-500"
             metrics={[
               { label: "Monthly Views", value: "86.8K", trend: "47.5%" },
@@ -188,7 +188,7 @@ const Index = () => {
             platform="TikTok"
             handle="@sheldonsimkus"
             followers="1.4K"
-            icon={<img src="/lovable-uploads/4039f0b3-214a-41b2-923e-5d0ce7f8a79e.png" className="h-6 w-6" alt="TikTok" />}
+            icon={<img src="/lovable-uploads/d3d646ba-e348-45c2-9a7b-d3f53ff73b4c.png" className="h-6 w-6" alt="TikTok" />}
             accentColor="black"
             metrics={[
               { label: "28-Day Views", value: "37K" },
