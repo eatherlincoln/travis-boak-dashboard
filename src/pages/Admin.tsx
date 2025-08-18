@@ -55,6 +55,42 @@ const Admin = () => {
     }
   }, [user]);
 
+  const fetchStats = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('platform_stats')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      
+      const formattedStats = data?.map(stat => ({
+        ...stat,
+        additional_metrics: typeof stat.additional_metrics === 'object' && stat.additional_metrics !== null 
+          ? stat.additional_metrics as { likes?: number; comments?: number; shares?: number; saves?: number; }
+          : {}
+      })) || [];
+      
+      setStats(formattedStats);
+      
+      // Initialize editing state
+      const editingState = {};
+      formattedStats.forEach(stat => {
+        editingState[stat.platform] = { ...stat };
+      });
+      setEditingStats(editingState);
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load platform statistics",
+        variant: "destructive"
+      });
+    }
+  };
+
   const fetchAudienceData = async () => {
     if (!user) return;
     
@@ -146,42 +182,6 @@ const Admin = () => {
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchStats = async () => {
-    if (!user) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('platform_stats')
-        .select('*')
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-      
-      const formattedStats = data?.map(stat => ({
-        ...stat,
-        additional_metrics: typeof stat.additional_metrics === 'object' && stat.additional_metrics !== null 
-          ? stat.additional_metrics as { likes?: number; comments?: number; shares?: number; saves?: number; }
-          : {}
-      })) || [];
-      
-      setStats(formattedStats);
-      
-      // Initialize editing state
-      const editingState = {};
-      formattedStats.forEach(stat => {
-        editingState[stat.platform] = { ...stat };
-      });
-      setEditingStats(editingState);
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load platform statistics",
-        variant: "destructive"
-      });
     }
   };
 
@@ -332,22 +332,20 @@ const Admin = () => {
           </Button>
         </div>
 
-        {/* Platform Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {stats.map((stat) => (
-            <Card key={stat.platform} className="shadow-card border-border/50">
+        {/* Instagram: Metrics + Demographics side-by-side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Instagram Metrics Card */}
+          {instagramStat && (
+            <Card className="shadow-card border-border/50">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 capitalize">
-                  <div className={`p-2 rounded-lg ${getPlatformColor(stat.platform)} text-white`}>
-                    {getPlatformIcon(stat.platform)}
+                  <div className={`p-2 rounded-lg ${getPlatformColor('instagram')} text-white`}>
+                    {getPlatformIcon('instagram')}
                   </div>
-                  {stat.platform}
+                  Instagram Metrics
                 </CardTitle>
                 <CardDescription>
-                  {stat.platform === 'youtube' ? 
-                    'Auto-updated from ViewStats - manual override available' : 
-                    `Update your ${stat.platform} statistics`
-                  }
+                  Update your Instagram statistics
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -355,98 +353,63 @@ const Admin = () => {
                   <Label>Followers</Label>
                   <Input
                     type="number"
-                    value={editingStats[stat.platform]?.follower_count || 0}
-                    onChange={(e) => updateEditingValue(stat.platform, 'follower_count', e.target.value)}
+                    value={editingStats['instagram']?.follower_count || 0}
+                    onChange={(e) => updateEditingValue('instagram', 'follower_count', e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>{stat.platform === 'instagram' || stat.platform === 'tiktok' ? 'Video Views (Monthly)' : 'Monthly Views'}</Label>
+                  <Label>Video Views (Monthly)</Label>
                   <Input
                     type="number"
-                    value={editingStats[stat.platform]?.monthly_views || 0}
-                    onChange={(e) => updateEditingValue(stat.platform, 'monthly_views', e.target.value)}
+                    value={editingStats['instagram']?.monthly_views || 0}
+                    onChange={(e) => updateEditingValue('instagram', 'monthly_views', e.target.value)}
                   />
                 </div>
-                
-                {/* Platform-specific metrics */}
-                {stat.platform === 'instagram' && (
-                  <div className="space-y-4 p-3 bg-muted/30 rounded-lg">
-                    <Label className="text-sm font-medium">Instagram Metrics</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <Label className="text-xs">Monthly Likes</Label>
-                        <Input
-                          type="number"
-                          value={editingStats[stat.platform]?.additional_metrics?.likes || 0}
-                          onChange={(e) => updateMetricValue(stat.platform, 'likes', e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs">Monthly Comments</Label>
-                        <Input
-                          type="number"
-                          value={editingStats[stat.platform]?.additional_metrics?.comments || 0}
-                          onChange={(e) => updateMetricValue(stat.platform, 'comments', e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs">Monthly Shares</Label>
-                        <Input
-                          type="number"
-                          value={editingStats[stat.platform]?.additional_metrics?.shares || 0}
-                          onChange={(e) => updateMetricValue(stat.platform, 'shares', e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs">Monthly Saves</Label>
-                        <Input
-                          type="number"
-                          value={editingStats[stat.platform]?.additional_metrics?.saves || 0}
-                          onChange={(e) => updateMetricValue(stat.platform, 'saves', e.target.value)}
-                        />
-                      </div>
+
+                <div className="space-y-4 p-3 bg-muted/30 rounded-lg">
+                  <Label className="text-sm font-medium">Instagram Metrics</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-xs">Monthly Likes</Label>
+                      <Input
+                        type="number"
+                        value={editingStats['instagram']?.additional_metrics?.likes || 0}
+                        onChange={(e) => updateMetricValue('instagram', 'likes', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Monthly Comments</Label>
+                      <Input
+                        type="number"
+                        value={editingStats['instagram']?.additional_metrics?.comments || 0}
+                        onChange={(e) => updateMetricValue('instagram', 'comments', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Monthly Shares</Label>
+                      <Input
+                        type="number"
+                        value={editingStats['instagram']?.additional_metrics?.shares || 0}
+                        onChange={(e) => updateMetricValue('instagram', 'shares', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Monthly Saves</Label>
+                      <Input
+                        type="number"
+                        value={editingStats['instagram']?.additional_metrics?.saves || 0}
+                        onChange={(e) => updateMetricValue('instagram', 'saves', e.target.value)}
+                      />
                     </div>
                   </div>
-                )}
-                
-                {stat.platform === 'tiktok' && (
-                  <div className="space-y-4 p-3 bg-muted/30 rounded-lg">
-                    <Label className="text-sm font-medium">TikTok Metrics</Label>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div>
-                        <Label className="text-xs">Monthly Likes</Label>
-                        <Input
-                          type="number"
-                          value={editingStats[stat.platform]?.additional_metrics?.likes || 0}
-                          onChange={(e) => updateMetricValue(stat.platform, 'likes', e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs">Monthly Comments</Label>
-                        <Input
-                          type="number"
-                          value={editingStats[stat.platform]?.additional_metrics?.comments || 0}
-                          onChange={(e) => updateMetricValue(stat.platform, 'comments', e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs">Monthly Shares</Label>
-                        <Input
-                          type="number"
-                          value={editingStats[stat.platform]?.additional_metrics?.shares || 0}
-                          onChange={(e) => updateMetricValue(stat.platform, 'shares', e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
+                </div>
+
                 <div className="space-y-2">
                   <Label>Engagement Rate (Auto-calculated)</Label>
                   <Input
                     type="number"
                     step="0.1"
-                    value={calculateEngagementRate(stat.platform)}
+                    value={calculateEngagementRate('instagram')}
                     disabled
                     className="bg-muted/50"
                   />
@@ -454,9 +417,9 @@ const Admin = () => {
                     Calculated from total engagements ÷ followers × 100
                   </p>
                 </div>
-                
+
                 <Button 
-                  onClick={() => updatePlatformStats(stat.platform)}
+                  onClick={() => updatePlatformStats('instagram')}
                   disabled={loading}
                   className="w-full"
                 >
@@ -465,133 +428,278 @@ const Admin = () => {
                 </Button>
               </CardContent>
             </Card>
-          ))}
-        </div>
+          )}
 
-        {/* Instagram Audience Demographics */}
-        <Card className="shadow-card border-border/50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <img src="/lovable-uploads/502a8d59-4e94-4c4a-94c8-4e5f78e6decf.png" className="h-5 w-5" alt="Instagram" />
-              Instagram Audience Demographics
-            </CardTitle>
-            <CardDescription>
-              Manage your Instagram audience insights and demographics
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Gender Split */}
-            <div className="space-y-4">
-              <Label className="text-base font-semibold">Gender Split</Label>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm">Men (%)</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={audienceData?.gender?.men || 88}
-                    onChange={(e) => updateAudienceValue('gender', { ...audienceData?.gender, men: parseInt(e.target.value) || 0 })}
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm">Women (%)</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={audienceData?.gender?.women || 12}
-                    onChange={(e) => updateAudienceValue('gender', { ...audienceData?.gender, women: parseInt(e.target.value) || 0 })}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Age Groups */}
-            <div className="space-y-4">
-              <Label className="text-base font-semibold">Age Groups</Label>
-              <div className="grid grid-cols-2 gap-4">
-                {(audienceData?.age_groups || [
-                  { range: "18-24", percentage: 22 },
-                  { range: "25-34", percentage: 31 },
-                  { range: "35-44", percentage: 21 },
-                  { range: "45-54", percentage: 16 }
-                ]).map((age, index) => (
-                  <div key={age.range}>
-                    <Label className="text-sm">{age.range} (%)</Label>
+          {/* Instagram Audience Demographics */}
+          <Card className="shadow-card border-border/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <img src="/lovable-uploads/502a8d59-4e94-4c4a-94c8-4e5f78e6decf.png" className="h-5 w-5" alt="Instagram" />
+                Instagram Demographics
+              </CardTitle>
+              <CardDescription>
+                Manage your Instagram audience insights
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Gender Split */}
+              <div className="space-y-4">
+                <Label className="text-base font-semibold">Gender Split</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm">Men (%)</Label>
                     <Input
                       type="number"
                       min="0"
                       max="100"
-                      value={age.percentage}
-                      onChange={(e) => updateAgeGroup(index, parseInt(e.target.value) || 0)}
+                      value={audienceData?.gender?.men || 88}
+                      onChange={(e) => updateAudienceValue('gender', { ...audienceData?.gender, men: parseInt(e.target.value) || 0 })}
                     />
                   </div>
-                ))}
+                  <div>
+                    <Label className="text-sm">Women (%)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={audienceData?.gender?.women || 12}
+                      onChange={(e) => updateAudienceValue('gender', { ...audienceData?.gender, women: parseInt(e.target.value) || 0 })}
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
 
-            {/* Top Countries */}
-            <div className="space-y-4">
-              <Label className="text-base font-semibold">Top Countries</Label>
-              <div className="grid grid-cols-2 gap-4">
-                {(audienceData?.countries || [
-                  { country: "Australia", percentage: 51 },
-                  { country: "USA", percentage: 10 },
-                  { country: "Japan", percentage: 6 },
-                  { country: "Brazil", percentage: 5 }
-                ]).map((country, index) => (
-                  <div key={country.country} className="space-y-2">
-                    <div>
-                      <Label className="text-sm">Country {index + 1}</Label>
-                      <Input
-                        type="text"
-                        value={country.country}
-                        onChange={(e) => updateCountry(index, 'country', e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-sm">Percentage (%)</Label>
+              {/* Age Groups */}
+              <div className="space-y-4">
+                <Label className="text-base font-semibold">Age Groups</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  {(audienceData?.age_groups || [
+                    { range: "18-24", percentage: 22 },
+                    { range: "25-34", percentage: 31 },
+                    { range: "35-44", percentage: 21 },
+                    { range: "45-54", percentage: 16 }
+                  ]).map((age, index) => (
+                    <div key={age.range}>
+                      <Label className="text-sm">{age.range} (%)</Label>
                       <Input
                         type="number"
                         min="0"
                         max="100"
-                        value={country.percentage}
-                        onChange={(e) => updateCountry(index, 'percentage', parseInt(e.target.value) || 0)}
+                        value={age.percentage}
+                        onChange={(e) => updateAgeGroup(index, parseInt(e.target.value) || 0)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Top Countries */}
+              <div className="space-y-4">
+                <Label className="text-base font-semibold">Top Countries</Label>
+                <div className="grid grid-cols-1 gap-3">
+                  {(audienceData?.countries || [
+                    { country: "Australia", percentage: 51 },
+                    { country: "USA", percentage: 10 },
+                    { country: "Japan", percentage: 6 },
+                    { country: "Brazil", percentage: 5 }
+                  ]).map((country, index) => (
+                    <div key={country.country} className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-sm">Country {index + 1}</Label>
+                        <Input
+                          type="text"
+                          value={country.country}
+                          onChange={(e) => updateCountry(index, 'country', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-sm">Percentage (%)</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={country.percentage}
+                          onChange={(e) => updateCountry(index, 'percentage', parseInt(e.target.value) || 0)}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Top Cities */}
+              <div className="space-y-4">
+                <Label className="text-base font-semibold">Top Cities</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  {(audienceData?.cities || ["Sydney", "Gold Coast", "Melbourne", "Sunshine Coast"]).map((city, index) => (
+                    <div key={index}>
+                      <Label className="text-sm">City {index + 1}</Label>
+                      <Input
+                        type="text"
+                        value={city}
+                        onChange={(e) => updateCity(index, e.target.value)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Button 
+                onClick={saveAudienceData}
+                disabled={loading}
+                className="w-full"
+              >
+                <Save className="mr-2 h-4 w-4" />
+                {loading ? 'Saving Demographics...' : 'Save Demographics'}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* YouTube and TikTok below */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {youtubeStat && (
+            <Card className="shadow-card border-border/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 capitalize">
+                  <div className={`p-2 rounded-lg ${getPlatformColor('youtube')} text-white`}>
+                    {getPlatformIcon('youtube')}
+                  </div>
+                  YouTube Metrics
+                </CardTitle>
+                <CardDescription>
+                  Manual update recommended - dashboard shows live ViewStats data
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Followers</Label>
+                  <Input
+                    type="number"
+                    value={editingStats['youtube']?.follower_count || 0}
+                    onChange={(e) => updateEditingValue('youtube', 'follower_count', e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Monthly Views</Label>
+                  <Input
+                    type="number"
+                    value={editingStats['youtube']?.monthly_views || 0}
+                    onChange={(e) => updateEditingValue('youtube', 'monthly_views', e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Engagement Rate (Auto-calculated)</Label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    value={calculateEngagementRate('youtube')}
+                    disabled
+                    className="bg-muted/50"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    YouTube engagement = comments + likes ÷ subscribers × 100
+                  </p>
+                </div>
+
+                <Button 
+                  onClick={() => updatePlatformStats('youtube')}
+                  disabled={loading}
+                  className="w-full"
+                >
+                  <Save className="mr-2 h-4 w-4" />
+                  {loading ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {tiktokStat && (
+            <Card className="shadow-card border-border/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 capitalize">
+                  <div className={`p-2 rounded-lg ${getPlatformColor('tiktok')} text-white`}>
+                    {getPlatformIcon('tiktok')}
+                  </div>
+                  TikTok Metrics
+                </CardTitle>
+                <CardDescription>Update your TikTok statistics</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Followers</Label>
+                  <Input
+                    type="number"
+                    value={editingStats['tiktok']?.follower_count || 0}
+                    onChange={(e) => updateEditingValue('tiktok', 'follower_count', e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Video Views (Monthly)</Label>
+                  <Input
+                    type="number"
+                    value={editingStats['tiktok']?.monthly_views || 0}
+                    onChange={(e) => updateEditingValue('tiktok', 'monthly_views', e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-4 p-3 bg-muted/30 rounded-lg">
+                  <Label className="text-sm font-medium">TikTok Metrics</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <Label className="text-xs">Monthly Likes</Label>
+                      <Input
+                        type="number"
+                        value={editingStats['tiktok']?.additional_metrics?.likes || 0}
+                        onChange={(e) => updateMetricValue('tiktok', 'likes', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Monthly Comments</Label>
+                      <Input
+                        type="number"
+                        value={editingStats['tiktok']?.additional_metrics?.comments || 0}
+                        onChange={(e) => updateMetricValue('tiktok', 'comments', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Monthly Shares</Label>
+                      <Input
+                        type="number"
+                        value={editingStats['tiktok']?.additional_metrics?.shares || 0}
+                        onChange={(e) => updateMetricValue('tiktok', 'shares', e.target.value)}
                       />
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
 
-            {/* Top Cities */}
-            <div className="space-y-4">
-              <Label className="text-base font-semibold">Top Cities</Label>
-              <div className="grid grid-cols-2 gap-4">
-                {(audienceData?.cities || ["Sydney", "Gold Coast", "Melbourne", "Sunshine Coast"]).map((city, index) => (
-                  <div key={index}>
-                    <Label className="text-sm">City {index + 1}</Label>
-                    <Input
-                      type="text"
-                      value={city}
-                      onChange={(e) => updateCity(index, e.target.value)}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
+                <div className="space-y-2">
+                  <Label>Engagement Rate (Auto-calculated)</Label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    value={calculateEngagementRate('tiktok')}
+                    disabled
+                    className="bg-muted/50"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Calculated from total engagements ÷ followers × 100
+                  </p>
+                </div>
 
-            <Button 
-              onClick={saveAudienceData}
-              disabled={loading}
-              className="w-full"
-            >
-              <Save className="mr-2 h-4 w-4" />
-              {loading ? 'Saving Demographics...' : 'Save Demographics'}
-            </Button>
-          </CardContent>
-        </Card>
+                <Button 
+                  onClick={() => updatePlatformStats('tiktok')}
+                  disabled={loading}
+                  className="w-full"
+                >
+                  <Save className="mr-2 h-4 w-4" />
+                  {loading ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </div>
 
         {/* Quick Stats Overview */}
         <Card className="mt-8 shadow-card border-border/50">
