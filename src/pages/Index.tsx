@@ -4,14 +4,16 @@ import { PlatformCard } from "@/components/PlatformCard";
 import { AudienceChart } from "@/components/AudienceChart";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Youtube, Instagram, Music, Users, Eye, TrendingUp, Play, Heart, Share, MessageCircle, ExternalLink } from "lucide-react";
+import { Youtube, Instagram, Music, Users, Eye, TrendingUp, Play, Heart, Share, MessageCircle, ExternalLink, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import heroImage from "/lovable-uploads/350aac33-19a1-4c3e-bac9-1e7258ac89b7.png";
 import { useYouTubeStats } from "@/hooks/useYouTubeStats";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
 
 const Index = () => {
-  const { stats: youtubeStats, loading: youtubeLoading } = useYouTubeStats();
-  
+  const { stats: youtubeStats, loading: youtubeLoading, refetch } = useYouTubeStats();
+  const { toast } = useToast();
   // Use real YouTube stats when available, fallback to hardcoded values
   const youtubeFollowers = youtubeStats?.subscriber_count || 8800;
   const youtubeViews = youtubeStats?.view_count || 847000;
@@ -113,6 +115,22 @@ const Index = () => {
                 <span className="text-sm font-medium">1.4K</span>
               </a>
             </div>
+            <div className="mt-4">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={async () => {
+                  toast({ title: "Refreshing YouTube stats", description: "Fetching latest data..." });
+                  await refetch();
+                  toast({ title: "Updated", description: "Latest stats fetched." });
+                }}
+                disabled={youtubeLoading}
+              >
+                <RotateCcw className={`mr-2 h-4 w-4 ${youtubeLoading ? 'animate-spin' : ''}`} />
+                Refresh stats
+              </Button>
+            </div>
+
           </div>
         </div>
       </div>
