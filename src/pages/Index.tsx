@@ -4,15 +4,17 @@ import { PlatformCard } from "@/components/PlatformCard";
 import { AudienceChart } from "@/components/AudienceChart";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Youtube, Instagram, Music, Users, Eye, Play, Heart, Share, MessageCircle, ExternalLink, Settings } from "lucide-react";
+import { Youtube, Instagram, Music, Users, Eye, Play, Heart, Share, MessageCircle, ExternalLink, Settings, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import heroImage from "/lovable-uploads/350aac33-19a1-4c3e-bac9-1e7258ac89b7.png";
 import { usePlatformStats } from "@/hooks/usePlatformStats";
+import { useViewStats } from "@/hooks/useViewStats";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
 const Index = () => {
-  const { getPlatformStat } = usePlatformStats();
+  const { getPlatformStat, refetch: refetchPlatformStats } = usePlatformStats();
+  const { refreshStats: refreshViewStats, loading: viewStatsLoading } = useViewStats();
   
   // Get platform stats (will use manual stats if user is logged in, fallback to hardcoded)
   const instagramStats = getPlatformStat('instagram');
@@ -119,7 +121,19 @@ const Index = () => {
                 <span className="text-sm font-medium">{((tiktokStats?.follower_count || 1410) / 1000).toFixed(1)}K</span>
               </a>
             </div>
-            <div className="mt-4">
+            <div className="mt-4 flex gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={async () => {
+                  await refreshViewStats();
+                  await refetchPlatformStats();
+                }}
+                disabled={viewStatsLoading}
+              >
+                <RotateCcw className={`mr-2 h-4 w-4 ${viewStatsLoading ? 'animate-spin' : ''}`} />
+                Refresh YouTube stats
+              </Button>
               <Link to="/auth">
                 <Button variant="outline" size="sm">
                   <Settings className="mr-2 h-4 w-4" />
