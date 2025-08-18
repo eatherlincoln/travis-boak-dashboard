@@ -23,14 +23,14 @@ export function MetricCard({ title, value, subtitle, icon, trend, className }: M
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
             <div className="flex items-baseline space-x-2">
               <p className="text-2xl font-bold text-foreground">{value}</p>
-              {trend && (
-                <span className={cn(
-                  "text-sm font-medium",
-                  trend.isPositive ? "text-success" : "text-destructive"
-                )}>
-                  {trend.isPositive ? "+" : ""}{trend.value}
-                </span>
-              )}
+            {trend && (
+              <span className={cn(
+                "text-sm font-medium",
+                trend.isPositive ? "text-success" : "text-destructive"
+              )}>
+                {trend.value}
+              </span>
+            )}
             </div>
             {subtitle && (
               <p className="text-sm text-muted-foreground">{subtitle}</p>
