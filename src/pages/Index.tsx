@@ -4,7 +4,7 @@ import { PlatformCard } from "@/components/PlatformCard";
 import { AudienceChart } from "@/components/AudienceChart";
 import { Badge } from "@/components/ui/badge";
 import { Youtube, Instagram, Music, Users, Eye, TrendingUp, Play, Heart, Share, MessageCircle } from "lucide-react";
-import heroImage from "@/assets/surf-hero.jpg";
+import heroImage from "/lovable-uploads/350aac33-19a1-4c3e-bac9-1e7258ac89b7.png";
 
 const Index = () => {
   // Total reach calculation
@@ -34,7 +34,7 @@ const Index = () => {
       {/* Hero Section */}
       <div className="relative h-96 bg-gradient-deep overflow-hidden">
         <div 
-          className="absolute inset-0 bg-cover bg-center opacity-20"
+          className="absolute inset-0 bg-cover bg-center opacity-30"
           style={{ backgroundImage: `url(${heroImage})` }}
         />
         <div className="relative z-10 container mx-auto px-6 h-full flex items-center">
@@ -45,7 +45,7 @@ const Index = () => {
             <p className="text-xl text-primary-foreground/90 mb-6">
               Professional Surfer & Content Creator
             </p>
-            <div className="flex gap-4 flex-wrap">
+            <div className="flex gap-4 flex-wrap mb-6">
               <Badge variant="secondary" className="text-base px-4 py-2">
                 {totalFollowers.toLocaleString()} Total Followers
               </Badge>
@@ -55,6 +55,22 @@ const Index = () => {
               <Badge variant="secondary" className="text-base px-4 py-2">
                 3 Active Platforms
               </Badge>
+            </div>
+            
+            {/* Social Media Icons and Followers */}
+            <div className="flex gap-6 items-center">
+              <div className="flex items-center gap-2 text-primary-foreground/90">
+                <Instagram className="h-5 w-5 text-white" />
+                <span className="text-sm font-medium">38.7K</span>
+              </div>
+              <div className="flex items-center gap-2 text-primary-foreground/90">
+                <Youtube className="h-5 w-5 text-white" />
+                <span className="text-sm font-medium">8.8K</span>
+              </div>
+              <div className="flex items-center gap-2 text-primary-foreground/90">
+                <Music className="h-5 w-5 text-white" />
+                <span className="text-sm font-medium">1.4K</span>
+              </div>
             </div>
           </div>
         </div>
