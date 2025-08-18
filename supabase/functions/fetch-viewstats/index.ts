@@ -37,39 +37,51 @@ Deno.serve(async (req) => {
     const html = await response.text();
     console.log('ViewStats page fetched successfully, parsing data...');
     
-    // Extract key metrics using regex patterns from HTML
-    const subscribersMatch = html.match(/(\d{1,3}(?:,\d{3})*)\s*Subscribers/i) || html.match(/Subscribers[^>]*>[\s\S]*?(\d+(?:,\d{3})*|\d+\.?\d*K)/i);
-    const monthlyViewsMatch = html.match(/(\d+(?:\.\d+)?K)\s*Views[^>]*Last 28 days/i) || html.match(/Views[^>]*Last 28 days[^>]*>[\s\S]*?(\d+(?:\.\d+)?K)/i);
-    const monthlySubsMatch = html.match(/(\d+)\s*Subs[^>]*Last 28 days/i) || html.match(/Subs[^>]*Last 28 days[^>]*>[\s\S]*?(\d+)/i);
-    const totalViewsMatch = html.match(/(\d+(?:\.\d+)?M)\s*Total Views/i) || html.match(/Total Views[^>]*>[\s\S]*?(\d+(?:\.\d+)?M)/i);
+    // Extract key metrics using robust parsing
+    // Monthly views (Last 28 days)
+    const monthlyViewsMatch = html.match(/Views[\s\S]*?Last 28 days[\s\S]*?(\d+(?:\.\d+)?K)/i);
+    // Total views (optional)
+    const totalViewsMatch = html.match(/Total Views[\s\S]*?(\d+(?:\.\d+)?M)/i);
 
     // Helper function to parse numbers with K/M suffixes
     const parseNumber = (str: string): number => {
       if (!str) return 0;
       const cleanStr = str.replace(/,/g, '');
-      if (cleanStr.includes('K')) {
-        return Math.round(parseFloat(cleanStr.replace('K', '')) * 1000);
-      }
-      if (cleanStr.includes('M')) {
-        return Math.round(parseFloat(cleanStr.replace('M', '')) * 1000000);
-      }
+      if (cleanStr.includes('K')) return Math.round(parseFloat(cleanStr.replace('K', '')) * 1000);
+      if (cleanStr.includes('M')) return Math.round(parseFloat(cleanStr.replace('M', '')) * 1000000);
       return parseInt(cleanStr) || 0;
     };
 
-    // Extract and parse the data with fallbacks
-    const subscriberCount = subscribersMatch ? parseNumber(subscribersMatch[1]) : 8780;
+    // Extract subscriber count by scanning the section between "Subscribers" and "Total Views"
+    let subscriberCount = 0;
+    const lower = html.toLowerCase();
+    const sIdx = lower.indexOf('subscribers');
+    const eIdx = lower.indexOf('total views', sIdx + 1);
+    if (sIdx !== -1 && eIdx !== -1) {
+      const section = html.slice(sIdx, eIdx);
+      const candidates = Array.from(section.matchAll(/(?<!#)\b(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?K)\b/g));
+      const parsed = candidates
+        .map((m) => parseNumber(m[1]))
+        .filter((n) => n > 500 && n < 10000000); // ignore small numbers and huge outliers
+      if (parsed.length) {
+        subscriberCount = Math.max(...parsed);
+      }
+      console.log('Subscriber candidates:', candidates.map((m) => m[1]));
+    }
+
+    // Fallback if not found
+    if (!subscriberCount) {
+      const fallback = html.match(/Subscribers[\s\S]*?(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?K)/i);
+      if (fallback) subscriberCount = parseNumber(fallback[1]);
+    }
+
+    // Extract and parse remaining data with fallbacks
     const totalViews = totalViewsMatch ? parseNumber(totalViewsMatch[1]) : 1649552;
     const monthlyViews = monthlyViewsMatch ? parseNumber(monthlyViewsMatch[1]) : 86250;
+    const monthlySubsMatch = html.match(/Subs[\s\S]*?Last 28 days[\s\S]*?(\d+)/i);
     const monthlySubs = monthlySubsMatch ? parseInt(monthlySubsMatch[1]) : 200;
 
-    console.log('Extracted data:', { subscribersMatch: subscribersMatch?.[1], monthlyViewsMatch: monthlyViewsMatch?.[1] });
-
-    console.log('Parsed ViewStats data:', {
-      subscriberCount,
-      totalViews,
-      monthlyViews,
-      monthlySubs
-    });
+    console.log('Parsed ViewStats data:', { subscriberCount, totalViews, monthlyViews, monthlySubs });
 
     // Update YouTube stats in the platform_stats table for all users
     const { error: updateError } = await supabase
