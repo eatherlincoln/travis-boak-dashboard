@@ -191,7 +191,11 @@ const Admin = () => {
     
     const { likes = 0, comments = 0, shares = 0, saves = 0 } = stat.additional_metrics;
     const totalEngagements = likes + comments + shares + (platform === 'instagram' ? saves : 0);
-    const engagementRate = stat.follower_count > 0 ? (totalEngagements / stat.follower_count) * 100 : 0;
+    
+    // Realistic calculation: Assume 30 posts per month, calculate average engagement per post
+    const estimatedPostsPerMonth = 30;
+    const avgEngagementPerPost = totalEngagements / estimatedPostsPerMonth;
+    const engagementRate = stat.follower_count > 0 ? (avgEngagementPerPost / stat.follower_count) * 100 : 0;
     
     return Math.round(engagementRate * 100) / 100; // Round to 2 decimal places
   };
@@ -414,7 +418,7 @@ const Admin = () => {
                     className="bg-muted/50"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Calculated from total engagements ÷ followers × 100
+                    Calculated from avg engagement per post (monthly total ÷ 30 posts) ÷ followers × 100
                   </p>
                 </div>
 
@@ -601,7 +605,7 @@ const Admin = () => {
                     className="bg-muted/50"
                   />
                   <p className="text-xs text-muted-foreground">
-                    YouTube engagement = comments + likes ÷ subscribers × 100
+                    YouTube engagement = avg per video (monthly total ÷ 10 videos) ÷ subscribers × 100
                   </p>
                 </div>
 
