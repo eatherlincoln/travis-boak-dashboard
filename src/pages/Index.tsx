@@ -93,18 +93,18 @@ const Index = () => {
             
             {/* Social Media Icons and Followers */}
             <div className="flex gap-6 items-center">
-              <div className="flex items-center gap-2 text-primary-foreground/90">
+              <a href="https://instagram.com/sheldonsimkus" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-primary-foreground/90 hover:text-primary-foreground transition-colors">
                 <img src="/lovable-uploads/502a8d59-4e94-4c4a-94c8-4e5f78e6decf.png" className="h-5 w-5" alt="Instagram" />
                 <span className="text-sm font-medium">38.7K</span>
-              </div>
-              <div className="flex items-center gap-2 text-primary-foreground/90">
+              </a>
+              <a href="https://www.youtube.com/@sheldonsimkus" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-primary-foreground/90 hover:text-primary-foreground transition-colors">
                 <img src="/lovable-uploads/9aa87b25-88f0-439d-890a-7c2d475c22f5.png" className="h-5 w-5" alt="YouTube" />
                 <span className="text-sm font-medium">8.8K</span>
-              </div>
-              <div className="flex items-center gap-2 text-primary-foreground/90">
+              </a>
+              <a href="https://www.tiktok.com/@sheldonsimkus" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-primary-foreground/90 hover:text-primary-foreground transition-colors">
                 <img src="/lovable-uploads/d3d646ba-e348-45c2-9a7b-d3f53ff73b4c.png" className="h-5 w-5" alt="TikTok" />
                 <span className="text-sm font-medium">1.4K</span>
-              </div>
+              </a>
             </div>
           </div>
         </div>
