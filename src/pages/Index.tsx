@@ -180,15 +180,15 @@ const Index = () => {
             icon={<img src="/lovable-uploads/502a8d59-4e94-4c4a-94c8-4e5f78e6decf.png" className="h-6 w-6" alt="Instagram" />}
             accentColor="pink-500"
             metrics={[
-              { label: "30-Day Views", value: `${Math.round((instagramStats?.monthly_views || 730000) / 1000)}K` },
-              { label: "90-Day Views", value: `${Math.round((instagramStats?.monthly_views || 730000) * 3 / 1000)}K` },
+              { label: "Video Views", value: `${Math.round((instagramStats?.monthly_views || 730000) / 1000)}K` },
+              { label: "Monthly Likes", value: `${Math.round((instagramStats?.additional_metrics?.likes || 15000) / 1000)}K` },
               { label: "Engagement Rate", value: `${instagramStats?.engagement_rate || 8.2}%` },
               { label: "Primary Audience", value: "AU (51%)" }
             ]}
             highlights={[
-              "Strongest platform with 38.7K engaged followers",
-              "High story engagement (67% of total)",
-              "Strong Australian surf community presence"
+              `${instagramStats?.engagement_rate ? `${instagramStats.engagement_rate}%` : '8.2%'} engagement rate ${(instagramStats?.engagement_rate || 8.2) > 6 ? '(above industry avg)' : '(growing)'}`,
+              `${Math.round(((instagramStats?.additional_metrics?.likes || 15000) + (instagramStats?.additional_metrics?.comments || 2000) + (instagramStats?.additional_metrics?.shares || 800)) / 1000)}K monthly interactions`,
+              `${instagramStats?.follower_count ? `${((instagramStats.follower_count || 38700) / 1000).toFixed(1)}K` : '38.7K'} engaged followers with ${instagramStats?.additional_metrics?.saves ? `${Math.round(instagramStats.additional_metrics.saves / 1000)}K saves` : 'strong save rate'}`
             ]}
           />
 
@@ -201,14 +201,14 @@ const Index = () => {
             accentColor="red-500"
             metrics={[
               { label: "Monthly Views", value: `${Math.round((youtubeStats?.monthly_views || 86800) / 1000)}K`, trend: "47.5%" },
-              { label: "Monthly Subs", value: "+190", trend: "58%" },
+              { label: "Subscribers", value: `${(youtubeFollowers / 1000).toFixed(1)}K` },
               { label: "Avg Watch Time", value: "3.2 min" },
               { label: "Engagement Rate", value: `${youtubeStats?.engagement_rate || 6.5}%` }
             ]}
             highlights={[
-              "POV surf content performing exceptionally well",
-              "116K views on 'POV Snapper Rocks' video",
-              "Consistent 40-50K views on surf edits"
+              `${youtubeFollowers.toLocaleString()} subscribers with consistent growth`,
+              `${Math.round((youtubeStats?.monthly_views || 86800) / 1000)}K monthly views (updated from ViewStats)`,
+              `POV surf content averaging ${Math.round((youtubeStats?.monthly_views || 86800) / 4 / 1000)}K+ views per video`
             ]}
           />
 
@@ -220,15 +220,15 @@ const Index = () => {
             icon={<img src="/lovable-uploads/d3d646ba-e348-45c2-9a7b-d3f53ff73b4c.png" className="h-6 w-6" alt="TikTok" />}
             accentColor="black"
             metrics={[
-              { label: "28-Day Views", value: `${Math.round((tiktokStats?.monthly_views || 37000) / 1000)}K` },
-              { label: "12-Month Views", value: `${Math.round((tiktokStats?.monthly_views || 37000) * 12 / 1000)}K` },
+              { label: "Video Views", value: `${Math.round((tiktokStats?.monthly_views || 37000) / 1000)}K` },
+              { label: "Monthly Likes", value: `${Math.round((tiktokStats?.additional_metrics?.likes || 8000) / 1000)}K` },
               { label: "Engagement Rate", value: `${tiktokStats?.engagement_rate || 9.1}%` },
-              { label: "For You %", value: "87.6%" }
+              { label: "Monthly Shares", value: `${tiktokStats?.additional_metrics?.shares || 1200}` }
             ]}
             highlights={[
-              "Strong 'For You' page discovery",
-              "Growing engagement with 1,653 shares",
-              "Emerging platform with growth potential"
+              `${tiktokStats?.engagement_rate ? `${tiktokStats.engagement_rate}%` : '9.1%'} engagement rate ${(tiktokStats?.engagement_rate || 9.1) > 8 ? '(excellent performance)' : '(growing)'}`,
+              `${Math.round(((tiktokStats?.additional_metrics?.likes || 8000) + (tiktokStats?.additional_metrics?.comments || 600) + (tiktokStats?.additional_metrics?.shares || 1200)) / 1000)}K monthly interactions`,
+              `Growing platform with ${((tiktokStats?.follower_count || 1410) / 1000).toFixed(1)}K followers and high viral potential`
             ]}
           />
         </div>

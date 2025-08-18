@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.fetch-viewstats]
 verify_jwt = false
+
+[functions.refresh-social-stats]
+verify_jwt = false

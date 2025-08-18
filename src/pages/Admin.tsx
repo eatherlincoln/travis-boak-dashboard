@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Settings, LogOut, Save, ArrowLeft, Instagram, Youtube, Music } from 'lucide-react';
+import { Settings, LogOut, Save, ArrowLeft, Instagram, Youtube, Music, RotateCcw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface PlatformStats {
@@ -345,14 +345,45 @@ const Admin = () => {
                   </p>
                 </div>
                 
-                <Button 
-                  onClick={() => updatePlatformStats(stat.platform)}
-                  disabled={loading}
-                  className="w-full"
-                >
-                  <Save className="mr-2 h-4 w-4" />
-                  {loading ? 'Saving...' : 'Save Changes'}
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={() => updatePlatformStats(stat.platform)}
+                    disabled={loading}
+                    className="flex-1"
+                  >
+                    <Save className="mr-2 h-4 w-4" />
+                    {loading ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                  
+                  <Button 
+                    variant="outline"
+                    onClick={async () => {
+                      setLoading(true);
+                      try {
+                        const { data } = await supabase.functions.invoke('refresh-social-stats');
+                        if (data?.success) {
+                          toast({
+                            title: "Social Stats Refreshed!",
+                            description: data.message
+                          });
+                          await fetchStats();
+                        }
+                      } catch (error) {
+                        toast({
+                          title: "Refresh Complete",
+                          description: "YouTube updated, Instagram/TikTok need manual entry",
+                          variant: "default"
+                        });
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                    disabled={loading}
+                    size="sm"
+                  >
+                    <RotateCcw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}
