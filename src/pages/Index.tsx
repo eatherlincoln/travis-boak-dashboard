@@ -4,31 +4,27 @@ import { PlatformCard } from "@/components/PlatformCard";
 import { AudienceChart } from "@/components/AudienceChart";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Youtube, Instagram, Music, Users, Eye, TrendingUp, Play, Heart, Share, MessageCircle, ExternalLink, RotateCcw, Settings } from "lucide-react";
+import { Youtube, Instagram, Music, Users, Eye, Play, Heart, Share, MessageCircle, ExternalLink, Settings } from "lucide-react";
 import { useState } from "react";
 import heroImage from "/lovable-uploads/350aac33-19a1-4c3e-bac9-1e7258ac89b7.png";
-import { useYouTubeStats } from "@/hooks/useYouTubeStats";
 import { usePlatformStats } from "@/hooks/usePlatformStats";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 
 const Index = () => {
-  const { stats: youtubeStats, loading: youtubeLoading, refetch } = useYouTubeStats();
   const { getPlatformStat } = usePlatformStats();
-  const { toast } = useToast();
   
   // Get platform stats (will use manual stats if user is logged in, fallback to hardcoded)
   const instagramStats = getPlatformStat('instagram');
-  const youtubeManualStats = getPlatformStat('youtube');
+  const youtubeStats = getPlatformStat('youtube');
   const tiktokStats = getPlatformStat('tiktok');
-  // Use real YouTube stats when available, otherwise use manual stats, then fallback to hardcoded values
-  const youtubeFollowers = youtubeStats?.subscriber_count || youtubeManualStats?.follower_count || 8800;
-  const youtubeViews = youtubeStats?.view_count || youtubeManualStats?.monthly_views || 847000;
+  
+  const youtubeFollowers = youtubeStats?.follower_count || 8800;
+  const youtubeViews = youtubeStats?.monthly_views || 86800;
   
   // Total reach calculation with all platform data
   const totalFollowers = (instagramStats?.follower_count || 38700) + youtubeFollowers + (tiktokStats?.follower_count || 1410);
-  const totalViews = youtubeViews + (tiktokStats?.monthly_views || 228000) + (instagramStats?.monthly_views || 729656);
+  const totalViews = youtubeViews + (tiktokStats?.monthly_views || 37000) + (instagramStats?.monthly_views || 730000);
 
   // Video data for top performing content
   const topVideos = [
@@ -123,20 +119,7 @@ const Index = () => {
                 <span className="text-sm font-medium">{((tiktokStats?.follower_count || 1410) / 1000).toFixed(1)}K</span>
               </a>
             </div>
-            <div className="mt-4 flex gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={async () => {
-                  toast({ title: "Refreshing YouTube stats", description: "Fetching latest data..." });
-                  await refetch();
-                  toast({ title: "Updated", description: "Latest stats fetched." });
-                }}
-                disabled={youtubeLoading}
-              >
-                <RotateCcw className={`mr-2 h-4 w-4 ${youtubeLoading ? 'animate-spin' : ''}`} />
-                Refresh stats
-              </Button>
+            <div className="mt-4">
               <Link to="/auth">
                 <Button variant="outline" size="sm">
                   <Settings className="mr-2 h-4 w-4" />
@@ -151,7 +134,7 @@ const Index = () => {
 
       <div className="container mx-auto px-6 py-8 space-y-8">
         {/* Key Metrics Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <MetricCard
             title="Total Reach"
             value={`${totalFollowers.toLocaleString()}`}
@@ -170,13 +153,6 @@ const Index = () => {
             value="8.2%"
             subtitle="Above industry average"
             icon={<Heart className="h-6 w-6" />}
-          />
-          <MetricCard
-            title="Revenue Potential"
-            value="$5.4K+"
-            subtitle="YouTube 12-month"
-            icon={<TrendingUp className="h-6 w-6" />}
-            trend={{ value: "58%", isPositive: true }}
           />
         </div>
 
@@ -210,10 +186,10 @@ const Index = () => {
             icon={<img src="/lovable-uploads/9aa87b25-88f0-439d-890a-7c2d475c22f5.png" className="h-6 w-6" alt="YouTube" />}
             accentColor="red-500"
             metrics={[
-              { label: "Monthly Views", value: `${Math.round((youtubeManualStats?.monthly_views || 86800) / 1000)}K`, trend: "47.5%" },
+              { label: "Monthly Views", value: `${Math.round((youtubeStats?.monthly_views || 86800) / 1000)}K`, trend: "47.5%" },
               { label: "Monthly Subs", value: "+190", trend: "58%" },
               { label: "Avg Watch Time", value: "3.2 min" },
-              { label: "Engagement Rate", value: `${youtubeManualStats?.engagement_rate || 6.5}%` }
+              { label: "Engagement Rate", value: `${youtubeStats?.engagement_rate || 6.5}%` }
             ]}
             highlights={[
               "POV surf content performing exceptionally well",

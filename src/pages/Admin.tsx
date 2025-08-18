@@ -18,7 +18,12 @@ interface PlatformStats {
   follower_count: number;
   monthly_views: number;
   engagement_rate: number;
-  additional_metrics: any;
+  additional_metrics: {
+    likes?: number;
+    comments?: number;
+    shares?: number;
+    saves?: number;
+  };
 }
 
 const Admin = () => {
@@ -52,11 +57,18 @@ const Admin = () => {
 
       if (error) throw error;
       
-      setStats(data || []);
+      const formattedStats = data?.map(stat => ({
+        ...stat,
+        additional_metrics: typeof stat.additional_metrics === 'object' && stat.additional_metrics !== null 
+          ? stat.additional_metrics as { likes?: number; comments?: number; shares?: number; saves?: number; }
+          : {}
+      })) || [];
+      
+      setStats(formattedStats);
       
       // Initialize editing state
       const editingState = {};
-      data?.forEach(stat => {
+      formattedStats.forEach(stat => {
         editingState[stat.platform] = { ...stat };
       });
       setEditingStats(editingState);
@@ -70,17 +82,32 @@ const Admin = () => {
     }
   };
 
+  const calculateEngagementRate = (platform: string) => {
+    const stat = editingStats[platform];
+    if (!stat || !stat.additional_metrics) return 0;
+    
+    const { likes = 0, comments = 0, shares = 0, saves = 0 } = stat.additional_metrics;
+    const totalEngagements = likes + comments + shares + (platform === 'instagram' ? saves : 0);
+    const engagementRate = stat.follower_count > 0 ? (totalEngagements / stat.follower_count) * 100 : 0;
+    
+    return Math.round(engagementRate * 100) / 100; // Round to 2 decimal places
+  };
+
   const updatePlatformStats = async (platform: string) => {
     if (!user || !editingStats[platform]) return;
     
     setLoading(true);
     try {
+      // Auto-calculate engagement rate
+      const calculatedEngagementRate = calculateEngagementRate(platform);
+      
       const { error } = await supabase
         .from('platform_stats')
         .update({
           follower_count: editingStats[platform].follower_count,
           monthly_views: editingStats[platform].monthly_views,
-          engagement_rate: editingStats[platform].engagement_rate
+          engagement_rate: calculatedEngagementRate,
+          additional_metrics: editingStats[platform].additional_metrics
         })
         .eq('user_id', user.id)
         .eq('platform', platform);
@@ -89,7 +116,7 @@ const Admin = () => {
 
       toast({
         title: "Updated!",
-        description: `${platform} statistics updated successfully`
+        description: `${platform} statistics updated successfully (Engagement: ${calculatedEngagementRate}%)`
       });
       
       await fetchStats();
@@ -111,6 +138,19 @@ const Admin = () => {
       [platform]: {
         ...prev[platform],
         [field]: field === 'engagement_rate' ? parseFloat(value) : parseInt(value) || 0
+      }
+    }));
+  };
+
+  const updateMetricValue = (platform: string, metric: string, value: any) => {
+    setEditingStats(prev => ({
+      ...prev,
+      [platform]: {
+        ...prev[platform],
+        additional_metrics: {
+          ...prev[platform]?.additional_metrics,
+          [metric]: parseInt(value) || 0
+        }
       }
     }));
   };
@@ -210,22 +250,101 @@ const Admin = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Monthly Views</Label>
+                  <Label>{stat.platform === 'instagram' || stat.platform === 'tiktok' ? 'Video Views (Monthly)' : 'Monthly Views'}</Label>
                   <Input
                     type="number"
                     value={editingStats[stat.platform]?.monthly_views || 0}
                     onChange={(e) => updateEditingValue(stat.platform, 'monthly_views', e.target.value)}
                   />
                 </div>
+                
+                {/* Platform-specific metrics */}
+                {stat.platform === 'instagram' && (
+                  <div className="space-y-4 p-3 bg-muted/30 rounded-lg">
+                    <Label className="text-sm font-medium">Instagram Metrics</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-xs">Monthly Likes</Label>
+                        <Input
+                          type="number"
+                          value={editingStats[stat.platform]?.additional_metrics?.likes || 0}
+                          onChange={(e) => updateMetricValue(stat.platform, 'likes', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Monthly Comments</Label>
+                        <Input
+                          type="number"
+                          value={editingStats[stat.platform]?.additional_metrics?.comments || 0}
+                          onChange={(e) => updateMetricValue(stat.platform, 'comments', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Monthly Shares</Label>
+                        <Input
+                          type="number"
+                          value={editingStats[stat.platform]?.additional_metrics?.shares || 0}
+                          onChange={(e) => updateMetricValue(stat.platform, 'shares', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Monthly Saves</Label>
+                        <Input
+                          type="number"
+                          value={editingStats[stat.platform]?.additional_metrics?.saves || 0}
+                          onChange={(e) => updateMetricValue(stat.platform, 'saves', e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {stat.platform === 'tiktok' && (
+                  <div className="space-y-4 p-3 bg-muted/30 rounded-lg">
+                    <Label className="text-sm font-medium">TikTok Metrics</Label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <Label className="text-xs">Monthly Likes</Label>
+                        <Input
+                          type="number"
+                          value={editingStats[stat.platform]?.additional_metrics?.likes || 0}
+                          onChange={(e) => updateMetricValue(stat.platform, 'likes', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Monthly Comments</Label>
+                        <Input
+                          type="number"
+                          value={editingStats[stat.platform]?.additional_metrics?.comments || 0}
+                          onChange={(e) => updateMetricValue(stat.platform, 'comments', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Monthly Shares</Label>
+                        <Input
+                          type="number"
+                          value={editingStats[stat.platform]?.additional_metrics?.shares || 0}
+                          onChange={(e) => updateMetricValue(stat.platform, 'shares', e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 <div className="space-y-2">
-                  <Label>Engagement Rate (%)</Label>
+                  <Label>Engagement Rate (Auto-calculated)</Label>
                   <Input
                     type="number"
                     step="0.1"
-                    value={editingStats[stat.platform]?.engagement_rate || 0}
-                    onChange={(e) => updateEditingValue(stat.platform, 'engagement_rate', e.target.value)}
+                    value={calculateEngagementRate(stat.platform)}
+                    disabled
+                    className="bg-muted/50"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Calculated from total engagements ÷ followers × 100
+                  </p>
                 </div>
+                
                 <Button 
                   onClick={() => updatePlatformStats(stat.platform)}
                   disabled={loading}
