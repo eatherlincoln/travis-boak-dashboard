@@ -124,7 +124,7 @@ const Index = () => {
                 {totalFollowers.toLocaleString()} Total Followers
               </Badge>
               <Badge variant="secondary" className="text-base px-4 py-2">
-                {(totalViews / 1000000).toFixed(1)}M+ Total Views
+                {Math.round(totalViews / 1000)}K Total Views
               </Badge>
               <Badge variant="secondary" className="text-base px-4 py-2">
                 3 Active Platforms
@@ -187,7 +187,7 @@ const Index = () => {
           />
           <MetricCard
             title="Monthly Views"
-            value={`${(totalViews / 1000000).toFixed(1)}M+`}
+            value={`${Math.round(totalViews / 1000)}K`}
             subtitle="Combined platforms"
             icon={<Eye className="h-6 w-6" />}
             trend={{ value: "+15.7%", isPositive: true }}
