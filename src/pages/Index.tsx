@@ -102,7 +102,7 @@ const Index = () => {
                 <span className="text-sm font-medium">8.8K</span>
               </div>
               <div className="flex items-center gap-2 text-primary-foreground/90">
-                <Music className="h-5 w-5 text-white" />
+                <img src="/lovable-uploads/4039f0b3-214a-41b2-923e-5d0ce7f8a79e.png" className="h-5 w-5" alt="TikTok" />
                 <span className="text-sm font-medium">1.4K</span>
               </div>
             </div>
@@ -188,7 +188,7 @@ const Index = () => {
             platform="TikTok"
             handle="@sheldonsimkus"
             followers="1.4K"
-            icon={<Music className="h-6 w-6 text-black" />}
+            icon={<img src="/lovable-uploads/4039f0b3-214a-41b2-923e-5d0ce7f8a79e.png" className="h-6 w-6" alt="TikTok" />}
             accentColor="black"
             metrics={[
               { label: "28-Day Views", value: "37K" },
