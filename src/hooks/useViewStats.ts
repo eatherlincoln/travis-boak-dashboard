@@ -18,6 +18,10 @@ export const useViewStats = () => {
           title: "Success!",
           description: `YouTube stats updated from ViewStats: ${data.data.subscriberCount.toLocaleString()} subscribers, ${Math.round(data.data.monthlyViews / 1000)}K monthly views`
         });
+        
+        // Force a page reload to ensure all components get the updated data
+        window.location.reload();
+        
         return data.data;
       } else {
         throw new Error(data.error || 'Failed to fetch ViewStats data');

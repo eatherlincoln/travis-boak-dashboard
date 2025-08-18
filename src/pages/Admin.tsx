@@ -237,7 +237,10 @@ const Admin = () => {
                   {stat.platform}
                 </CardTitle>
                 <CardDescription>
-                  Update your {stat.platform} statistics
+                  {stat.platform === 'youtube' ? 
+                    'Auto-updated from ViewStats - manual override available' : 
+                    `Update your ${stat.platform} statistics`
+                  }
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
