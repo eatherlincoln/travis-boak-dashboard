@@ -40,8 +40,8 @@ const Index = () => {
       title: "Dawn Patrol Session",
       platform: "YouTube",
       views: "42K views", 
-      videoId: "INJLrBxBHHc",
-      thumbnail: `https://img.youtube.com/vi/INJLrBxBHHc/mqdefault.jpg`
+      videoId: "7GrvnlBeC8M",
+      thumbnail: `https://img.youtube.com/vi/7GrvnlBeC8M/mqdefault.jpg`
     }
   ];
 
