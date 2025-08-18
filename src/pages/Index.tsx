@@ -139,8 +139,8 @@ const Index = () => {
             metrics={[
               { label: "Monthly Views", value: "86.8K", trend: "47.5%" },
               { label: "Monthly Subs", value: "+190", trend: "58%" },
-              { label: "Monthly Revenue", value: "$134-374" },
-              { label: "Total Videos", value: "173" }
+              { label: "Avg Watch Time", value: "3.2 min" },
+              { label: "Avg Likes/Video", value: "1.2K" }
             ]}
             highlights={[
               "POV surf content performing exceptionally well",
