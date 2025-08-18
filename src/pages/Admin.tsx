@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Settings, LogOut, Save, ArrowLeft, Instagram, Youtube, Music, RotateCcw } from 'lucide-react';
+import { Settings, LogOut, Save, ArrowLeft, Instagram, Youtube, Video, RotateCcw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface PlatformStats {
@@ -270,7 +270,7 @@ const Admin = () => {
       case 'youtube':
         return <Youtube className="h-5 w-5" />;
       case 'tiktok':
-        return <Music className="h-5 w-5" />;
+        return <Video className="h-5 w-5" />;
       default:
         return <Settings className="h-5 w-5" />;
     }
