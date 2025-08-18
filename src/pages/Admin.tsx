@@ -575,7 +575,7 @@ const Admin = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Followers</Label>
+                  <Label>Subscribers</Label>
                   <Input
                     type="number"
                     value={editingStats['youtube']?.follower_count || 0}

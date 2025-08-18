@@ -88,19 +88,19 @@ Deno.serve(async (req) => {
 
     console.log('Parsed ViewStats data:', { subscriberCount, totalViews, monthlyViews, monthlySubs });
 
-    // Update YouTube stats in the platform_stats table for all users
-    const { error: updateError } = await supabase
-      .from('platform_stats')
-      .update({
-        follower_count: subscriberCount,
-        monthly_views: monthlyViews,
-        updated_at: new Date().toISOString()
-      })
-      .eq('platform', 'youtube');
+    // Insert latest stats into youtube_stats table (do not overwrite manual admin values)
+    const { error: insertError } = await supabase
+      .from('youtube_stats')
+      .insert({
+        channel_id: 'UCKp8YgCM8wfzNHqGY0_Fhfg',
+        subscriber_count: subscriberCount,
+        view_count: totalViews,
+        video_count: null,
+      });
 
-    if (updateError) {
-      console.error('Database update error:', updateError);
-      throw new Error(`Database error: ${updateError.message}`);
+    if (insertError) {
+      console.error('Database insert error:', insertError);
+      throw new Error(`Database error: ${insertError.message}`);
     }
 
     console.log('Successfully updated YouTube stats from ViewStats');
