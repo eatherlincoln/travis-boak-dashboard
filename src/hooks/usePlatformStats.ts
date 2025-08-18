@@ -22,17 +22,19 @@ export const usePlatformStats = () => {
       setLoading(true);
       setError(null);
 
-      // If user is logged in, fetch their stats
-      if (user) {
-        const { data, error } = await supabase
-          .from('platform_stats')
-          .select('*')
-          .eq('user_id', user.id);
+      // Try to fetch stats from database first (for admin updates)
+      const { data: adminStats, error: adminError } = await supabase
+        .from('platform_stats')
+        .select('*')
+        .limit(3); // Get all platform stats from any user
 
-        if (error) throw error;
-        setStats(data || []);
+      // If we have admin stats, use them
+      if (!adminError && adminStats && adminStats.length > 0) {
+        console.log('Using admin stats from database:', adminStats);
+        setStats(adminStats);
       } else {
         // Fallback to default stats for public view
+        console.log('Using fallback stats');
         setStats([
           {
             platform: 'instagram',
@@ -98,7 +100,7 @@ export const usePlatformStats = () => {
 
   useEffect(() => {
     fetchStats();
-  }, [user]);
+  }, []); // Remove user dependency since we always fetch from database now
 
   const getPlatformStat = (platform: string) => {
     return stats.find(stat => stat.platform === platform);
