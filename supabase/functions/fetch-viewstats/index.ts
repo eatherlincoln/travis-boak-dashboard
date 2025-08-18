@@ -1,5 +1,4 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import FirecrawlApp from 'https://esm.sh/@mendable/firecrawl-js@1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,7 +7,6 @@ const corsHeaders = {
 
 const supabaseUrl = 'https://gmprigvmotrdrayxacnl.supabase.co';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY');
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -17,38 +15,33 @@ Deno.serve(async (req) => {
   }
 
   try {
-    if (!firecrawlApiKey) {
-      throw new Error('Firecrawl API key not configured');
-    }
-
     if (!supabaseServiceKey) {
       throw new Error('Supabase service key not configured');
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const firecrawl = new FirecrawlApp({ apiKey: firecrawlApiKey });
 
-    console.log('Scraping ViewStats for Sheldon Simkus...');
+    console.log('Fetching ViewStats data via direct HTTP request...');
 
-    // Scrape the ViewStats page
-    const scrapeResult = await firecrawl.scrapeUrl('https://www.viewstats.com/@sheldonsimkus/channelytics', {
-      formats: ['markdown']
+    // Fetch the ViewStats page directly
+    const response = await fetch('https://www.viewstats.com/@sheldonsimkus/channelytics', {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
     });
 
-    if (!scrapeResult.success || !scrapeResult.markdown) {
-      throw new Error('Failed to scrape ViewStats page');
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ViewStats page: ${response.status}`);
     }
 
-    console.log('ViewStats page scraped successfully');
-
-    // Parse the markdown content to extract stats
-    const content = scrapeResult.markdown;
+    const html = await response.text();
+    console.log('ViewStats page fetched successfully, parsing data...');
     
-    // Extract key metrics using regex patterns
-    const subscribersMatch = content.match(/Subscribers[\s\S]*?(\d{1,3}(?:,\d{3})*|\d+\.?\d*K)/i);
-    const totalViewsMatch = content.match(/Total Views[\s\S]*?(\d{1,3}(?:,\d{3})*(?:\.\d+)?[MK]?)/i);
-    const monthlyViewsMatch = content.match(/Views[\s\S]*?Last 28 days[\s\S]*?(\d{1,3}(?:,\d{3})*|\d+\.?\d*K)/i);
-    const monthlySubsMatch = content.match(/Subs[\s\S]*?Last 28 days[\s\S]*?(\d+)/i);
+    // Extract key metrics using regex patterns from HTML
+    const subscribersMatch = html.match(/(\d{1,3}(?:,\d{3})*)\s*Subscribers/i) || html.match(/Subscribers[^>]*>[\s\S]*?(\d+(?:,\d{3})*|\d+\.?\d*K)/i);
+    const monthlyViewsMatch = html.match(/(\d+(?:\.\d+)?K)\s*Views[^>]*Last 28 days/i) || html.match(/Views[^>]*Last 28 days[^>]*>[\s\S]*?(\d+(?:\.\d+)?K)/i);
+    const monthlySubsMatch = html.match(/(\d+)\s*Subs[^>]*Last 28 days/i) || html.match(/Subs[^>]*Last 28 days[^>]*>[\s\S]*?(\d+)/i);
+    const totalViewsMatch = html.match(/(\d+(?:\.\d+)?M)\s*Total Views/i) || html.match(/Total Views[^>]*>[\s\S]*?(\d+(?:\.\d+)?M)/i);
 
     // Helper function to parse numbers with K/M suffixes
     const parseNumber = (str: string): number => {
@@ -63,11 +56,13 @@ Deno.serve(async (req) => {
       return parseInt(cleanStr) || 0;
     };
 
-    // Extract and parse the data
+    // Extract and parse the data with fallbacks
     const subscriberCount = subscribersMatch ? parseNumber(subscribersMatch[1]) : 8780;
     const totalViews = totalViewsMatch ? parseNumber(totalViewsMatch[1]) : 1649552;
     const monthlyViews = monthlyViewsMatch ? parseNumber(monthlyViewsMatch[1]) : 86250;
     const monthlySubs = monthlySubsMatch ? parseInt(monthlySubsMatch[1]) : 200;
+
+    console.log('Extracted data:', { subscribersMatch: subscribersMatch?.[1], monthlyViewsMatch: monthlyViewsMatch?.[1] });
 
     console.log('Parsed ViewStats data:', {
       subscriberCount,
