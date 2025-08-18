@@ -147,29 +147,29 @@ const Index = () => {
               </a>
             </div>
             <div className="mt-4 flex gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={async () => {
-                  await refreshViewStats();
-                  await refetchPlatformStats();
-                }}
-                disabled={viewStatsLoading}
-              >
-                <RotateCcw className={`mr-2 h-4 w-4 ${viewStatsLoading ? 'animate-spin' : ''}`} />
-                Refresh YouTube stats
-              </Button>
+              <div className="flex flex-col">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={async () => {
+                    await refreshViewStats();
+                    await refetchPlatformStats();
+                  }}
+                  disabled={viewStatsLoading}
+                >
+                  <RotateCcw className={`mr-2 h-4 w-4 ${viewStatsLoading ? 'animate-spin' : ''}`} />
+                  Refresh YouTube stats
+                </Button>
+                <p className="text-xs text-primary-foreground/90 mt-1">
+                  Stats are refreshed at the start of each month
+                </p>
+              </div>
               <Link to="/auth">
                 <Button variant="outline" size="sm">
                   <Settings className="mr-2 h-4 w-4" />
                   Admin
                 </Button>
               </Link>
-            </div>
-            <div className="mt-2">
-              <p className="text-xs text-muted-foreground text-center">
-                Stats are refreshed at the start of each month
-              </p>
             </div>
           </div>
         </div>
