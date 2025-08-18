@@ -19,19 +19,29 @@ const Index = () => {
       title: "POV Snapper Rocks – First Swell",
       platform: "YouTube",
       views: "116K views",
-      videoId: "dQw4w9WgXcQ" // Replace with actual YouTube video ID
+      videoId: "dQw4w9WgXcQ", // Replace with actual YouTube video ID
+      thumbnail: `https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg`
     },
     {
       title: "POV Best of Snapper Rocks", 
       platform: "YouTube",
       views: "54K views",
-      videoId: "dQw4w9WgXcQ" // Replace with actual YouTube video ID
+      videoId: "dQw4w9WgXcQ", // Replace with actual YouTube video ID
+      thumbnail: `https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg`
     },
     {
       title: "Cyclone Alfred at Double Island",
       platform: "YouTube", 
       views: "54K views",
-      videoId: "dQw4w9WgXcQ" // Replace with actual YouTube video ID
+      videoId: "dQw4w9WgXcQ", // Replace with actual YouTube video ID
+      thumbnail: `https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg`
+    },
+    {
+      title: "Dawn Patrol Session",
+      platform: "YouTube",
+      views: "42K views", 
+      videoId: "dQw4w9WgXcQ", // Replace with actual YouTube video ID
+      thumbnail: `https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg`
     }
   ];
 
@@ -205,22 +215,28 @@ const Index = () => {
                 <Play className="h-5 w-5 text-primary" />
                 Top Performing Content
               </h3>
-              <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
                 {topVideos.map((video, index) => (
                   <Dialog key={index}>
                     <DialogTrigger asChild>
-                      <div className="bg-muted/30 p-4 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors group">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <h4 className="font-medium mb-2 group-hover:text-primary transition-colors">
-                              {video.title}
-                            </h4>
-                            <div className="flex justify-between text-sm text-muted-foreground">
-                              <span>{video.platform}</span>
-                              <span>{video.views}</span>
-                            </div>
+                      <div className="bg-muted/30 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors group overflow-hidden">
+                        <div className="aspect-video relative">
+                          <img 
+                            src={video.thumbnail} 
+                            alt={video.title}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
+                          <Play className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-8 w-8 text-white opacity-80 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                        <div className="p-3">
+                          <h4 className="font-medium text-sm mb-1 group-hover:text-primary transition-colors line-clamp-2">
+                            {video.title}
+                          </h4>
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>{video.platform}</span>
+                            <span>{video.views}</span>
                           </div>
-                          <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors ml-3" />
                         </div>
                       </div>
                     </DialogTrigger>
