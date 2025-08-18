@@ -187,7 +187,7 @@ const Index = () => {
           />
           <MetricCard
             title="Monthly Views"
-            value="1.8M+"
+            value={`${(totalViews / 1000000).toFixed(1)}M+`}
             subtitle="Combined platforms"
             icon={<Eye className="h-6 w-6" />}
             trend={{ value: "+15.7%", isPositive: true }}
