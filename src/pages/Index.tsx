@@ -19,29 +19,29 @@ const Index = () => {
       title: "POV Snapper Rocks – First Swell",
       platform: "YouTube",
       views: "116K views",
-      videoId: "dQw4w9WgXcQ", // Replace with actual YouTube video ID
-      thumbnail: `https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg`
+      videoId: "INJLrBxBHHc",
+      thumbnail: `https://img.youtube.com/vi/INJLrBxBHHc/mqdefault.jpg`
     },
     {
       title: "POV Best of Snapper Rocks", 
       platform: "YouTube",
       views: "54K views",
-      videoId: "dQw4w9WgXcQ", // Replace with actual YouTube video ID
-      thumbnail: `https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg`
+      videoId: "FRC3mKhAO5U",
+      thumbnail: `https://img.youtube.com/vi/FRC3mKhAO5U/mqdefault.jpg`
     },
     {
       title: "Cyclone Alfred at Double Island",
       platform: "YouTube", 
       views: "54K views",
-      videoId: "dQw4w9WgXcQ", // Replace with actual YouTube video ID
-      thumbnail: `https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg`
+      videoId: "ShOJK4TvA38",
+      thumbnail: `https://img.youtube.com/vi/ShOJK4TvA38/mqdefault.jpg`
     },
     {
       title: "Dawn Patrol Session",
       platform: "YouTube",
       views: "42K views", 
-      videoId: "dQw4w9WgXcQ", // Replace with actual YouTube video ID
-      thumbnail: `https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg`
+      videoId: "INJLrBxBHHc",
+      thumbnail: `https://img.youtube.com/vi/INJLrBxBHHc/mqdefault.jpg`
     }
   ];
 
