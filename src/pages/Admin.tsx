@@ -303,6 +303,10 @@ const Admin = () => {
   if (!user) {
     return null;
   }
+  
+  const instagramStat = stats.find((s) => s.platform === 'instagram');
+  const youtubeStat = stats.find((s) => s.platform === 'youtube');
+  const tiktokStat = stats.find((s) => s.platform === 'tiktok');
 
   return (
     <div className="min-h-screen bg-gradient-wave">
