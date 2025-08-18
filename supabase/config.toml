@@ -1,1 +1,4 @@
 project_id = "gmprigvmotrdrayxacnl"
+
+[functions.fetch-youtube-stats]
+verify_jwt = false

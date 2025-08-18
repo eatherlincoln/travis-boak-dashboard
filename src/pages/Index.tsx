@@ -7,11 +7,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Youtube, Instagram, Music, Users, Eye, TrendingUp, Play, Heart, Share, MessageCircle, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import heroImage from "/lovable-uploads/350aac33-19a1-4c3e-bac9-1e7258ac89b7.png";
+import { useYouTubeStats } from "@/hooks/useYouTubeStats";
 
 const Index = () => {
-  // Total reach calculation
-  const totalFollowers = 38700 + 8800 + 1410; // Instagram + YouTube + TikTok
-  const totalViews = 847000 + 228000 + 729656; // YouTube 12-month + TikTok 12-month + Instagram 90-day
+  const { stats: youtubeStats, loading: youtubeLoading } = useYouTubeStats();
+  
+  // Use real YouTube stats when available, fallback to hardcoded values
+  const youtubeFollowers = youtubeStats?.subscriber_count || 8800;
+  const youtubeViews = youtubeStats?.view_count || 847000;
+  
+  // Total reach calculation with real YouTube data
+  const totalFollowers = 38700 + youtubeFollowers + 1410; // Instagram + YouTube + TikTok
+  const totalViews = youtubeViews + 228000 + 729656; // YouTube + TikTok 12-month + Instagram 90-day
 
   // Video data for top performing content
   const topVideos = [
@@ -99,7 +106,7 @@ const Index = () => {
               </a>
               <a href="https://www.youtube.com/@sheldonsimkus" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-primary-foreground/90 hover:text-primary-foreground transition-colors">
                 <img src="/lovable-uploads/9aa87b25-88f0-439d-890a-7c2d475c22f5.png" className="h-5 w-5" alt="YouTube" />
-                <span className="text-sm font-medium">8.8K</span>
+                <span className="text-sm font-medium">{(youtubeFollowers / 1000).toFixed(1)}K</span>
               </a>
               <a href="https://www.tiktok.com/@sheldonsimkus" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-primary-foreground/90 hover:text-primary-foreground transition-colors">
                 <img src="/lovable-uploads/d3d646ba-e348-45c2-9a7b-d3f53ff73b4c.png" className="h-5 w-5" alt="TikTok" />
@@ -167,7 +174,7 @@ const Index = () => {
           <PlatformCard
             platform="YouTube"
             handle="@sheldonsimkus"
-            followers="8.8K"
+            followers={`${(youtubeFollowers / 1000).toFixed(1)}K`}
             icon={<img src="/lovable-uploads/9aa87b25-88f0-439d-890a-7c2d475c22f5.png" className="h-6 w-6" alt="YouTube" />}
             accentColor="red-500"
             metrics={[
