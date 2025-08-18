@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      platform_audience: {
+        Row: {
+          age_groups: Json | null
+          cities: Json | null
+          countries: Json | null
+          gender: Json | null
+          id: string
+          platform: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          age_groups?: Json | null
+          cities?: Json | null
+          countries?: Json | null
+          gender?: Json | null
+          id?: string
+          platform: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          age_groups?: Json | null
+          cities?: Json | null
+          countries?: Json | null
+          gender?: Json | null
+          id?: string
+          platform?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       platform_stats: {
         Row: {
           additional_metrics: Json | null

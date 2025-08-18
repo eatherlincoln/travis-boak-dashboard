@@ -26,6 +26,13 @@ interface PlatformStats {
   };
 }
 
+interface AudienceData {
+  gender?: { men: number; women: number };
+  age_groups?: Array<{ range: string; percentage: number }>;
+  countries?: Array<{ country: string; percentage: number }>;
+  cities?: string[];
+}
+
 const Admin = () => {
   const { user, signOut, loading: authLoading } = useAuth();
   const { toast } = useToast();
@@ -33,6 +40,7 @@ const Admin = () => {
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState<PlatformStats[]>([]);
   const [editingStats, setEditingStats] = useState<{ [key: string]: PlatformStats }>({});
+  const [audienceData, setAudienceData] = useState<AudienceData>({});
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -43,8 +51,103 @@ const Admin = () => {
   useEffect(() => {
     if (user) {
       fetchStats();
+      fetchAudienceData();
     }
   }, [user]);
+
+  const fetchAudienceData = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('platform_audience')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('platform', 'instagram')
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+      
+      if (data) {
+        setAudienceData({
+          gender: data.gender as { men: number; women: number },
+          age_groups: data.age_groups as Array<{ range: string; percentage: number }>,
+          countries: data.countries as Array<{ country: string; percentage: number }>,
+          cities: data.cities as string[]
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching audience data:', error);
+    }
+  };
+
+  const updateAudienceValue = (field: string, value: any) => {
+    setAudienceData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const updateAgeGroup = (index: number, percentage: number) => {
+    const newAgeGroups = [...(audienceData.age_groups || [])];
+    newAgeGroups[index] = { ...newAgeGroups[index], percentage };
+    setAudienceData(prev => ({ ...prev, age_groups: newAgeGroups }));
+  };
+
+  const updateCountry = (index: number, field: 'country' | 'percentage', value: string | number) => {
+    const newCountries = [...(audienceData.countries || [])];
+    newCountries[index] = { ...newCountries[index], [field]: value };
+    setAudienceData(prev => ({ ...prev, countries: newCountries }));
+  };
+
+  const updateCity = (index: number, value: string) => {
+    const newCities = [...(audienceData.cities || [])];
+    newCities[index] = value;
+    setAudienceData(prev => ({ ...prev, cities: newCities }));
+  };
+
+  const saveAudienceData = async () => {
+    if (!user) return;
+    
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('platform_audience')
+        .upsert({
+          user_id: user.id,
+          platform: 'instagram',
+          gender: audienceData.gender || { men: 88, women: 12 },
+          age_groups: audienceData.age_groups || [
+            { range: "25-34", percentage: 31 },
+            { range: "18-24", percentage: 22 },
+            { range: "35-44", percentage: 21 },
+            { range: "45-54", percentage: 16 }
+          ],
+          countries: audienceData.countries || [
+            { country: "Australia", percentage: 51 },
+            { country: "USA", percentage: 10 },
+            { country: "Japan", percentage: 6 },
+            { country: "Brazil", percentage: 5 }
+          ],
+          cities: audienceData.cities || ["Sydney", "Gold Coast", "Melbourne", "Sunshine Coast"]
+        }, { onConflict: 'user_id,platform' });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success!",
+        description: "Instagram audience demographics updated successfully"
+      });
+    } catch (error) {
+      console.error('Error saving audience data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save audience demographics",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchStats = async () => {
     if (!user) return;
@@ -360,6 +463,131 @@ const Admin = () => {
             </Card>
           ))}
         </div>
+
+        {/* Instagram Audience Demographics */}
+        <Card className="shadow-card border-border/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <img src="/lovable-uploads/502a8d59-4e94-4c4a-94c8-4e5f78e6decf.png" className="h-5 w-5" alt="Instagram" />
+              Instagram Audience Demographics
+            </CardTitle>
+            <CardDescription>
+              Manage your Instagram audience insights and demographics
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Gender Split */}
+            <div className="space-y-4">
+              <Label className="text-base font-semibold">Gender Split</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm">Men (%)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={audienceData?.gender?.men || 88}
+                    onChange={(e) => updateAudienceValue('gender', { ...audienceData?.gender, men: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm">Women (%)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={audienceData?.gender?.women || 12}
+                    onChange={(e) => updateAudienceValue('gender', { ...audienceData?.gender, women: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Age Groups */}
+            <div className="space-y-4">
+              <Label className="text-base font-semibold">Age Groups</Label>
+              <div className="grid grid-cols-2 gap-4">
+                {(audienceData?.age_groups || [
+                  { range: "18-24", percentage: 22 },
+                  { range: "25-34", percentage: 31 },
+                  { range: "35-44", percentage: 21 },
+                  { range: "45-54", percentage: 16 }
+                ]).map((age, index) => (
+                  <div key={age.range}>
+                    <Label className="text-sm">{age.range} (%)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={age.percentage}
+                      onChange={(e) => updateAgeGroup(index, parseInt(e.target.value) || 0)}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Top Countries */}
+            <div className="space-y-4">
+              <Label className="text-base font-semibold">Top Countries</Label>
+              <div className="grid grid-cols-2 gap-4">
+                {(audienceData?.countries || [
+                  { country: "Australia", percentage: 51 },
+                  { country: "USA", percentage: 10 },
+                  { country: "Japan", percentage: 6 },
+                  { country: "Brazil", percentage: 5 }
+                ]).map((country, index) => (
+                  <div key={country.country} className="space-y-2">
+                    <div>
+                      <Label className="text-sm">Country {index + 1}</Label>
+                      <Input
+                        type="text"
+                        value={country.country}
+                        onChange={(e) => updateCountry(index, 'country', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm">Percentage (%)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={country.percentage}
+                        onChange={(e) => updateCountry(index, 'percentage', parseInt(e.target.value) || 0)}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Top Cities */}
+            <div className="space-y-4">
+              <Label className="text-base font-semibold">Top Cities</Label>
+              <div className="grid grid-cols-2 gap-4">
+                {(audienceData?.cities || ["Sydney", "Gold Coast", "Melbourne", "Sunshine Coast"]).map((city, index) => (
+                  <div key={index}>
+                    <Label className="text-sm">City {index + 1}</Label>
+                    <Input
+                      type="text"
+                      value={city}
+                      onChange={(e) => updateCity(index, e.target.value)}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <Button 
+              onClick={saveAudienceData}
+              disabled={loading}
+              className="w-full"
+            >
+              <Save className="mr-2 h-4 w-4" />
+              {loading ? 'Saving Demographics...' : 'Save Demographics'}
+            </Button>
+          </CardContent>
+        </Card>
 
         {/* Quick Stats Overview */}
         <Card className="mt-8 shadow-card border-border/50">
