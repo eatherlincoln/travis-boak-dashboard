@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface YouTubeStats {
   channel_id: string;
@@ -10,19 +11,26 @@ interface YouTubeStats {
 }
 
 export const useYouTubeStats = () => {
+  const { user } = useAuth();
   const [stats, setStats] = useState<YouTubeStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchStats = async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
 
-      // First, try to get existing stats from the database
+      // First, try to get existing stats from the database (user-specific)
       const { data: existingStats, error: dbError } = await supabase
         .from('youtube_stats')
         .select('*')
+        .eq('user_id', user.id)
         .eq('channel_id', 'UCKp8YgCM8wfzNHqGY0_Fhfg')
         .order('updated_at', { ascending: false })
         .limit(1)
@@ -55,10 +63,11 @@ export const useYouTubeStats = () => {
       }
 
       if (freshData?.success && freshData?.data) {
-        // Fetch the updated stats from the database
+        // Fetch the updated stats from the database (user-specific)
         const { data: updatedStats, error: updatedError } = await supabase
           .from('youtube_stats')
           .select('*')
+          .eq('user_id', user.id)
           .eq('channel_id', 'UCKp8YgCM8wfzNHqGY0_Fhfg')
           .order('updated_at', { ascending: false })
           .limit(1)
@@ -90,8 +99,10 @@ export const useYouTubeStats = () => {
   };
 
   useEffect(() => {
-    fetchStats();
-  }, []);
+    if (user) {
+      fetchStats();
+    }
+  }, [user]);
 
   return { stats, loading, error, refetch: fetchStats };
 };

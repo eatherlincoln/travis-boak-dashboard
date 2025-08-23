@@ -24,6 +24,23 @@ Deno.serve(async (req) => {
       throw new Error('Supabase service key not configured');
     }
 
+    // Get the authorization header to verify user access
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('Authorization header required');
+    }
+
+    // Create Supabase client for auth verification
+    const supabaseAuth = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY') || '');
+    
+    // Verify the user token
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(token);
+    
+    if (authError || !user) {
+      throw new Error('Invalid or expired token');
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Sheldon Simkus YouTube channel ID (extracted from @sheldonsimkus)
@@ -52,6 +69,7 @@ Deno.serve(async (req) => {
     // Extract the statistics
     const channelStats = {
       channel_id: channelId,
+      user_id: user.id, // Associate with the authenticated user
       subscriber_count: parseInt(stats.subscriberCount || '0'),
       view_count: parseInt(stats.viewCount || '0'),
       video_count: parseInt(stats.videoCount || '0'),
@@ -59,11 +77,11 @@ Deno.serve(async (req) => {
 
     console.log('Parsed stats:', channelStats);
 
-    // Insert or update the stats in the database
+    // Insert or update the stats in the database (user-specific)
     const { data, error } = await supabase
       .from('youtube_stats')
       .upsert(channelStats, { 
-        onConflict: 'channel_id',
+        onConflict: 'user_id,channel_id',
         ignoreDuplicates: false 
       })
       .select()
