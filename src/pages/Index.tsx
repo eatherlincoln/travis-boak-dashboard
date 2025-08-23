@@ -420,16 +420,50 @@ const Index = () => {
           </Card>
         </div>
 
-        {/* Contact & Partnership Info */}
+        {/* Partnership Opportunities */}
         <Card className="shadow-ocean border-primary/20 bg-gradient-ocean">
-          <CardContent className="p-8 text-center">
-            <h2 className="text-3xl font-bold text-primary-foreground mb-4">
+          <CardContent className="p-8">
+            <h2 className="text-3xl font-bold text-primary-foreground mb-6 text-center">
               Partnership Opportunities
             </h2>
-            <p className="text-primary-foreground/90 text-lg mb-6 max-w-2xl mx-auto">
-              Ready to collaborate with a growing surf content creator reaching engaged audiences 
-              across Australia and globally. Strong performance metrics and authentic surf lifestyle content.
+            <p className="text-primary-foreground/90 text-lg mb-8 text-center max-w-4xl mx-auto">
+              Partner with Sheldon Simkus — a rising force in surf media whose authentic lifestyle content and world-class surfing consistently engage audiences across Australia and globally. With proven performance metrics, a loyal following, and the credibility to cut through in surf culture, Sheldon offers brands a unique opportunity to align with a content creator who delivers both reach and real impact.
             </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              {/* Content Collaborations */}
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
+                <h3 className="text-xl font-semibold text-primary-foreground mb-3">1. Content Collaborations</h3>
+                <p className="text-primary-foreground/90 text-sm leading-relaxed">
+                  Custom video and photo content created with your brand seamlessly integrated into Sheldon's authentic surf lifestyle. Ideal for brands looking to tap into the energy of surf culture with credibility and creativity.
+                </p>
+              </div>
+
+              {/* Brand Ambassador */}
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
+                <h3 className="text-xl font-semibold text-primary-foreground mb-3">2. Brand Ambassador</h3>
+                <p className="text-primary-foreground/90 text-sm leading-relaxed">
+                  Ongoing partnerships that put your products front and center across Sheldon's platforms and surf career. A powerful way to build trust, consistency, and long-term brand equity with his engaged audience.
+                </p>
+              </div>
+
+              {/* Event & Travel Integration */}
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
+                <h3 className="text-xl font-semibold text-primary-foreground mb-3">3. Event & Travel Integration</h3>
+                <p className="text-primary-foreground/90 text-sm leading-relaxed">
+                  Leverage Sheldon's global surf schedule, trips, and competitions to position your brand in premium, culturally relevant moments. From contest appearances to surf edits in iconic locations, this is high-visibility exposure with impact.
+                </p>
+              </div>
+
+              {/* Custom Campaigns */}
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
+                <h3 className="text-xl font-semibold text-primary-foreground mb-3">4. Custom Campaigns</h3>
+                <p className="text-primary-foreground/90 text-sm leading-relaxed">
+                  Tailored programs that align with your specific goals — whether that's launching a new product, targeting a key demographic, or creating buzz across surf and lifestyle media.
+                </p>
+              </div>
+            </div>
+            
             <div className="flex flex-wrap justify-center gap-4">
               <Badge variant="secondary" className="text-base px-4 py-2">
                 Authentic Audience
