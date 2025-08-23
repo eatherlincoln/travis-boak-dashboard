@@ -22,19 +22,23 @@ export const usePlatformStats = () => {
       setLoading(true);
       setError(null);
 
+      console.log('🔍 Fetching platform stats...');
+      
       // Try to fetch stats from database first (for admin updates)
       const { data: adminStats, error: adminError } = await supabase
         .from('platform_stats')
         .select('*')
         .limit(3); // Get all platform stats from any user
 
+      console.log('📊 Database query result:', { adminStats, adminError });
+
       // If we have admin stats, use them
       if (!adminError && adminStats && adminStats.length > 0) {
-        console.log('Using admin stats from database:', adminStats);
+        console.log('✅ Using admin stats from database:', adminStats);
         setStats(adminStats);
       } else {
         // Fallback to default stats for public view
-        console.log('Using fallback stats');
+        console.log('⚠️ Using fallback stats - no admin data found');
         setStats([
           {
             platform: 'instagram',

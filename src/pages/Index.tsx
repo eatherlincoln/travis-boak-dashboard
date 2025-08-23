@@ -117,10 +117,18 @@ const Index = () => {
     }
   ];
 
+  console.log('🎯 Instagram stats loaded:', instagramStats);
+  console.log('🖼️ Admin top post URLs:', instagramStats?.additional_metrics?.top_posts_urls);
+  
   const adminTopUrls: string[] = (instagramStats?.additional_metrics?.top_posts_urls as string[]) || [];
   const topInstagramPosts = (adminTopUrls && adminTopUrls.length > 0)
-    ? defaultInstagramPosts.map((p, i) => ({ ...p, image: adminTopUrls[i] || p.image }))
+    ? defaultInstagramPosts.map((p, i) => ({ 
+        ...p, 
+        image: adminTopUrls[i] || p.image 
+      }))
     : defaultInstagramPosts;
+
+  console.log('📸 Final Instagram posts with thumbnails:', topInstagramPosts);
 
   // Audience data for Instagram (primary platform)
   const audienceData = {
