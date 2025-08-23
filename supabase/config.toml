@@ -4,7 +4,7 @@ project_id = "gmprigvmotrdrayxacnl"
 verify_jwt = false
 
 [functions.fetch-viewstats]
-verify_jwt = false
+verify_jwt = true
 
 [functions.refresh-social-stats]
 verify_jwt = false
