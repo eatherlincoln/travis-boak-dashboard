@@ -91,28 +91,28 @@ const Index = () => {
       title: "Perfect barrel at Snapper Rocks",
       platform: "Instagram",
       likes: "2.8K likes",
-      image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=500&h=500&fit=crop&crop=center",
+      image: "https://images.unsplash.com/photo-1581852017103-68ac65514cf7?w=500&h=500&fit=crop&crop=center",
       engagement: "8.2%"
     },
     {
       title: "Dawn patrol magic hours",
       platform: "Instagram", 
       likes: "2.1K likes",
-      image: "https://images.unsplash.com/photo-1502680390469-be75c86b636f?w=500&h=500&fit=crop&crop=center",
+      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&h=500&fit=crop&crop=center",
       engagement: "7.8%"
     },
     {
       title: "Behind the scenes setup",
       platform: "Instagram",
       likes: "1.9K likes", 
-      image: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=500&h=500&fit=crop&crop=center",
+      image: "https://images.unsplash.com/photo-1519018307286-6e2407875739?w=500&h=500&fit=crop&crop=center",
       engagement: "9.1%"
     },
     {
       title: "Post-session recovery",
       platform: "Instagram",
       likes: "1.6K likes",
-      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&h=500&fit=crop&crop=center", 
+      image: "https://images.unsplash.com/photo-1490730141103-6cac27aaab94?w=500&h=500&fit=crop&crop=center", 
       engagement: "7.5%"
     }
   ];
@@ -210,9 +210,9 @@ const Index = () => {
       <div className="container mx-auto px-6 py-8 space-y-8">
         {/* Brand Introduction */}
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-12 gap-8 items-center">
+          <div className="grid grid-cols-12 gap-8 items-start">
             {/* Text Content - 2/3 width (8 columns) */}
-            <div className="col-span-8 space-y-4">
+            <div className="col-span-8 space-y-6">
               <p className="text-base leading-relaxed text-foreground">
                 Sheldon Simkus is a professional surfer with a proven global reach, a trusted voice in surf culture, and a track record of delivering measurable value for partners.
               </p>
@@ -228,9 +228,9 @@ const Index = () => {
             <div className="col-span-4">
               <div className="relative">
                 <img 
-                  src="/lovable-uploads/e66a9bc1-6ece-4033-bea3-123135a4d342.png" 
+                  src="/lovable-uploads/123052c9-c430-4f2a-ba24-37159c2c70be.png" 
                   alt="Sheldon Simkus - Professional Surfer" 
-                  className="w-full rounded-lg shadow-card object-cover aspect-[3/4]"
+                  className="w-full rounded-lg shadow-card object-cover"
                 />
               </div>
             </div>
