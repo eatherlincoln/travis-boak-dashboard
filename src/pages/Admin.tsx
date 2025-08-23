@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Settings, LogOut, Save, ArrowLeft, Instagram, Youtube, Video, RotateCcw, Upload, Trash2, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import InstagramPostForm from '@/components/InstagramPostForm';
 
 interface PlatformStats {
   id: string;
@@ -480,6 +481,11 @@ const Admin = () => {
             <LogOut className="mr-2 h-4 w-4" />
             Sign Out
           </Button>
+        </div>
+
+        {/* Instagram Post Analysis Form */}
+        <div className="mb-8">
+          <InstagramPostForm />
         </div>
 
         {/* Instagram: Metrics + Demographics side-by-side */}
