@@ -11,6 +11,7 @@ export const useAutoRefresh = (options: AutoRefreshOptions = {}) => {
   const { intervalMinutes = 30, enableExternalRefresh = true } = options;
   const { refreshStats } = useViewStats();
   const { session } = useAuth();
+  
   const refreshExternalData = useCallback(async () => {
     if (!enableExternalRefresh || !session) return;
     
@@ -26,16 +27,19 @@ export const useAutoRefresh = (options: AutoRefreshOptions = {}) => {
   useEffect(() => {
     if (!enableExternalRefresh || !session) return;
 
-    // Initial refresh on mount
-    refreshExternalData();
+    // Initial refresh on mount - add small delay to prevent race conditions
+    const initialTimeout = setTimeout(() => {
+      refreshExternalData();
+    }, 1000);
 
     // Set up interval for periodic refresh
     const interval = setInterval(refreshExternalData, intervalMinutes * 60 * 1000);
 
     return () => {
+      clearTimeout(initialTimeout);
       clearInterval(interval);
     };
-  }, [refreshExternalData, intervalMinutes, enableExternalRefresh, session]);
+  }, [enableExternalRefresh, session, intervalMinutes]); // Remove refreshExternalData from deps to prevent re-running
 
   return { refreshExternalData };
 };
