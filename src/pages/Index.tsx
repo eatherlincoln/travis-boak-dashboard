@@ -9,7 +9,6 @@ import { useState } from "react";
 import heroImage from "/lovable-uploads/350aac33-19a1-4c3e-bac9-1e7258ac89b7.png";
 import { usePlatformStats } from "@/hooks/usePlatformStats";
 import { useViewStats } from "@/hooks/useViewStats";
-import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
@@ -17,8 +16,7 @@ const Index = () => {
   const { getPlatformStat, refetch: refetchPlatformStats } = usePlatformStats();
   const { refreshStats: refreshViewStats, loading: viewStatsLoading } = useViewStats();
   
-  // Enable auto-refresh for external data every 30 minutes  
-  useAutoRefresh({ intervalMinutes: 30, enableExternalRefresh: true });
+  // Auto-refresh disabled - only manual refresh via button
   
   // Get platform stats (will use manual stats if user is logged in, fallback to hardcoded)
   const instagramStats = getPlatformStat('instagram');
