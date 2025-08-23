@@ -408,6 +408,40 @@ const Admin = () => {
                   </div>
                 </div>
 
+                <div className="space-y-4 p-3 bg-muted/30 rounded-lg">
+                  <Label className="text-sm font-medium">Top Instagram Post Links</Label>
+                  <div className="grid grid-cols-1 gap-2">
+                    <div>
+                      <Label className="text-xs">Post 1 URL</Label>
+                      <Input
+                        type="url"
+                        placeholder="https://instagram.com/p/..."
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Post 2 URL</Label>
+                      <Input
+                        type="url"
+                        placeholder="https://instagram.com/p/..."
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Post 3 URL</Label>
+                      <Input
+                        type="url"
+                        placeholder="https://instagram.com/p/..."
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Post 4 URL</Label>
+                      <Input
+                        type="url"
+                        placeholder="https://instagram.com/p/..."
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <Label>Engagement Rate (Auto-calculated)</Label>
                   <Input

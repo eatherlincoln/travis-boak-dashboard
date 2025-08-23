@@ -77,9 +77,9 @@ const Index = () => {
       thumbnail: `https://img.youtube.com/vi/ShOJK4TvA38/mqdefault.jpg`
     },
     {
-      title: "Dawn Patrol Session",
+      title: "Epic Dawn Patrol Waves",
       platform: "YouTube",
-      views: "42K views", 
+      views: "48K views", 
       videoId: "7GrvnlBeC8M",
       thumbnail: `https://img.youtube.com/vi/7GrvnlBeC8M/mqdefault.jpg`
     }
@@ -345,12 +345,6 @@ const Index = () => {
                   </div>
                 ))}
               </div>
-              <div className="mt-4 p-3 bg-primary/10 rounded-lg">
-                <p className="text-sm text-primary">
-                  <strong>Content Strategy:</strong> Authentic surf lifestyle posts averaging 8.2% engagement, 
-                  with behind-the-scenes content performing exceptionally well.
-                </p>
-              </div>
             </CardContent>
           </Card>
           
@@ -366,7 +360,7 @@ const Index = () => {
                   <Dialog key={index}>
                     <DialogTrigger asChild>
                       <div className="bg-muted/30 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors group overflow-hidden">
-                        <div className="aspect-video relative">
+                        <div className="aspect-square relative">
                           <img 
                             src={video.thumbnail} 
                             alt={video.title}
@@ -405,12 +399,6 @@ const Index = () => {
                     </DialogContent>
                   </Dialog>
                 ))}
-              </div>
-              <div className="mt-4 p-3 bg-primary/10 rounded-lg">
-                <p className="text-sm text-primary">
-                  <strong>Content Strategy:</strong> POV surf videos consistently perform 40-50K+ views, 
-                  showing strong audience preference for immersive surf content.
-                </p>
               </div>
             </CardContent>
           </Card>
