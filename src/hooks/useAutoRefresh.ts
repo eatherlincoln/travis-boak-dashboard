@@ -1,5 +1,6 @@
 import { useEffect, useCallback } from 'react';
 import { useViewStats } from './useViewStats';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface AutoRefreshOptions {
   intervalMinutes?: number;
@@ -9,9 +10,9 @@ interface AutoRefreshOptions {
 export const useAutoRefresh = (options: AutoRefreshOptions = {}) => {
   const { intervalMinutes = 30, enableExternalRefresh = true } = options;
   const { refreshStats } = useViewStats();
-
+  const { session } = useAuth();
   const refreshExternalData = useCallback(async () => {
-    if (!enableExternalRefresh) return;
+    if (!enableExternalRefresh || !session) return;
     
     try {
       console.log('🔄 Auto-refreshing external data...');
@@ -20,10 +21,10 @@ export const useAutoRefresh = (options: AutoRefreshOptions = {}) => {
     } catch (error) {
       console.error('❌ Auto-refresh failed:', error);
     }
-  }, [refreshStats, enableExternalRefresh]);
+  }, [refreshStats, enableExternalRefresh, session]);
 
   useEffect(() => {
-    if (!enableExternalRefresh) return;
+    if (!enableExternalRefresh || !session) return;
 
     // Initial refresh on mount
     refreshExternalData();
@@ -34,7 +35,7 @@ export const useAutoRefresh = (options: AutoRefreshOptions = {}) => {
     return () => {
       clearInterval(interval);
     };
-  }, [refreshExternalData, intervalMinutes, enableExternalRefresh]);
+  }, [refreshExternalData, intervalMinutes, enableExternalRefresh, session]);
 
   return { refreshExternalData };
 };

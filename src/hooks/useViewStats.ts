@@ -7,6 +7,12 @@ export const useViewStats = () => {
   const { toast } = useToast();
 
   const refreshStats = async () => {
+    // Require an active session before invoking the secured function
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      console.info('Skipping ViewStats refresh: user not authenticated');
+      return null;
+    }
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('fetch-viewstats');
@@ -28,12 +34,14 @@ export const useViewStats = () => {
       }
     } catch (error) {
       console.error('Error fetching ViewStats:', error);
+      const msg = (error as any)?.message?.toString() || '';
+      const isAuthError = msg.includes('403') || msg.includes('401') || msg.toLowerCase().includes('jwt') || msg.toLowerCase().includes('token');
       toast({
-        title: "Error",
-        description: "Failed to update YouTube stats from ViewStats",
-        variant: "destructive"
+        title: isAuthError ? "Sign in required" : "Error",
+        description: isAuthError ? "Please sign in as admin to refresh ViewStats." : "Failed to update YouTube stats from ViewStats",
+        variant: isAuthError ? "default" : "destructive"
       });
-      throw error;
+      return null;
     } finally {
       setLoading(false);
     }
