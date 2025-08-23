@@ -114,6 +114,27 @@ export const usePlatformStats = () => {
 
   useEffect(() => {
     fetchStats();
+
+    // Set up real-time subscription for platform stats
+    const channel = supabase
+      .channel('platform-stats-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'platform_stats'
+        },
+        (payload) => {
+          console.log('🔄 Platform stats changed:', payload);
+          fetchStats(); // Refetch data when changes occur
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []); // Remove user dependency since we always fetch from database now
 
   const getPlatformStat = (platform: string) => {

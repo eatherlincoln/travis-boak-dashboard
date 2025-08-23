@@ -101,6 +101,27 @@ export const useYouTubeStats = () => {
   useEffect(() => {
     if (user) {
       fetchStats();
+
+      // Set up real-time subscription for YouTube stats
+      const channel = supabase
+        .channel('youtube-stats-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'youtube_stats'
+          },
+          (payload) => {
+            console.log('🔄 YouTube stats changed:', payload);
+            fetchStats(); // Refetch data when changes occur
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [user]);
 
