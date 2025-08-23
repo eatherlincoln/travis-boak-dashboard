@@ -120,16 +120,31 @@ const Index = () => {
   console.log('🎯 Instagram stats loaded:', instagramStats);
   console.log('🖼️ Admin image URLs:', instagramStats?.image_urls);
   
+  // Helper to format numbers like 2.8K
+  const formatNumberShort = (n: number) => {
+    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+    if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+    return `${Math.round(n)}`;
+  };
+
   const adminImageUrls: string[] = (instagramStats?.image_urls || []) as string[];
+  const monthlyLikes = Number(instagramStats?.additional_metrics?.likes || 0);
+  const avgLikesPerPost = monthlyLikes > 0 ? monthlyLikes / 30 : 0;
+  const engagementStr = typeof instagramStats?.engagement_rate === 'number'
+    ? `${instagramStats.engagement_rate}%`
+    : undefined;
+
   const topInstagramPosts = (adminImageUrls && adminImageUrls.length > 0)
     ? defaultInstagramPosts.map((p, i) => ({ 
         ...p, 
         image: adminImageUrls[i] || p.image,
-        engagement: `${instagramStats?.engagement_rate || p.engagement}%`
+        likes: avgLikesPerPost ? `${formatNumberShort(avgLikesPerPost)} likes/post` : p.likes,
+        engagement: engagementStr || p.engagement
       }))
     : defaultInstagramPosts.map(p => ({ 
-        ...p, 
-        engagement: `${instagramStats?.engagement_rate || p.engagement}%`
+        ...p,
+        likes: avgLikesPerPost ? `${formatNumberShort(avgLikesPerPost)} likes/post` : p.likes,
+        engagement: engagementStr || p.engagement
       }));
 
   console.log('📸 Final Instagram posts with thumbnails:', topInstagramPosts);
@@ -272,10 +287,10 @@ const Index = () => {
           />
           <MetricCard
             title="Engagement Rate"
-            value="8.2%"
-            subtitle="Above industry average"
+            value={`${typeof instagramStats?.engagement_rate === 'number' ? instagramStats.engagement_rate : 8.2}%`}
+            subtitle="Latest Instagram engagement"
             icon={<Heart className="h-6 w-6" />}
-            trend={{ value: "+1.2%", isPositive: true }}
+            trend={{ value: getTrend('instagram', 'engagement').value, isPositive: true }}
           />
         </div>
 
