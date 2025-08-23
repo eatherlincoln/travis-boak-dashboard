@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Settings, LogOut, Save, ArrowLeft, Instagram, Youtube, Video, RotateCcw } from 'lucide-react';
+import { Settings, LogOut, Save, ArrowLeft, Instagram, Youtube, Video, RotateCcw, Upload, Trash2, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface PlatformStats {
@@ -43,6 +43,8 @@ const Admin = () => {
   const [stats, setStats] = useState<PlatformStats[]>([]);
   const [editingStats, setEditingStats] = useState<{ [key: string]: PlatformStats }>({});
   const [audienceData, setAudienceData] = useState<AudienceData>({});
+  const [uploadingFiles, setUploadingFiles] = useState<{ [key: number]: boolean }>({});
+  const [previewImages, setPreviewImages] = useState<{ [key: number]: string }>({});
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -302,6 +304,110 @@ const Admin = () => {
       } as any;
     });
   };
+
+  // File upload functionality
+  const handleFileUpload = async (file: File, index: number) => {
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: "Invalid File Type",
+        description: "Please upload JPEG, PNG, WebP, or GIF images only.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate file size (5MB limit)
+    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    if (file.size > maxSize) {
+      toast({
+        title: "File Too Large",
+        description: "Please upload images smaller than 5MB.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setUploadingFiles(prev => ({ ...prev, [index]: true }));
+
+    try {
+      // Generate unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `thumbnails/${fileName}`;
+
+      // Upload to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('post-images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('post-images')
+        .getPublicUrl(filePath);
+
+      // Update the image URL in the form
+      updateImageUrl(index, publicUrl);
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPreviewImages(prev => ({ ...prev, [index]: e.target?.result as string }));
+      };
+      reader.readAsDataURL(file);
+
+      toast({
+        title: "Upload Successful!",
+        description: `Image ${index + 1} uploaded successfully.`
+      });
+
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload image. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setUploadingFiles(prev => ({ ...prev, [index]: false }));
+    }
+  };
+
+  // Remove uploaded image
+  const removeImage = async (index: number) => {
+    const currentUrl = editingStats['instagram']?.image_urls?.[index];
+    
+    if (currentUrl && currentUrl.includes('post-images')) {
+      try {
+        // Extract file path from URL
+        const urlParts = currentUrl.split('/');
+        const filePath = urlParts.slice(-2).join('/'); // thumbnails/filename.ext
+        
+        // Delete from storage
+        await supabase.storage
+          .from('post-images')
+          .remove([filePath]);
+      } catch (error) {
+        console.error('Error deleting file:', error);
+      }
+    }
+
+    // Remove from form
+    updateImageUrl(index, '');
+    setPreviewImages(prev => {
+      const newPreviews = { ...prev };
+      delete newPreviews[index];
+      return newPreviews;
+    });
+
+    toast({
+      title: "Image Removed",
+      description: `Thumbnail ${index + 1} has been removed.`
+    });
+  };
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
@@ -490,48 +596,105 @@ const Admin = () => {
                   </div>
                 </div>
 
-                <div className="space-y-4 p-3 bg-blue-50/50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
-                  <Label className="text-sm font-medium text-blue-800 dark:text-blue-200">Thumbnail Image URLs</Label>
+                <div className="space-y-4 p-4 bg-blue-50/50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center gap-2">
+                    <Upload className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    <Label className="text-sm font-medium text-blue-800 dark:text-blue-200">Thumbnail Images</Label>
+                  </div>
                   <p className="text-xs text-blue-600 dark:text-blue-400">
-                    Enter direct image URLs (e.g., from Unsplash, your server, or CDN) to display as thumbnails on the front page.
+                    Upload images from your device or enter direct URLs. Supported formats: JPEG, PNG, WebP, GIF. Max size: 5MB per image.
                   </p>
-                  <div className="grid grid-cols-1 gap-2">
-                    <div>
-                      <Label className="text-xs">Thumbnail 1 URL</Label>
-                      <Input
-                        type="url"
-                        placeholder="https://images.unsplash.com/photo-..."
-                        value={editingStats['instagram']?.image_urls?.[0] || ''}
-                        onChange={(e) => updateImageUrl(0, e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs">Thumbnail 2 URL</Label>
-                      <Input
-                        type="url"
-                        placeholder="https://images.unsplash.com/photo-..."
-                        value={editingStats['instagram']?.image_urls?.[1] || ''}
-                        onChange={(e) => updateImageUrl(1, e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs">Thumbnail 3 URL</Label>
-                      <Input
-                        type="url"
-                        placeholder="https://images.unsplash.com/photo-..."
-                        value={editingStats['instagram']?.image_urls?.[2] || ''}
-                        onChange={(e) => updateImageUrl(2, e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs">Thumbnail 4 URL</Label>
-                      <Input
-                        type="url"
-                        placeholder="https://images.unsplash.com/photo-..."
-                        value={editingStats['instagram']?.image_urls?.[3] || ''}
-                        onChange={(e) => updateImageUrl(3, e.target.value)}
-                      />
-                    </div>
+                  
+                  <div className="grid grid-cols-1 gap-4">
+                    {[0, 1, 2, 3].map((index) => (
+                      <div key={index} className="space-y-2 p-3 bg-white/50 dark:bg-gray-900/50 rounded-md border border-blue-100 dark:border-blue-900">
+                        <Label className="text-xs font-medium">Thumbnail {index + 1}</Label>
+                        
+                        {/* Preview if image exists */}
+                        {(editingStats['instagram']?.image_urls?.[index] || previewImages[index]) && (
+                          <div className="relative group">
+                            <img 
+                              src={previewImages[index] || editingStats['instagram']?.image_urls?.[index]}
+                              alt={`Thumbnail ${index + 1} preview`}
+                              className="w-full h-24 object-cover rounded-md border"
+                            />
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-md flex items-center justify-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => window.open(editingStats['instagram']?.image_urls?.[index], '_blank')}
+                                disabled={!editingStats['instagram']?.image_urls?.[index]}
+                              >
+                                <Eye className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => removeImage(index)}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Upload Button */}
+                        <div className="flex gap-2">
+                          <div className="flex-1">
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  handleFileUpload(file, index);
+                                }
+                                e.target.value = ''; // Reset input
+                              }}
+                              className="hidden"
+                              id={`file-upload-${index}`}
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="w-full"
+                              onClick={() => document.getElementById(`file-upload-${index}`)?.click()}
+                              disabled={uploadingFiles[index]}
+                            >
+                              {uploadingFiles[index] ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary mr-2"></div>
+                                  Uploading...
+                                </>
+                              ) : (
+                                <>
+                                  <Upload className="h-3 w-3 mr-2" />
+                                  Upload Image
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* URL Input as Alternative */}
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">Or enter URL directly:</Label>
+                          <Input
+                            type="url"
+                            placeholder="https://images.unsplash.com/photo-..."
+                            value={editingStats['instagram']?.image_urls?.[index] || ''}
+                            onChange={(e) => updateImageUrl(index, e.target.value)}
+                            className="text-xs"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="text-xs text-blue-600 dark:text-blue-400 bg-blue-100/50 dark:bg-blue-900/30 p-2 rounded">
+                    <strong>💡 Tip:</strong> For best results, use square images (1:1 aspect ratio) around 500x500px. 
+                    Uploaded images are automatically optimized and stored securely.
                   </div>
                 </div>
 
