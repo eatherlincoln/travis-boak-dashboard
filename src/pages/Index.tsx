@@ -233,7 +233,7 @@ const Index = () => {
             <div className="col-span-4">
               <div className="relative">
                 <img 
-                  src="/lovable-uploads/123052c9-c430-4f2a-ba24-37159c2c70be.png" 
+                  src="/lovable-uploads/593bbc81-f03e-419e-a492-8024f176fd1a.png" 
                   alt="Sheldon Simkus - Professional Surfer" 
                   className="w-full rounded-lg shadow-card object-cover aspect-square max-w-sm ml-auto"
                 />
