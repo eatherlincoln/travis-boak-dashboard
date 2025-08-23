@@ -23,6 +23,7 @@ interface PlatformStats {
     comments?: number;
     shares?: number;
     saves?: number;
+    top_posts_urls?: string[]; // New: admin-managed Instagram top post thumbnails
   };
 }
 
@@ -262,6 +263,25 @@ const Admin = () => {
     }));
   };
 
+  // New: update top Instagram post thumbnail URLs (indexes 0-3)
+  const updateTopPostUrl = (index: number, value: string) => {
+    setEditingStats(prev => {
+      const current = prev['instagram'];
+      if (!current) return prev as any;
+      const urls = [...(current.additional_metrics?.top_posts_urls || [])];
+      urls[index] = value;
+      return {
+        ...prev,
+        instagram: {
+          ...current,
+          additional_metrics: {
+            ...(current.additional_metrics || {}),
+            top_posts_urls: urls,
+          },
+        },
+      } as any;
+    });
+  };
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
@@ -416,6 +436,8 @@ const Admin = () => {
                       <Input
                         type="url"
                         placeholder="https://instagram.com/p/..."
+                        value={editingStats['instagram']?.additional_metrics?.top_posts_urls?.[0] || ''}
+                        onChange={(e) => updateTopPostUrl(0, e.target.value)}
                       />
                     </div>
                     <div>
@@ -423,6 +445,8 @@ const Admin = () => {
                       <Input
                         type="url"
                         placeholder="https://instagram.com/p/..."
+                        value={editingStats['instagram']?.additional_metrics?.top_posts_urls?.[1] || ''}
+                        onChange={(e) => updateTopPostUrl(1, e.target.value)}
                       />
                     </div>
                     <div>
@@ -430,6 +454,8 @@ const Admin = () => {
                       <Input
                         type="url"
                         placeholder="https://instagram.com/p/..."
+                        value={editingStats['instagram']?.additional_metrics?.top_posts_urls?.[2] || ''}
+                        onChange={(e) => updateTopPostUrl(2, e.target.value)}
                       />
                     </div>
                     <div>
@@ -437,6 +463,8 @@ const Admin = () => {
                       <Input
                         type="url"
                         placeholder="https://instagram.com/p/..."
+                        value={editingStats['instagram']?.additional_metrics?.top_posts_urls?.[3] || ''}
+                        onChange={(e) => updateTopPostUrl(3, e.target.value)}
                       />
                     </div>
                   </div>

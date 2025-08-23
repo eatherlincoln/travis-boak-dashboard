@@ -86,7 +86,7 @@ const Index = () => {
   ];
 
   // Instagram posts data for top performing content
-  const topInstagramPosts = [
+  const defaultInstagramPosts = [
     {
       title: "Perfect barrel at Snapper Rocks",
       platform: "Instagram",
@@ -116,6 +116,11 @@ const Index = () => {
       engagement: "7.5%"
     }
   ];
+
+  const adminTopUrls: string[] = (instagramStats?.additional_metrics?.top_posts_urls as string[]) || [];
+  const topInstagramPosts = (adminTopUrls && adminTopUrls.length > 0)
+    ? defaultInstagramPosts.map((p, i) => ({ ...p, image: adminTopUrls[i] || p.image }))
+    : defaultInstagramPosts;
 
   // Audience data for Instagram (primary platform)
   const audienceData = {
@@ -207,7 +212,7 @@ const Index = () => {
         </div>
       </div>
 
-      <div className="container mx-auto px-6 py-8 space-y-8">
+      <div className="container mx-auto px-4 py-6 space-y-6">
         {/* Brand Introduction */}
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-12 gap-8 items-start">
@@ -230,7 +235,7 @@ const Index = () => {
                 <img 
                   src="/lovable-uploads/123052c9-c430-4f2a-ba24-37159c2c70be.png" 
                   alt="Sheldon Simkus - Professional Surfer" 
-                  className="w-full rounded-lg shadow-card object-cover"
+                  className="w-full rounded-lg shadow-card object-cover aspect-square max-w-sm ml-auto"
                 />
               </div>
             </div>
