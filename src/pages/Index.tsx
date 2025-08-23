@@ -85,6 +85,38 @@ const Index = () => {
     }
   ];
 
+  // Instagram posts data for top performing content
+  const topInstagramPosts = [
+    {
+      title: "Perfect barrel at Snapper Rocks",
+      platform: "Instagram",
+      likes: "2.8K likes",
+      image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=500&h=500&fit=crop&crop=center",
+      engagement: "8.2%"
+    },
+    {
+      title: "Dawn patrol magic hours",
+      platform: "Instagram", 
+      likes: "2.1K likes",
+      image: "https://images.unsplash.com/photo-1502680390469-be75c86b636f?w=500&h=500&fit=crop&crop=center",
+      engagement: "7.8%"
+    },
+    {
+      title: "Behind the scenes setup",
+      platform: "Instagram",
+      likes: "1.9K likes", 
+      image: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=500&h=500&fit=crop&crop=center",
+      engagement: "9.1%"
+    },
+    {
+      title: "Post-session recovery",
+      platform: "Instagram",
+      likes: "1.6K likes",
+      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&h=500&fit=crop&crop=center", 
+      engagement: "7.5%"
+    }
+  ];
+
   // Audience data for Instagram (primary platform)
   const audienceData = {
     gender: { men: 88, women: 12 },
@@ -176,6 +208,19 @@ const Index = () => {
       </div>
 
       <div className="container mx-auto px-6 py-8 space-y-8">
+        {/* Brand Introduction */}
+        <div className="max-w-4xl mx-auto text-center space-y-4">
+          <p className="text-lg leading-relaxed text-foreground">
+            Sheldon Simkus is a professional surfer with a proven global reach, a trusted voice in surf culture, and a track record of delivering measurable value for partners.
+          </p>
+          <p className="text-lg leading-relaxed text-foreground">
+            Sheldon's ability to combine high-performance surfing with authentic, creative storytelling has established him as a unique content creator whose work consistently generates strong exposure and return on investment. His attention to detail and credibility in the surfing world ensure that every collaboration feels genuine, resonates deeply with audiences, and elevates the brands he works with.
+          </p>
+          <p className="text-lg leading-relaxed text-foreground">
+            We invite you to join Sheldon in building meaningful partnerships that go beyond traditional sponsorships — driving real engagement, cultural relevance, and business growth.
+          </p>
+        </div>
+
         {/* Key Metrics Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <MetricCard
@@ -264,11 +309,52 @@ const Index = () => {
           />
         </div>
 
-        {/* Audience Demographics */}
+        {/* Audience Demographics - Full Width */}
+        <AudienceChart data={audienceData} />
+
+        {/* Top Content Performance - Side by Side */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <AudienceChart data={audienceData} />
+          {/* Top Instagram Posts */}
+          <Card className="shadow-card border-border/50">
+            <CardContent className="p-6">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Instagram className="h-5 w-5 text-primary" />
+                Top Performing Instagram Posts
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                {topInstagramPosts.map((post, index) => (
+                  <div key={index} className="bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors group overflow-hidden">
+                    <div className="aspect-square relative">
+                      <img 
+                        src={post.image} 
+                        alt={post.title}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
+                      <Heart className="absolute top-2 right-2 h-4 w-4 text-white opacity-80" />
+                    </div>
+                    <div className="p-3">
+                      <h4 className="font-medium text-sm mb-1 group-hover:text-primary transition-colors line-clamp-2">
+                        {post.title}
+                      </h4>
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>{post.likes}</span>
+                        <span>{post.engagement} ER</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 p-3 bg-primary/10 rounded-lg">
+                <p className="text-sm text-primary">
+                  <strong>Content Strategy:</strong> Authentic surf lifestyle posts averaging 8.2% engagement, 
+                  with behind-the-scenes content performing exceptionally well.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
           
-          {/* Top Content Performance */}
+          {/* Top YouTube Content */}
           <Card className="shadow-card border-border/50">
             <CardContent className="p-6">
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
