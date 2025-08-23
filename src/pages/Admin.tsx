@@ -9,10 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Settings, LogOut, Save, ArrowLeft, Instagram, Youtube, Video, RotateCcw, Upload, Trash2, Eye, Plus, Edit3, Calendar, Hash, BarChart3 } from 'lucide-react';
+import { Settings, LogOut, Save, ArrowLeft, Instagram, Youtube, Video, RotateCcw, Upload, Trash2, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useInstagramPosts } from '@/hooks/useInstagramPosts';
-import type { InstagramPost } from '@/hooks/useInstagramPosts';
 
 interface PlatformStats {
   id: string;
@@ -47,11 +45,6 @@ const Admin = () => {
   const [audienceData, setAudienceData] = useState<AudienceData>({});
   const [uploadingFiles, setUploadingFiles] = useState<{ [key: number]: boolean }>({});
   const [previewImages, setPreviewImages] = useState<{ [key: number]: string }>({});
-  
-  // Individual post management
-  const { posts, upsertPost, deletePost, fetchPosts } = useInstagramPosts();
-  const [editingPost, setEditingPost] = useState<Partial<InstagramPost> | null>(null);
-  const [showPostForm, setShowPostForm] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -415,86 +408,6 @@ const Admin = () => {
       description: `Thumbnail ${index + 1} has been removed.`
     });
   };
-
-  // Individual Post Management Functions
-  const handleSavePost = async () => {
-    if (!editingPost || !editingPost.post_url || !editingPost.title) {
-      toast({
-        title: "Missing Information",
-        description: "Please provide at least a post URL and title.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      setLoading(true);
-      await upsertPost(editingPost as InstagramPost);
-      
-      toast({
-        title: "Success!",
-        description: `Instagram post ${editingPost.id ? 'updated' : 'created'} successfully.`
-      });
-      
-      setEditingPost(null);
-      setShowPostForm(false);
-    } catch (error) {
-      console.error('Error saving post:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save post. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleEditPost = (post: InstagramPost) => {
-    setEditingPost({ ...post });
-    setShowPostForm(true);
-  };
-
-  const handleDeletePost = async (postId: string) => {
-    if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
-      return;
-    }
-
-    try {
-      setLoading(true);
-      await deletePost(postId);
-      
-      toast({
-        title: "Deleted",
-        description: "Instagram post deleted successfully."
-      });
-    } catch (error) {
-      console.error('Error deleting post:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete post. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleNewPost = () => {
-    setEditingPost({
-      post_url: '',
-      title: '',
-      content_type: 'image',
-      likes_count: 0,
-      comments_count: 0,
-      shares_count: 0,
-      saves_count: 0,
-      reach_count: 0,
-      impressions_count: 0,
-      hashtags: []
-    });
-    setShowPostForm(true);
-  };
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
@@ -569,93 +482,376 @@ const Admin = () => {
           </Button>
         </div>
 
-        {/* Enhanced Instagram: Metrics + Individual Posts Management */}
-        <div className="grid grid-cols-1 gap-6 mb-8">
-          <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="overview">Overview & Thumbnails</TabsTrigger>
-              <TabsTrigger value="posts">Individual Posts</TabsTrigger>
-              <TabsTrigger value="demographics">Demographics</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="overview" className="space-y-6">
-              {/* Existing Instagram Metrics Card - EXACT SAME FUNCTIONALITY */}
-              {instagramStat && (
-                <Card className="shadow-card border-border/50">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 capitalize">
-                      <div className={`p-2 rounded-lg ${getPlatformColor('instagram')} text-white`}>
-                        {getPlatformIcon('instagram')}
-                      </div>
-                      Instagram Overview & Thumbnails
-                    </CardTitle>
-                    <CardDescription>
-                      Manage overall Instagram stats and thumbnail images
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {/* ... keep existing code (follower count, monthly views, engagement metrics, post URLs, thumbnails) */}
-                    <div className="space-y-2">
-                      <Label>Followers</Label>
+        {/* Instagram: Metrics + Demographics side-by-side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Instagram Metrics Card */}
+          {instagramStat && (
+            <Card className="shadow-card border-border/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 capitalize">
+                  <div className={`p-2 rounded-lg ${getPlatformColor('instagram')} text-white`}>
+                    {getPlatformIcon('instagram')}
+                  </div>
+                  Instagram Metrics
+                </CardTitle>
+                <CardDescription>
+                  Update your Instagram statistics
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Followers</Label>
+                  <Input
+                    type="number"
+                    value={editingStats['instagram']?.follower_count || 0}
+                    onChange={(e) => updateEditingValue('instagram', 'follower_count', e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Video Views (Monthly)</Label>
+                  <Input
+                    type="number"
+                    value={editingStats['instagram']?.monthly_views || 0}
+                    onChange={(e) => updateEditingValue('instagram', 'monthly_views', e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-4 p-3 bg-muted/30 rounded-lg">
+                  <Label className="text-sm font-medium">Instagram Metrics</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-xs">Monthly Likes</Label>
                       <Input
                         type="number"
-                        value={editingStats['instagram']?.follower_count || 0}
-                        onChange={(e) => updateEditingValue('instagram', 'follower_count', e.target.value)}
+                        value={editingStats['instagram']?.additional_metrics?.likes || 0}
+                        onChange={(e) => updateMetricValue('instagram', 'likes', e.target.value)}
                       />
                     </div>
-                    <Button 
-                      onClick={() => updatePlatformStats('instagram')}
-                      disabled={loading}
-                      className="w-full"
-                    >
-                      <Save className="mr-2 h-4 w-4" />
-                      {loading ? 'Saving...' : 'Save Changes'}
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="posts" className="space-y-6">
-              <Card className="shadow-card border-border/50">
-                <CardHeader>
-                  <CardTitle>Individual Instagram Posts</CardTitle>
-                  <CardDescription>Manage detailed post-level metrics</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p>Individual post management coming soon...</p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="demographics" className="space-y-6">
-              {/* Instagram Audience Demographics */}
-              <Card className="shadow-card border-border/50">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <div className="p-2 rounded-lg bg-pink-500 text-white">
-                      <Instagram className="h-5 w-5" />
+                    <div>
+                      <Label className="text-xs">Monthly Comments</Label>
+                      <Input
+                        type="number"
+                        value={editingStats['instagram']?.additional_metrics?.comments || 0}
+                        onChange={(e) => updateMetricValue('instagram', 'comments', e.target.value)}
+                      />
                     </div>
-                    Instagram Demographics
-                  </CardTitle>
-                  <CardDescription>
-                    Manage your Instagram audience insights
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <Button 
-                    onClick={saveAudienceData}
-                    disabled={loading}
-                    className="w-full"
-                  >
-                    <Save className="mr-2 h-4 w-4" />
-                    {loading ? 'Saving Demographics...' : 'Save Demographics'}
-                  </Button>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+                    <div>
+                      <Label className="text-xs">Monthly Shares</Label>
+                      <Input
+                        type="number"
+                        value={editingStats['instagram']?.additional_metrics?.shares || 0}
+                        onChange={(e) => updateMetricValue('instagram', 'shares', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Monthly Saves</Label>
+                      <Input
+                        type="number"
+                        value={editingStats['instagram']?.additional_metrics?.saves || 0}
+                        onChange={(e) => updateMetricValue('instagram', 'saves', e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4 p-3 bg-muted/30 rounded-lg">
+                  <Label className="text-sm font-medium">Instagram Post Links (for reference)</Label>
+                  <div className="grid grid-cols-1 gap-2">
+                    <div>
+                      <Label className="text-xs">Post 1 URL</Label>
+                      <Input
+                        type="url"
+                        placeholder="https://instagram.com/p/..."
+                        value={editingStats['instagram']?.additional_metrics?.top_posts_urls?.[0] || ''}
+                        onChange={(e) => updateTopPostUrl(0, e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Post 2 URL</Label>
+                      <Input
+                        type="url"
+                        placeholder="https://instagram.com/p/..."
+                        value={editingStats['instagram']?.additional_metrics?.top_posts_urls?.[1] || ''}
+                        onChange={(e) => updateTopPostUrl(1, e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Post 3 URL</Label>
+                      <Input
+                        type="url"
+                        placeholder="https://instagram.com/p/..."
+                        value={editingStats['instagram']?.additional_metrics?.top_posts_urls?.[2] || ''}
+                        onChange={(e) => updateTopPostUrl(2, e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Post 4 URL</Label>
+                      <Input
+                        type="url"
+                        placeholder="https://instagram.com/p/..."
+                        value={editingStats['instagram']?.additional_metrics?.top_posts_urls?.[3] || ''}
+                        onChange={(e) => updateTopPostUrl(3, e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4 p-4 bg-blue-50/50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center gap-2">
+                    <Upload className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    <Label className="text-sm font-medium text-blue-800 dark:text-blue-200">Thumbnail Images</Label>
+                  </div>
+                  <p className="text-xs text-blue-600 dark:text-blue-400">
+                    Upload images from your device or enter direct URLs. Supported formats: JPEG, PNG, WebP, GIF. Max size: 5MB per image.
+                  </p>
+                  
+                  <div className="grid grid-cols-1 gap-4">
+                    {[0, 1, 2, 3].map((index) => (
+                      <div key={index} className="space-y-2 p-3 bg-white/50 dark:bg-gray-900/50 rounded-md border border-blue-100 dark:border-blue-900">
+                        <Label className="text-xs font-medium">Thumbnail {index + 1}</Label>
+                        
+                        {/* Preview if image exists */}
+                        {(editingStats['instagram']?.image_urls?.[index] || previewImages[index]) && (
+                          <div className="relative group">
+                            <img 
+                              src={previewImages[index] || editingStats['instagram']?.image_urls?.[index]}
+                              alt={`Thumbnail ${index + 1} preview`}
+                              className="w-full h-24 object-cover rounded-md border"
+                            />
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-md flex items-center justify-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => window.open(editingStats['instagram']?.image_urls?.[index], '_blank')}
+                                disabled={!editingStats['instagram']?.image_urls?.[index]}
+                              >
+                                <Eye className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => removeImage(index)}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Upload Button */}
+                        <div className="flex gap-2">
+                          <div className="flex-1">
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  handleFileUpload(file, index);
+                                }
+                                e.target.value = ''; // Reset input
+                              }}
+                              className="hidden"
+                              id={`file-upload-${index}`}
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="w-full"
+                              onClick={() => document.getElementById(`file-upload-${index}`)?.click()}
+                              disabled={uploadingFiles[index]}
+                            >
+                              {uploadingFiles[index] ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary mr-2"></div>
+                                  Uploading...
+                                </>
+                              ) : (
+                                <>
+                                  <Upload className="h-3 w-3 mr-2" />
+                                  Upload Image
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* URL Input as Alternative */}
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">Or enter URL directly:</Label>
+                          <Input
+                            type="url"
+                            placeholder="https://images.unsplash.com/photo-..."
+                            value={editingStats['instagram']?.image_urls?.[index] || ''}
+                            onChange={(e) => updateImageUrl(index, e.target.value)}
+                            className="text-xs"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="text-xs text-blue-600 dark:text-blue-400 bg-blue-100/50 dark:bg-blue-900/30 p-2 rounded">
+                    <strong>💡 Tip:</strong> For best results, use square images (1:1 aspect ratio) around 500x500px. 
+                    Uploaded images are automatically optimized and stored securely.
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Engagement Rate (Auto-calculated)</Label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    value={calculateEngagementRate('instagram')}
+                    disabled
+                    className="bg-muted/50"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Calculated from avg engagement per post (monthly total ÷ 30 posts) ÷ followers × 100
+                  </p>
+                </div>
+
+                <Button 
+                  onClick={() => updatePlatformStats('instagram')}
+                  disabled={loading}
+                  className="w-full"
+                >
+                  <Save className="mr-2 h-4 w-4" />
+                  {loading ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Instagram Audience Demographics */}
+          <Card className="shadow-card border-border/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-pink-500 text-white">
+                  <Instagram className="h-5 w-5" />
+                </div>
+                Instagram Demographics
+              </CardTitle>
+              <CardDescription>
+                Manage your Instagram audience insights
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Gender Split */}
+              <div className="space-y-4">
+                <Label className="text-base font-semibold">Gender Split</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm">Men (%)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={audienceData?.gender?.men || 88}
+                      onChange={(e) => updateAudienceValue('gender', { ...audienceData?.gender, men: parseInt(e.target.value) || 0 })}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm">Women (%)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={audienceData?.gender?.women || 12}
+                      onChange={(e) => updateAudienceValue('gender', { ...audienceData?.gender, women: parseInt(e.target.value) || 0 })}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Age Groups */}
+              <div className="space-y-4">
+                <Label className="text-base font-semibold">Age Groups</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  {(audienceData?.age_groups || [
+                    { range: "18-24", percentage: 22 },
+                    { range: "25-34", percentage: 31 },
+                    { range: "35-44", percentage: 21 },
+                    { range: "45-54", percentage: 16 }
+                  ]).map((age, index) => (
+                    <div key={age.range}>
+                      <Label className="text-sm">{age.range} (%)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={age.percentage}
+                        onChange={(e) => updateAgeGroup(index, parseInt(e.target.value) || 0)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Top Countries */}
+              <div className="space-y-4">
+                <Label className="text-base font-semibold">Top Countries</Label>
+                <div className="grid grid-cols-1 gap-3">
+                  {(audienceData?.countries || [
+                    { country: "Australia", percentage: 51 },
+                    { country: "USA", percentage: 10 },
+                    { country: "Japan", percentage: 6 },
+                    { country: "Brazil", percentage: 5 }
+                  ]).map((country, index) => (
+                    <div key={country.country} className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-sm">Country {index + 1}</Label>
+                        <Input
+                          type="text"
+                          value={country.country}
+                          onChange={(e) => updateCountry(index, 'country', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-sm">Percentage (%)</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={country.percentage}
+                          onChange={(e) => updateCountry(index, 'percentage', parseInt(e.target.value) || 0)}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Top Cities */}
+              <div className="space-y-4">
+                <Label className="text-base font-semibold">Top Cities</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  {(audienceData?.cities || ["Sydney", "Gold Coast", "Melbourne", "Sunshine Coast"]).map((city, index) => (
+                    <div key={index}>
+                      <Label className="text-sm">City {index + 1}</Label>
+                      <Input
+                        type="text"
+                        value={city}
+                        onChange={(e) => updateCity(index, e.target.value)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Button 
+                onClick={saveAudienceData}
+                disabled={loading}
+                className="w-full"
+              >
+                <Save className="mr-2 h-4 w-4" />
+                {loading ? 'Saving Demographics...' : 'Save Demographics'}
+              </Button>
+            </CardContent>
+          </Card>
         </div>
+
         {/* YouTube and TikTok below */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {youtubeStat && (
