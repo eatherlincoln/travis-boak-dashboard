@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      instagram_posts: {
+        Row: {
+          comments_count: number | null
+          content_type: string | null
+          created_at: string | null
+          engagement_rate: number | null
+          hashtags: string[] | null
+          id: string
+          image_url: string | null
+          impressions_count: number | null
+          likes_count: number | null
+          post_url: string
+          posted_at: string | null
+          reach_count: number | null
+          saves_count: number | null
+          shares_count: number | null
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          comments_count?: number | null
+          content_type?: string | null
+          created_at?: string | null
+          engagement_rate?: number | null
+          hashtags?: string[] | null
+          id?: string
+          image_url?: string | null
+          impressions_count?: number | null
+          likes_count?: number | null
+          post_url: string
+          posted_at?: string | null
+          reach_count?: number | null
+          saves_count?: number | null
+          shares_count?: number | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          comments_count?: number | null
+          content_type?: string | null
+          created_at?: string | null
+          engagement_rate?: number | null
+          hashtags?: string[] | null
+          id?: string
+          image_url?: string | null
+          impressions_count?: number | null
+          likes_count?: number | null
+          post_url?: string
+          posted_at?: string | null
+          reach_count?: number | null
+          saves_count?: number | null
+          shares_count?: number | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       platform_audience: {
         Row: {
           age_groups: Json | null
