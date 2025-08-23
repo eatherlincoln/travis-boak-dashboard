@@ -9,6 +9,7 @@ interface PlatformStats {
   engagement_rate: number;
   additional_metrics: any;
   updated_at: string;
+  image_urls?: string[];
 }
 
 export const usePlatformStats = () => {
@@ -35,7 +36,16 @@ export const usePlatformStats = () => {
       // If we have admin stats, use them
       if (!adminError && adminStats && adminStats.length > 0) {
         console.log('✅ Using admin stats from database:', adminStats);
-        setStats(adminStats);
+        const formattedStats = adminStats.map(stat => ({
+          platform: stat.platform,
+          follower_count: stat.follower_count || 0,
+          monthly_views: stat.monthly_views || 0,
+          engagement_rate: stat.engagement_rate || 0,
+          additional_metrics: stat.additional_metrics || {},
+          updated_at: stat.updated_at,
+          image_urls: Array.isArray(stat.image_urls) ? stat.image_urls.map(url => String(url)) : []
+        }));
+        setStats(formattedStats);
       } else {
         // Fallback to default stats for public view
         console.log('⚠️ Using fallback stats - no admin data found');

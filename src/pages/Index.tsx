@@ -118,15 +118,19 @@ const Index = () => {
   ];
 
   console.log('🎯 Instagram stats loaded:', instagramStats);
-  console.log('🖼️ Admin top post URLs:', instagramStats?.additional_metrics?.top_posts_urls);
+  console.log('🖼️ Admin image URLs:', instagramStats?.image_urls);
   
-  const adminTopUrls: string[] = (instagramStats?.additional_metrics?.top_posts_urls as string[]) || [];
-  const topInstagramPosts = (adminTopUrls && adminTopUrls.length > 0)
+  const adminImageUrls: string[] = (instagramStats?.image_urls || []) as string[];
+  const topInstagramPosts = (adminImageUrls && adminImageUrls.length > 0)
     ? defaultInstagramPosts.map((p, i) => ({ 
         ...p, 
-        image: adminTopUrls[i] || p.image 
+        image: adminImageUrls[i] || p.image,
+        engagement: `${instagramStats?.engagement_rate || p.engagement}%`
       }))
-    : defaultInstagramPosts;
+    : defaultInstagramPosts.map(p => ({ 
+        ...p, 
+        engagement: `${instagramStats?.engagement_rate || p.engagement}%`
+      }));
 
   console.log('📸 Final Instagram posts with thumbnails:', topInstagramPosts);
 

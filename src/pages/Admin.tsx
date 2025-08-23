@@ -23,8 +23,9 @@ interface PlatformStats {
     comments?: number;
     shares?: number;
     saves?: number;
-    top_posts_urls?: string[]; // New: admin-managed Instagram top post thumbnails
+    top_posts_urls?: string[]; // Instagram post URLs for reference
   };
+  image_urls: string[]; // Direct image URLs for thumbnails
 }
 
 interface AudienceData {
@@ -71,7 +72,8 @@ const Admin = () => {
         ...stat,
         additional_metrics: typeof stat.additional_metrics === 'object' && stat.additional_metrics !== null 
           ? stat.additional_metrics as { likes?: number; comments?: number; shares?: number; saves?: number; }
-          : {}
+          : {},
+        image_urls: Array.isArray(stat.image_urls) ? stat.image_urls.map(url => String(url)) : []
       })) || [];
       
       setStats(formattedStats);
@@ -215,7 +217,8 @@ const Admin = () => {
           follower_count: editingStats[platform].follower_count,
           monthly_views: editingStats[platform].monthly_views,
           engagement_rate: calculatedEngagementRate,
-          additional_metrics: editingStats[platform].additional_metrics
+          additional_metrics: editingStats[platform].additional_metrics,
+          image_urls: editingStats[platform].image_urls || []
         })
         .eq('user_id', user.id)
         .eq('platform', platform);
@@ -263,7 +266,7 @@ const Admin = () => {
     }));
   };
 
-  // New: update top Instagram post thumbnail URLs (indexes 0-3)
+  // Update top Instagram post URLs (indexes 0-3)
   const updateTopPostUrl = (index: number, value: string) => {
     setEditingStats(prev => {
       const current = prev['instagram'];
@@ -278,6 +281,23 @@ const Admin = () => {
             ...(current.additional_metrics || {}),
             top_posts_urls: urls,
           },
+        },
+      } as any;
+    });
+  };
+
+  // Update thumbnail image URLs (indexes 0-3)
+  const updateImageUrl = (index: number, value: string) => {
+    setEditingStats(prev => {
+      const current = prev['instagram'];
+      if (!current) return prev as any;
+      const urls = [...(current.image_urls || [])];
+      urls[index] = value;
+      return {
+        ...prev,
+        instagram: {
+          ...current,
+          image_urls: urls,
         },
       } as any;
     });
@@ -429,7 +449,7 @@ const Admin = () => {
                 </div>
 
                 <div className="space-y-4 p-3 bg-muted/30 rounded-lg">
-                  <Label className="text-sm font-medium">Top Instagram Post Links</Label>
+                  <Label className="text-sm font-medium">Instagram Post Links (for reference)</Label>
                   <div className="grid grid-cols-1 gap-2">
                     <div>
                       <Label className="text-xs">Post 1 URL</Label>
@@ -465,6 +485,51 @@ const Admin = () => {
                         placeholder="https://instagram.com/p/..."
                         value={editingStats['instagram']?.additional_metrics?.top_posts_urls?.[3] || ''}
                         onChange={(e) => updateTopPostUrl(3, e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4 p-3 bg-blue-50/50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <Label className="text-sm font-medium text-blue-800 dark:text-blue-200">Thumbnail Image URLs</Label>
+                  <p className="text-xs text-blue-600 dark:text-blue-400">
+                    Enter direct image URLs (e.g., from Unsplash, your server, or CDN) to display as thumbnails on the front page.
+                  </p>
+                  <div className="grid grid-cols-1 gap-2">
+                    <div>
+                      <Label className="text-xs">Thumbnail 1 URL</Label>
+                      <Input
+                        type="url"
+                        placeholder="https://images.unsplash.com/photo-..."
+                        value={editingStats['instagram']?.image_urls?.[0] || ''}
+                        onChange={(e) => updateImageUrl(0, e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Thumbnail 2 URL</Label>
+                      <Input
+                        type="url"
+                        placeholder="https://images.unsplash.com/photo-..."
+                        value={editingStats['instagram']?.image_urls?.[1] || ''}
+                        onChange={(e) => updateImageUrl(1, e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Thumbnail 3 URL</Label>
+                      <Input
+                        type="url"
+                        placeholder="https://images.unsplash.com/photo-..."
+                        value={editingStats['instagram']?.image_urls?.[2] || ''}
+                        onChange={(e) => updateImageUrl(2, e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Thumbnail 4 URL</Label>
+                      <Input
+                        type="url"
+                        placeholder="https://images.unsplash.com/photo-..."
+                        value={editingStats['instagram']?.image_urls?.[3] || ''}
+                        onChange={(e) => updateImageUrl(3, e.target.value)}
                       />
                     </div>
                   </div>

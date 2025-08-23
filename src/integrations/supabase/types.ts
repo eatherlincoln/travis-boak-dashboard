@@ -53,6 +53,7 @@ export type Database = {
           engagement_rate: number | null
           follower_count: number | null
           id: string
+          image_urls: Json | null
           monthly_views: number | null
           platform: string
           updated_at: string
@@ -63,6 +64,7 @@ export type Database = {
           engagement_rate?: number | null
           follower_count?: number | null
           id?: string
+          image_urls?: Json | null
           monthly_views?: number | null
           platform: string
           updated_at?: string
@@ -73,6 +75,7 @@ export type Database = {
           engagement_rate?: number | null
           follower_count?: number | null
           id?: string
+          image_urls?: Json | null
           monthly_views?: number | null
           platform?: string
           updated_at?: string
