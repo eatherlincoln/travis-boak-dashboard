@@ -209,16 +209,32 @@ const Index = () => {
 
       <div className="container mx-auto px-6 py-8 space-y-8">
         {/* Brand Introduction */}
-        <div className="max-w-4xl mx-auto text-center space-y-4">
-          <p className="text-lg leading-relaxed text-foreground">
-            Sheldon Simkus is a professional surfer with a proven global reach, a trusted voice in surf culture, and a track record of delivering measurable value for partners.
-          </p>
-          <p className="text-lg leading-relaxed text-foreground">
-            Sheldon's ability to combine high-performance surfing with authentic, creative storytelling has established him as a unique content creator whose work consistently generates strong exposure and return on investment. His attention to detail and credibility in the surfing world ensure that every collaboration feels genuine, resonates deeply with audiences, and elevates the brands he works with.
-          </p>
-          <p className="text-lg leading-relaxed text-foreground">
-            We invite you to join Sheldon in building meaningful partnerships that go beyond traditional sponsorships — driving real engagement, cultural relevance, and business growth.
-          </p>
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-12 gap-8 items-center">
+            {/* Text Content - 2/3 width (8 columns) */}
+            <div className="col-span-8 space-y-4">
+              <p className="text-base leading-relaxed text-foreground">
+                Sheldon Simkus is a professional surfer with a proven global reach, a trusted voice in surf culture, and a track record of delivering measurable value for partners.
+              </p>
+              <p className="text-base leading-relaxed text-foreground">
+                Sheldon's ability to combine high-performance surfing with authentic, creative storytelling has established him as a unique content creator whose work consistently generates strong exposure and return on investment. His attention to detail and credibility in the surfing world ensure that every collaboration feels genuine, resonates deeply with audiences, and elevates the brands he works with.
+              </p>
+              <p className="text-base leading-relaxed text-foreground">
+                We invite you to join Sheldon in building meaningful partnerships that go beyond traditional sponsorships — driving real engagement, cultural relevance, and business growth.
+              </p>
+            </div>
+            
+            {/* Headshot - 1/3 width (4 columns) */}
+            <div className="col-span-4">
+              <div className="relative">
+                <img 
+                  src="/lovable-uploads/e66a9bc1-6ece-4033-bea3-123135a4d342.png" 
+                  alt="Sheldon Simkus - Professional Surfer" 
+                  className="w-full rounded-lg shadow-card object-cover aspect-[3/4]"
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Key Metrics Overview */}
