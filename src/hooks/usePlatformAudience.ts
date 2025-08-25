@@ -76,30 +76,28 @@ export const usePlatformAudience = () => {
   };
 
   useEffect(() => {
-    if (user) {
-      fetchAudience();
+    fetchAudience();
 
-      // Set up real-time subscription for audience data
-      const channel = supabase
-        .channel('audience-data-changes')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'platform_audience'
-          },
-          (payload) => {
-            console.log('🔄 Audience data changed:', payload);
-            fetchAudience(); // Refetch data when changes occur
-          }
-        )
-        .subscribe();
+    // Set up real-time subscription for audience data (listen to all changes, not just user-specific)
+    const channel = supabase
+      .channel('audience-data-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'platform_audience'
+        },
+        (payload) => {
+          console.log('🔄 Audience data changed:', payload);
+          fetchAudience(); // Refetch data when changes occur
+        }
+      )
+      .subscribe();
 
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    }
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const getAudienceByPlatform = (platform: string) => {

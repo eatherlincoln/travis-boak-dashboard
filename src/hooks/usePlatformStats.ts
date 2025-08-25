@@ -135,7 +135,7 @@ export const usePlatformStats = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []); // Remove user dependency since we always fetch from database now
+  }, [user]); // Re-subscribe when user changes
 
   const getPlatformStat = (platform: string) => {
     return stats.find(stat => stat.platform === platform);

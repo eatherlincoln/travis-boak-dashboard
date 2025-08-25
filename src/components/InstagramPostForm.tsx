@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,6 +35,7 @@ const InstagramPostForm = () => {
   const { toast } = useToast();
   const [uploading, setUploading] = useState<{ [key: string]: boolean }>({});
   const [thumbnailPreviews, setThumbnailPreviews] = useState<{ [key: string]: string }>({});
+  const [loading, setLoading] = useState(true);
 
   const form = useForm<FormData>({
     defaultValues: {
@@ -44,6 +45,68 @@ const InstagramPostForm = () => {
       post4: { url: '', metrics: { likes: 0, comments: 0, shares: 0 } },
     }
   });
+
+  // Load existing Instagram post data on mount
+  useEffect(() => {
+    const loadExistingPosts = async () => {
+      if (!user) return;
+
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('platform_stats')
+          .select('additional_metrics')
+          .eq('user_id', user.id)
+          .eq('platform', 'instagram')
+          .single();
+
+        if (error) {
+          console.log('No existing Instagram posts found');
+          return;
+        }
+
+        if (data?.additional_metrics && typeof data.additional_metrics === 'object' && data.additional_metrics !== null) {
+          const metrics = data.additional_metrics as any;
+          if (metrics.post_analysis) {
+            const posts = metrics.post_analysis;
+            const formData: Partial<FormData> = {};
+            
+            posts.forEach((post: any, index: number) => {
+              const postKey = `post${index + 1}` as keyof FormData;
+              if (index < 4) { // Only load first 4 posts
+                formData[postKey] = {
+                  url: post.url || '',
+                  metrics: {
+                    likes: post.likes || 0,
+                    comments: post.comments || 0,
+                    shares: post.shares || 0,
+                  },
+                  thumbnailUrl: post.image_url || ''
+                };
+
+                // Set thumbnail preview if image exists
+                if (post.image_url) {
+                  setThumbnailPreviews(prev => ({
+                    ...prev,
+                    [postKey]: post.image_url
+                  }));
+                }
+              }
+            });
+
+            // Update form with loaded data
+            form.reset(formData as FormData);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading existing posts:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadExistingPosts();
+  }, [user, form]);
 
   const handleImageUpload = async (file: File, postKey: string) => {
     if (!user) return;
@@ -319,6 +382,39 @@ const InstagramPostForm = () => {
       </Card>
     );
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">Instagram Post Analysis</h2>
+            <p className="text-muted-foreground">Loading existing posts...</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[1, 2, 3, 4].map((num) => (
+            <Card key={num} className="shadow-card border-border/50">
+              <CardHeader>
+                <CardTitle className="text-lg">Post {num}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="animate-pulse space-y-4">
+                  <div className="h-4 bg-muted rounded w-3/4"></div>
+                  <div className="h-10 bg-muted rounded"></div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="h-10 bg-muted rounded"></div>
+                    <div className="h-10 bg-muted rounded"></div>
+                    <div className="h-10 bg-muted rounded"></div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
