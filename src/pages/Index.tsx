@@ -9,12 +9,14 @@ import { useState } from "react";
 import heroImage from "/lovable-uploads/350aac33-19a1-4c3e-bac9-1e7258ac89b7.png";
 import { usePlatformStats } from "@/hooks/usePlatformStats";
 import { useViewStats } from "@/hooks/useViewStats";
+import { useInstagramPosts } from "@/hooks/useInstagramPosts";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
 const Index = () => {
   const { getPlatformStat, refetch: refetchPlatformStats } = usePlatformStats();
   const { refreshStats: refreshViewStats, loading: viewStatsLoading } = useViewStats();
+  const { posts: instagramPosts, loading: postsLoading, refetch: refetchPosts } = useInstagramPosts();
   
   // Auto-refresh disabled - only manual refresh via button
   
@@ -87,69 +89,8 @@ const Index = () => {
     }
   ];
 
-  // Instagram posts data for top performing content
-  const defaultInstagramPosts = [
-    {
-      title: "Perfect barrel at Snapper Rocks",
-      platform: "Instagram",
-      likes: "2.8K likes",
-      image: "https://images.unsplash.com/photo-1581852017103-68ac65514cf7?w=500&h=500&fit=crop&crop=center",
-      engagement: "8.2%"
-    },
-    {
-      title: "Dawn patrol magic hours",
-      platform: "Instagram", 
-      likes: "2.1K likes",
-      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&h=500&fit=crop&crop=center",
-      engagement: "7.8%"
-    },
-    {
-      title: "Behind the scenes setup",
-      platform: "Instagram",
-      likes: "1.9K likes", 
-      image: "https://images.unsplash.com/photo-1519018307286-6e2407875739?w=500&h=500&fit=crop&crop=center",
-      engagement: "9.1%"
-    },
-    {
-      title: "Post-session recovery",
-      platform: "Instagram",
-      likes: "1.6K likes",
-      image: "https://images.unsplash.com/photo-1490730141103-6cac27aaab94?w=500&h=500&fit=crop&crop=center", 
-      engagement: "7.5%"
-    }
-  ];
-
   console.log('🎯 Instagram stats loaded:', instagramStats);
-  console.log('🖼️ Admin image URLs:', instagramStats?.image_urls);
-  
-  // Helper to format numbers like 2.8K
-  const formatNumberShort = (n: number) => {
-    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-    if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-    return `${Math.round(n)}`;
-  };
-
-  const adminImageUrls: string[] = (instagramStats?.image_urls || []) as string[];
-  const monthlyLikes = Number(instagramStats?.additional_metrics?.likes || 0);
-  const avgLikesPerPost = monthlyLikes > 0 ? monthlyLikes / 30 : 0;
-  const engagementStr = typeof instagramStats?.engagement_rate === 'number'
-    ? `${instagramStats.engagement_rate}%`
-    : undefined;
-
-  const topInstagramPosts = (adminImageUrls && adminImageUrls.length > 0)
-    ? defaultInstagramPosts.map((p, i) => ({ 
-        ...p, 
-        image: adminImageUrls[i] || p.image,
-        likes: avgLikesPerPost ? `${formatNumberShort(avgLikesPerPost)} likes/post` : p.likes,
-        engagement: engagementStr || p.engagement
-      }))
-    : defaultInstagramPosts.map(p => ({ 
-        ...p,
-        likes: avgLikesPerPost ? `${formatNumberShort(avgLikesPerPost)} likes/post` : p.likes,
-        engagement: engagementStr || p.engagement
-      }));
-
-  console.log('📸 Final Instagram posts with thumbnails:', topInstagramPosts);
+  console.log('📸 Instagram posts from hook:', instagramPosts);
 
   // Audience data for Instagram (primary platform)
   const audienceData = {
@@ -214,15 +155,16 @@ const Index = () => {
             </div>
             <div className="mt-4 flex gap-2">
               <div className="flex flex-col">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={async () => {
-                    await refreshViewStats();
-                    await refetchPlatformStats();
-                  }}
-                  disabled={viewStatsLoading}
-                >
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={async () => {
+                  await refreshViewStats();
+                  await refetchPlatformStats();
+                  await refetchPosts();
+                }}
+                disabled={viewStatsLoading}
+              >
                   <RotateCcw className={`mr-2 h-4 w-4 ${viewStatsLoading ? 'animate-spin' : ''}`} />
                   Refresh YouTube stats
                 </Button>
@@ -372,26 +314,57 @@ const Index = () => {
                 Top Performing Instagram Posts
               </h3>
               <div className="grid grid-cols-2 gap-3">
-                {topInstagramPosts.map((post, index) => (
+                {instagramPosts.map((post, index) => (
                   <div key={index} className="bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors group overflow-hidden">
-                    <div className="aspect-square relative">
-                      <img 
-                        src={post.image} 
-                        alt={post.title}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
-                      <Heart className="absolute top-2 right-2 h-4 w-4 text-white opacity-80" />
-                    </div>
-                    <div className="p-3">
-                      <h4 className="font-medium text-sm mb-1 group-hover:text-primary transition-colors line-clamp-2">
-                        {post.title}
-                      </h4>
-                      <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>{post.likes}</span>
-                        <span>{post.engagement} ER</span>
+                    {post.url && post.url !== '#' ? (
+                      <a 
+                        href={post.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="block"
+                      >
+                        <div className="aspect-square relative">
+                          <img 
+                            src={post.image} 
+                            alt={post.title}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
+                          <Heart className="absolute top-2 right-2 h-4 w-4 text-white opacity-80" />
+                          <ExternalLink className="absolute top-2 left-2 h-4 w-4 text-white opacity-80" />
+                        </div>
+                        <div className="p-3">
+                          <h4 className="font-medium text-sm mb-1 group-hover:text-primary transition-colors line-clamp-2">
+                            {post.title}
+                          </h4>
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>{post.likes}</span>
+                            <span>{post.engagement} ER</span>
+                          </div>
+                        </div>
+                      </a>
+                    ) : (
+                      <div className="block">
+                        <div className="aspect-square relative">
+                          <img 
+                            src={post.image} 
+                            alt={post.title}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
+                          <Heart className="absolute top-2 right-2 h-4 w-4 text-white opacity-80" />
+                        </div>
+                        <div className="p-3">
+                          <h4 className="font-medium text-sm mb-1 group-hover:text-primary transition-colors line-clamp-2">
+                            {post.title}
+                          </h4>
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>{post.likes}</span>
+                            <span>{post.engagement} ER</span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 ))}
               </div>
