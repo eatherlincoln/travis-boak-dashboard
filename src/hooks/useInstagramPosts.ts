@@ -35,12 +35,12 @@ const defaultInstagramPosts = [
     likes: "2.8K likes",
     likesNumber: 2800,
     image: "https://images.unsplash.com/photo-1581852017103-68ac65514cf7?w=500&h=500&fit=crop&crop=center",
-    engagement: "8.2%",
-    engagementRate: 8.2,
+    engagement: "4.2%",
+    engagementRate: 4.2,
     comments: 45,
     shares: 12,
     saves: 156,
-    reach: 34000,
+    reach: 96750,
     url: '#'
   },
   {
@@ -49,12 +49,12 @@ const defaultInstagramPosts = [
     likes: "2.1K likes",
     likesNumber: 2100,
     image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&h=500&fit=crop&crop=center",
-    engagement: "7.8%",
-    engagementRate: 7.8,
+    engagement: "3.8%",
+    engagementRate: 3.8,
     comments: 38,
     shares: 8,
     saves: 142,
-    reach: 29500,
+    reach: 77400,
     url: '#'
   },
   {
@@ -63,12 +63,12 @@ const defaultInstagramPosts = [
     likes: "1.9K likes",
     likesNumber: 1900,
     image: "https://images.unsplash.com/photo-1519018307286-6e2407875739?w=500&h=500&fit=crop&crop=center",
-    engagement: "9.1%",
-    engagementRate: 9.1,
+    engagement: "5.1%",
+    engagementRate: 5.1,
     comments: 52,
     shares: 15,
     saves: 98,
-    reach: 22800,
+    reach: 45600,
     url: '#'
   },
   {
@@ -77,12 +77,12 @@ const defaultInstagramPosts = [
     likes: "1.6K likes",
     likesNumber: 1600,
     image: "https://images.unsplash.com/photo-1490730141103-6cac27aaab94?w=500&h=500&fit=crop&crop=center", 
-    engagement: "7.5%",
-    engagementRate: 7.5,
+    engagement: "3.5%",
+    engagementRate: 3.5,
     comments: 29,
     shares: 6,
     saves: 87,
-    reach: 23100,
+    reach: 61800,
     url: '#'
   }
 ];
@@ -104,13 +104,12 @@ export const useInstagramPosts = () => {
   const calculateEngagementRate = (post: InstagramPostData, followerCount: number = 38700) => {
     const totalEngagement = post.likes + post.comments + post.shares + (post.saves || 0);
     
-    // Use reach if available, otherwise estimate reach as 20-30% of follower count (typical organic reach)
-    const estimatedReach = post.reach || Math.floor(followerCount * 0.25);
+    // For Instagram, engagement rate is typically calculated as:
+    // (Total Engagement / Follower Count) * 100
+    // This is the industry standard method
+    const engagementRate = (totalEngagement / followerCount) * 100;
     
-    // Engagement Rate = (Total Engagement / Reach) * 100
-    const engagementRate = (totalEngagement / estimatedReach) * 100;
-    
-    return Math.max(0.1, Math.min(25, engagementRate)); // Cap between 0.1% and 25% for realism
+    return Math.max(0.1, Math.min(15, engagementRate)); // Cap between 0.1% and 15% for realism
   };
 
   const fetchPosts = async () => {
@@ -146,7 +145,8 @@ export const useInstagramPosts = () => {
           const formattedPosts: FormattedInstagramPost[] = adminPosts.map((post, index) => {
             const likesNum = post.likes || 0;
             const engagementRate = calculateEngagementRate(post, followerCount);
-            const estimatedReach = post.reach || Math.floor(followerCount * 0.25);
+            // Use actual reach if provided, otherwise estimate as 2-3x follower count for viral content
+            const estimatedReach = post.reach || Math.floor(followerCount * 2.5);
             
             return {
               title: post.url 
