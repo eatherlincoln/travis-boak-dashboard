@@ -38,6 +38,29 @@ const Index = () => {
     if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
     return `${Math.round(n)}`;
   };
+
+  // Calculate overall Instagram engagement rate from post analysis
+  const getInstagramEngagementRate = () => {
+    if (instagramStats?.additional_metrics?.post_analysis && Array.isArray(instagramStats.additional_metrics.post_analysis)) {
+      const posts = instagramStats.additional_metrics.post_analysis;
+      const followerCount = instagramStats?.follower_count || 38700;
+      
+      // Calculate average engagement rate across all posts
+      const totalEngagementRates = posts.reduce((sum, post) => {
+        const totalEngagement = (post.likes || 0) + (post.comments || 0) + (post.shares || 0);
+        const engagementRate = (totalEngagement / followerCount) * 100;
+        return sum + engagementRate;
+      }, 0);
+      
+      const averageEngagementRate = totalEngagementRates / posts.length;
+      return Math.max(0.1, Math.min(15, averageEngagementRate));
+    }
+    
+    // Fallback to a realistic default
+    return 4.2;
+  };
+
+  const calculatedInstagramER = getInstagramEngagementRate();
   const getTrend = (platform: string, metric: string) => {
     // Simulate realistic growth trends - in production, this would compare to previous month's data
     const trends = {
@@ -234,7 +257,7 @@ const Index = () => {
           />
           <MetricCard
             title="Engagement Rate"
-            value={`${typeof instagramStats?.engagement_rate === 'number' ? instagramStats.engagement_rate : 8.2}%`}
+            value={`${calculatedInstagramER.toFixed(1)}%`}
             subtitle="Latest Instagram engagement"
             icon={<Heart className="h-6 w-6" />}
             trend={{ value: getTrend('instagram', 'engagement').value, isPositive: true }}
@@ -259,11 +282,11 @@ const Index = () => {
             metrics={[
               { label: "Video Views", value: `${Math.round((instagramStats?.monthly_views || 730000) / 1000)}K`, trend: getTrend('instagram', 'views').value },
               { label: "Monthly Likes", value: `${Math.round((instagramStats?.additional_metrics?.likes || 15000) / 1000)}K`, trend: getTrend('instagram', 'likes').value },
-              { label: "Engagement Rate", value: `${instagramStats?.engagement_rate || 8.2}%`, trend: getTrend('instagram', 'engagement').value },
+              { label: "Engagement Rate", value: `${calculatedInstagramER.toFixed(1)}%`, trend: getTrend('instagram', 'engagement').value },
               { label: "Followers", value: `${((instagramStats?.follower_count || 38700) / 1000).toFixed(1)}K`, trend: getTrend('instagram', 'followers').value }
             ]}
             highlights={[
-              `${instagramStats?.engagement_rate ? `${instagramStats.engagement_rate}%` : '8.2%'} engagement rate ${(instagramStats?.engagement_rate || 8.2) > 6 ? '(above industry avg)' : '(growing)'}`,
+              `${calculatedInstagramER.toFixed(1)}% engagement rate ${calculatedInstagramER > 3.5 ? '(above industry avg)' : '(growing)'}`,
               `${Math.round(((instagramStats?.additional_metrics?.likes || 15000) + (instagramStats?.additional_metrics?.comments || 2000) + (instagramStats?.additional_metrics?.shares || 800)) / 1000)}K monthly interactions`,
               `${instagramStats?.follower_count ? `${((instagramStats.follower_count || 38700) / 1000).toFixed(1)}K` : '38.7K'} engaged followers with ${instagramStats?.additional_metrics?.saves ? `${Math.round(instagramStats.additional_metrics.saves / 1000)}K saves` : 'strong save rate'}`
             ]}
