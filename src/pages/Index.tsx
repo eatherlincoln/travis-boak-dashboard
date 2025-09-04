@@ -211,37 +211,8 @@ const Index = () => {
           </CardContent>
         </Card>
 
-        {/* Key Metrics - Matching Bottom Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <MetricCard
-            title="Total Followers"
-            value={totalFollowers.toLocaleString()}
-            icon={<Users className="h-6 w-6" />}
-            trend={{ value: "+3.8%", isPositive: true }}
-          />
-          <MetricCard
-            title="Engagement Rate"
-            value={`${typeof instagramStats?.engagement_rate === 'number' ? instagramStats.engagement_rate : 8.2}%`}
-            subtitle="(by Reach)"
-            icon={<Heart className="h-6 w-6" />}
-            trend={{ value: getTrend('instagram', 'engagement').value, isPositive: true }}
-          />
-          <MetricCard
-            title="Avg Likes (30d)"
-            value={`${Math.round((instagramStats?.additional_metrics?.likes || 15000) / 1000)}K`}
-            icon={<Heart className="h-6 w-6" />}
-            trend={{ value: getTrend('instagram', 'likes').value, isPositive: true }}
-          />
-          <MetricCard
-            title="Weekly Growth"
-            value="+2.3%"
-            icon={<TrendingUp className="h-6 w-6" />}
-            trend={{ value: "+2.3%", isPositive: true }}
-          />
-        </div>
-
         {/* Key Metrics Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <MetricCard
             title="Total Reach"
             value={`${totalFollowers.toLocaleString()}`}
@@ -262,6 +233,12 @@ const Index = () => {
             subtitle="Latest Instagram engagement"
             icon={<Heart className="h-6 w-6" />}
             trend={{ value: getTrend('instagram', 'engagement').value, isPositive: true }}
+          />
+          <MetricCard
+            title="Weekly Growth"
+            value="+2.3%"
+            icon={<TrendingUp className="h-6 w-6" />}
+            trend={{ value: "+2.3%", isPositive: true }}
           />
         </div>
 
