@@ -150,6 +150,14 @@ const Index = () => {
                 <img src="/lovable-uploads/502a8d59-4e94-4c4a-94c8-4e5f78e6decf.png" className="h-6 w-6" alt="Instagram" />
                 <span className="text-lg font-bold">{((instagramStats?.follower_count || 38700) / 1000).toFixed(1)}K</span>
               </a>
+              <a href="https://www.youtube.com/@sheldonsimkus" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-white/90 hover:text-white transition-colors">
+                <img src="/lovable-uploads/9aa87b25-88f0-439d-890a-7c2d475c22f5.png" className="h-6 w-6" alt="YouTube" />
+                <span className="text-lg font-bold">{(youtubeFollowers / 1000).toFixed(1)}K</span>
+              </a>
+              <a href="https://www.tiktok.com/@sheldonsimkus" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-white/90 hover:text-white transition-colors">
+                <img src="/lovable-uploads/d3d646ba-e348-45c2-9a7b-d3f53ff73b4c.png" className="h-6 w-6" alt="TikTok" />
+                <span className="text-lg font-bold">{((tiktokStats?.follower_count || 1410) / 1000).toFixed(1)}K</span>
+              </a>
             </div>
             
             <div className="flex gap-3">
