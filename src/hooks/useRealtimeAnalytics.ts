@@ -27,7 +27,7 @@ export const useRealtimeAnalytics = (options: UseRealtimeAnalyticsOptions = {}) 
       
       let query = supabase
         .from('analytics_public')
-        .select('*')
+        .select('source, metric, value, updated_at')
         .order('updated_at', { ascending: false });
 
       // Apply filters if provided
