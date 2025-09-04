@@ -13,6 +13,7 @@ import { Settings, LogOut, Save, ArrowLeft, Instagram, Youtube, Video, RotateCcw
 import { Link } from 'react-router-dom';
 import InstagramPostForm from '@/components/InstagramPostForm';
 import { PublicDashboard } from '@/components/PublicDashboard';
+import AnalyticsForm from '@/components/AnalyticsForm';
 
 interface PlatformStats {
   id: string;
@@ -483,6 +484,9 @@ const Admin = () => {
             Sign Out
           </Button>
         </div>
+
+        {/* Analytics Input Form */}
+        <AnalyticsForm />
 
         {/* Instagram Post Analysis Form */}
         <div className="mb-8">
