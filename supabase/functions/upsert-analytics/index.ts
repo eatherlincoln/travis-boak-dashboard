@@ -47,12 +47,43 @@ Deno.serve(async (req) => {
       auth: { persistSession: false } 
     });
 
-    // Parse and validate request payload
-    const { source, metric, value, recorded_at } = await req.json();
+    // Parse and validate request payload with enhanced security
+    let requestBody;
+    try {
+      requestBody = await req.json();
+    } catch (error) {
+      return new Response(JSON.stringify({ ok: false, error: 'invalid JSON' }), { 
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const { source, metric, value, recorded_at } = requestBody;
     
-    if (!source || !metric || typeof value !== 'number') {
-      console.error('Invalid payload:', { source, metric, value, recorded_at });
-      return new Response(JSON.stringify({ ok: false, error: 'invalid payload - source, metric, and numeric value required' }), { 
+    // Enhanced validation with limits
+    const allowedSources = ['instagram', 'tiktok', 'youtube'];
+    const maxMetricLength = 50;
+    const maxValue = 1000000000; // 1 billion limit
+    
+    if (!source || !allowedSources.includes(source)) {
+      console.error('Invalid source:', source);
+      return new Response(JSON.stringify({ ok: false, error: 'invalid source - must be instagram, tiktok, or youtube' }), { 
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    if (!metric || typeof metric !== 'string' || metric.length > maxMetricLength) {
+      console.error('Invalid metric:', { metric, length: metric?.length });
+      return new Response(JSON.stringify({ ok: false, error: `invalid metric - must be string under ${maxMetricLength} chars` }), { 
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    if (typeof value !== 'number' || isNaN(value) || value < 0 || value > maxValue) {
+      console.error('Invalid value:', { value, type: typeof value });
+      return new Response(JSON.stringify({ ok: false, error: `invalid value - must be number between 0-${maxValue}` }), { 
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
