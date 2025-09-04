@@ -12,6 +12,7 @@ import { useViewStats } from "@/hooks/useViewStats";
 import { useInstagramPosts } from "@/hooks/useInstagramPosts";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { PublicDashboard } from "@/components/PublicDashboard";
 
 const Index = () => {
   const { getPlatformStat, refetch: refetchPlatformStats } = usePlatformStats();
@@ -632,6 +633,13 @@ const Index = () => {
                 Professional Content
               </Badge>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Live Analytics Dashboard */}
+        <Card className="shadow-card border-border/50">
+          <CardContent className="p-6">
+            <PublicDashboard />
           </CardContent>
         </Card>
       </div>

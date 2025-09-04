@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Settings, LogOut, Save, ArrowLeft, Instagram, Youtube, Video, RotateCcw, Upload, Trash2, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import InstagramPostForm from '@/components/InstagramPostForm';
+import { PublicDashboard } from '@/components/PublicDashboard';
 
 interface PlatformStats {
   id: string;
@@ -886,6 +887,17 @@ const Admin = () => {
                 </div>
               ))}
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Live Analytics Dashboard */}
+        <Card className="shadow-card border-border/50">
+          <CardHeader>
+            <CardTitle>Live Analytics Dashboard</CardTitle>
+            <CardDescription>Real-time analytics updates from the public snapshot</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PublicDashboard />
           </CardContent>
         </Card>
       </div>
