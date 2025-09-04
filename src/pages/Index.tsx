@@ -112,49 +112,47 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-wave">
-      {/* Hero Section */}
-      <div className="relative h-96 bg-gradient-deep overflow-hidden">
+      {/* Hero Section - Matching Molly Picklum Layout */}
+      <div className="relative h-[60vh] min-h-[500px] bg-gradient-deep overflow-hidden">
         <div 
-          className="absolute inset-0 bg-cover bg-center opacity-30"
+          className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${heroImage})` }}
         />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent" />
+        
         <div className="relative z-10 container mx-auto px-6 h-full flex items-center">
-          <div className="max-w-2xl">
-            <h1 className="text-5xl font-bold text-primary-foreground mb-4">
+          <div className="max-w-2xl text-white">
+            <h1 className="text-6xl font-bold mb-2">
               Sheldon Simkus
             </h1>
-            <p className="text-xl text-primary-foreground/90 mb-6">
-              Professional Surfer & Content Creator
+            <p className="text-2xl mb-8 text-white/90">
+              Professional Surfer and Content Creator
             </p>
-            <div className="flex gap-4 flex-wrap mb-6">
-              <Badge variant="secondary" className="text-base px-4 py-2">
+            
+            <div className="flex gap-3 flex-wrap mb-8">
+              <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 text-base font-medium">
                 {totalFollowers.toLocaleString()} Total Followers
-              </Badge>
-              <Badge variant="secondary" className="text-base px-4 py-2">
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 text-base font-medium">
                 {Math.round(totalViews / 1000)}K Total Views
-              </Badge>
-              <Badge variant="secondary" className="text-base px-4 py-2">
-                3 Active Platforms
-              </Badge>
+              </div>
+              <Link to="/auth">
+                <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 text-base font-medium hover:bg-white/20 transition-colors cursor-pointer flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  Admin
+                </div>
+              </Link>
             </div>
             
-            {/* Social Media Icons and Followers */}
-            <div className="flex gap-6 items-center">
-              <a href="https://instagram.com/sheldonsimkus" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-primary-foreground/90 hover:text-primary-foreground transition-colors">
-                <img src="/lovable-uploads/502a8d59-4e94-4c4a-94c8-4e5f78e6decf.png" className="h-5 w-5" alt="Instagram" />
-                <span className="text-sm font-medium">{((instagramStats?.follower_count || 38700) / 1000).toFixed(1)}K</span>
-              </a>
-              <a href="https://www.youtube.com/@sheldonsimkus" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-primary-foreground/90 hover:text-primary-foreground transition-colors">
-                <img src="/lovable-uploads/9aa87b25-88f0-439d-890a-7c2d475c22f5.png" className="h-5 w-5" alt="YouTube" />
-                <span className="text-sm font-medium">{(youtubeFollowers / 1000).toFixed(1)}K</span>
-              </a>
-              <a href="https://www.tiktok.com/@sheldonsimkus" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-primary-foreground/90 hover:text-primary-foreground transition-colors">
-                <img src="/lovable-uploads/d3d646ba-e348-45c2-9a7b-d3f53ff73b4c.png" className="h-5 w-5" alt="TikTok" />
-                <span className="text-sm font-medium">{((tiktokStats?.follower_count || 1410) / 1000).toFixed(1)}K</span>
+            {/* Social Media Icons with Follower Counts */}
+            <div className="flex gap-6 items-center mb-6">
+              <a href="https://instagram.com/sheldonsimkus" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-white/90 hover:text-white transition-colors">
+                <img src="/lovable-uploads/502a8d59-4e94-4c4a-94c8-4e5f78e6decf.png" className="h-6 w-6" alt="Instagram" />
+                <span className="text-lg font-bold">{((instagramStats?.follower_count || 38700) / 1000).toFixed(1)}K</span>
               </a>
             </div>
-            <div className="mt-4 flex gap-2">
-              <div className="flex flex-col">
+            
+            <div className="flex gap-3">
               <Button
                 variant="secondary"
                 size="sm"
@@ -164,53 +162,74 @@ const Index = () => {
                   await refetchPosts();
                 }}
                 disabled={viewStatsLoading}
+                className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20"
               >
-                  <RotateCcw className={`mr-2 h-4 w-4 ${viewStatsLoading ? 'animate-spin' : ''}`} />
-                  Refresh YouTube stats
-                </Button>
-                <p className="text-xs text-primary-foreground/90 mt-1">
-                  Stats are refreshed at the start of each month
-                </p>
-              </div>
-              <Link to="/auth">
-                <Button variant="outline" size="sm">
-                  <Settings className="mr-2 h-4 w-4" />
-                  Admin
-                </Button>
-              </Link>
+                <RotateCcw className={`mr-2 h-4 w-4 ${viewStatsLoading ? 'animate-spin' : ''}`} />
+                Refresh Stats
+              </Button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-6 space-y-6">
-        {/* Brand Introduction */}
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-12 gap-8 items-start">
-            {/* Text Content - 2/3 width (8 columns) */}
-            <div className="col-span-8 space-y-6">
-              <p className="text-base leading-relaxed text-foreground">
-                Sheldon Simkus is a professional surfer with a proven global reach, a trusted voice in surf culture, and a track record of delivering measurable value for partners.
-              </p>
-              <p className="text-base leading-relaxed text-foreground">
-                Sheldon's ability to combine high-performance surfing with authentic, creative storytelling has established him as a unique content creator whose work consistently generates strong exposure and return on investment. His attention to detail and credibility in the surfing world ensure that every collaboration feels genuine, resonates deeply with audiences, and elevates the brands he works with.
-              </p>
-              <p className="text-base leading-relaxed text-foreground">
-                We invite you to join Sheldon in building meaningful partnerships that go beyond traditional sponsorships — driving real engagement, cultural relevance, and business growth.
-              </p>
-            </div>
-            
-            {/* Headshot - 1/3 width (4 columns) */}
-            <div className="col-span-4">
-              <div className="relative">
-                <img 
-                  src="/lovable-uploads/593bbc81-f03e-419e-a492-8024f176fd1a.png" 
-                  alt="Sheldon Simkus - Professional Surfer" 
-                  className="w-full rounded-lg shadow-card object-cover aspect-square max-w-sm ml-auto"
-                />
+      <div className="container mx-auto px-4 py-8 space-y-8">
+        {/* About Sheldon Section - Matching Layout */}
+        <Card className="shadow-card border-border/50">
+          <CardContent className="p-8">
+            <div className="flex items-start gap-8">
+              <img 
+                src="/lovable-uploads/593bbc81-f03e-419e-a492-8024f176fd1a.png" 
+                alt="Sheldon Simkus" 
+                className="w-32 h-32 rounded-lg object-cover flex-shrink-0"
+              />
+              <div className="flex-1">
+                <h2 className="text-2xl font-bold mb-4 text-primary">About Sheldon</h2>
+                <p className="text-muted-foreground mb-6 leading-relaxed">
+                  Sheldon Simkus is a professional surfer with a proven global reach, a trusted voice in surf culture, and a track record of delivering measurable value for partners. His ability to combine high-performance surfing with authentic, creative storytelling has established him as a unique content creator whose work consistently generates strong exposure and return on investment.
+                </p>
+                <div className="flex gap-2 flex-wrap">
+                  <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50">
+                    Professional Surfer
+                  </Badge>
+                  <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
+                    Content Creator
+                  </Badge>
+                  <Badge variant="outline" className="text-purple-600 border-purple-200 bg-purple-50">
+                    Global Influencer
+                  </Badge>
+                </div>
               </div>
             </div>
-          </div>
+          </CardContent>
+        </Card>
+
+        {/* Key Metrics - Matching Bottom Layout */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <MetricCard
+            title="Total Followers"
+            value={totalFollowers.toLocaleString()}
+            icon={<Users className="h-6 w-6" />}
+            trend={{ value: "+3.8%", isPositive: true }}
+          />
+          <MetricCard
+            title="Engagement Rate"
+            value={`${typeof instagramStats?.engagement_rate === 'number' ? instagramStats.engagement_rate : 8.2}%`}
+            subtitle="(by Reach)"
+            icon={<Heart className="h-6 w-6" />}
+            trend={{ value: getTrend('instagram', 'engagement').value, isPositive: true }}
+          />
+          <MetricCard
+            title="Avg Likes (30d)"
+            value={`${Math.round((instagramStats?.additional_metrics?.likes || 15000) / 1000)}K`}
+            icon={<Heart className="h-6 w-6" />}
+            trend={{ value: getTrend('instagram', 'likes').value, isPositive: true }}
+          />
+          <MetricCard
+            title="Weekly Growth"
+            value="+2.3%"
+            icon={<TrendingUp className="h-6 w-6" />}
+            trend={{ value: "+2.3%", isPositive: true }}
+          />
         </div>
 
         {/* Key Metrics Overview */}
