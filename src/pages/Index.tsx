@@ -4,7 +4,7 @@ import { PlatformCard } from "@/components/PlatformCard";
 import { AudienceChart } from "@/components/AudienceChart";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Youtube, Instagram, Music, Users, Eye, Play, Heart, Share, MessageCircle, ExternalLink, Settings, RotateCcw, TrendingUp, TrendingDown } from "lucide-react";
+import { Youtube, Instagram, Music, Users, Eye, Play, Heart, Share, MessageCircle, ExternalLink, Settings, RotateCcw, TrendingUp, TrendingDown, Bookmark } from "lucide-react";
 import { useState } from "react";
 import heroImage from "/lovable-uploads/350aac33-19a1-4c3e-bac9-1e7258ac89b7.png";
 import { usePlatformStats } from "@/hooks/usePlatformStats";
@@ -313,64 +313,169 @@ const Index = () => {
           {/* Top Instagram Posts */}
           <Card className="shadow-card border-border/50">
             <CardContent className="p-6">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <Instagram className="h-5 w-5 text-primary" />
-                Top Performing Instagram Posts
-              </h3>
-              <div className="grid grid-cols-2 gap-3">
-                {instagramPosts.map((post, index) => (
-                  <div key={index} className="bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors group overflow-hidden">
-                    {post.url && post.url !== '#' ? (
-                      <a 
-                        href={post.url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="block"
-                      >
-                        <div className="aspect-square relative">
-                          <img 
-                            src={post.image} 
-                            alt={post.title}
-                            className="w-full h-full object-cover"
-                          />
-                          <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
-                          <Heart className="absolute top-2 right-2 h-4 w-4 text-white opacity-80" />
-                          <ExternalLink className="absolute top-2 left-2 h-4 w-4 text-white opacity-80" />
-                        </div>
-                        <div className="p-3">
-                          <h4 className="font-medium text-sm mb-1 group-hover:text-primary transition-colors line-clamp-2">
-                            {post.title}
-                          </h4>
-                          <div className="flex justify-between text-xs text-muted-foreground">
-                            <span>{post.likes}</span>
-                            <span>{post.engagement} ER</span>
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+                  <Instagram className="h-5 w-5 text-primary" />
+                  Top Performing Posts
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Best performing content based on engagement metrics
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                {instagramPosts.map((post, index) => {
+                  const engagementRate = parseFloat(post.engagement.replace('%', ''));
+                  const likesNumber = parseInt(post.likes.replace(/[^\d]/g, '')) * (post.likes.includes('K') ? 1000 : 1);
+                  const postNumber = index + 1;
+                  
+                  return (
+                    <div key={index} className="bg-card rounded-lg border border-border/50 overflow-hidden hover:shadow-md transition-all duration-200">
+                      {post.url && post.url !== '#' ? (
+                        <a 
+                          href={post.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="block group"
+                        >
+                          <div className="aspect-square relative">
+                            <img 
+                              src={post.image} 
+                              alt={post.title}
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                            
+                            {/* Engagement Rate Badge */}
+                            <div className="absolute top-2 right-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-md">
+                              {engagementRate.toFixed(2)}% ER
+                            </div>
+                            
+                            {/* External Link Icon */}
+                            <ExternalLink className="absolute top-2 left-2 h-4 w-4 text-white opacity-80" />
+                            
+                            {/* Overlay Stats */}
+                            <div className="absolute bottom-2 left-2 text-white">
+                              <div className="flex items-center gap-3 text-sm font-medium">
+                                <span className="flex items-center gap-1">
+                                  <Heart className="h-3 w-3" />
+                                  {Math.floor(likesNumber / 1000) >= 1 ? `${(likesNumber/1000).toFixed(1)}K` : likesNumber}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <MessageCircle className="h-3 w-3" />
+                                  {post.comments}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Share className="h-3 w-3" />
+                                  0
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </a>
+                      ) : (
+                        <div className="block group">
+                          <div className="aspect-square relative">
+                            <img 
+                              src={post.image} 
+                              alt={post.title}
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                            
+                            {/* Engagement Rate Badge */}
+                            <div className="absolute top-2 right-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-md">
+                              {engagementRate.toFixed(2)}% ER
+                            </div>
+                            
+                            {/* Overlay Stats */}
+                            <div className="absolute bottom-2 left-2 text-white">
+                              <div className="flex items-center gap-3 text-sm font-medium">
+                                <span className="flex items-center gap-1">
+                                  <Heart className="h-3 w-3" />
+                                  {Math.floor(likesNumber / 1000) >= 1 ? `${(likesNumber/1000).toFixed(1)}K` : likesNumber}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <MessageCircle className="h-3 w-3" />
+                                  {post.comments}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Share className="h-3 w-3" />
+                                  0
+                                </span>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </a>
-                    ) : (
-                      <div className="block">
-                        <div className="aspect-square relative">
-                          <img 
-                            src={post.image} 
-                            alt={post.title}
-                            className="w-full h-full object-cover"
-                          />
-                          <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
-                          <Heart className="absolute top-2 right-2 h-4 w-4 text-white opacity-80" />
+                      )}
+                      
+                      {/* Post Details */}
+                      <div className="p-3">
+                        <div className="flex justify-between items-start mb-2">
+                          <span className="text-xs text-muted-foreground font-medium">Post #{postNumber}</span>
+                          <span className="text-xs text-green-600 font-bold">
+                            {engagementRate.toFixed(2)}% ER
+                          </span>
                         </div>
-                        <div className="p-3">
-                          <h4 className="font-medium text-sm mb-1 group-hover:text-primary transition-colors line-clamp-2">
-                            {post.title}
-                          </h4>
-                          <div className="flex justify-between text-xs text-muted-foreground">
-                            <span>{post.likes}</span>
-                            <span>{post.engagement} ER</span>
+                        
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className="flex items-center gap-1">
+                            <Heart className="h-3 w-3 text-red-500" />
+                            <span>{Math.floor(likesNumber / 1000) >= 1 ? `${(likesNumber/1000).toFixed(1)}K` : likesNumber}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <MessageCircle className="h-3 w-3 text-blue-500" />
+                            <span>{post.comments}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Share className="h-3 w-3 text-green-500" />
+                            <span>0</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Bookmark className="h-3 w-3 text-orange-500" />
+                            <span>0</span>
                           </div>
                         </div>
+                        
+                        {post.url !== '#' && (
+                          <div className="mt-2 text-xs text-muted-foreground">
+                            Reach: 78.0K
+                          </div>
+                        )}
                       </div>
-                    )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Summary Stats */}
+              <div className="border-t pt-4">
+                <div className="grid grid-cols-6 gap-4 text-center">
+                  <div>
+                    <div className="text-lg font-bold text-blue-600">22.3K</div>
+                    <div className="text-xs text-muted-foreground">Total Likes (30d)</div>
                   </div>
-                ))}
+                  <div>
+                    <div className="text-lg font-bold text-blue-400">684</div>
+                    <div className="text-xs text-muted-foreground">Total Comments (30d)</div>
+                  </div>
+                  <div>
+                    <div className="text-lg font-bold text-green-600">1.1K</div>
+                    <div className="text-xs text-muted-foreground">Total Shares (30d)</div>
+                  </div>
+                  <div>
+                    <div className="text-lg font-bold text-orange-500">2.2K</div>
+                    <div className="text-xs text-muted-foreground">Total Saves (30d)</div>
+                  </div>
+                  <div>
+                    <div className="text-lg font-bold text-green-500">5.6K</div>
+                    <div className="text-xs text-muted-foreground">Avg Likes</div>
+                  </div>
+                  <div>
+                    <div className="text-lg font-bold text-orange-600">3.06</div>
+                    <div className="text-xs text-muted-foreground">Comments Ratio</div>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
