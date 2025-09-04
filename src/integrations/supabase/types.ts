@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      analytics: {
+        Row: {
+          id: string
+          metric: string
+          recorded_at: string
+          source: string
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          id?: string
+          metric: string
+          recorded_at?: string
+          source: string
+          updated_at?: string
+          value: number
+        }
+        Update: {
+          id?: string
+          metric?: string
+          recorded_at?: string
+          source?: string
+          updated_at?: string
+          value?: number
+        }
+        Relationships: []
+      }
+      analytics_public: {
+        Row: {
+          metric: string
+          source: string
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          metric: string
+          source: string
+          updated_at?: string
+          value: number
+        }
+        Update: {
+          metric?: string
+          source?: string
+          updated_at?: string
+          value?: number
+        }
+        Relationships: []
+      }
       instagram_posts: {
         Row: {
           comments_count: number | null
