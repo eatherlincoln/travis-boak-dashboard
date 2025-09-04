@@ -521,37 +521,31 @@ const Index = () => {
                   <Dialog key={index}>
                     <DialogTrigger asChild>
                       <div className="bg-muted/30 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors group overflow-hidden">
-                        <div className="flex gap-4 p-3">
-                          {/* Video Thumbnail - Landscape */}
-                          <div className="flex-shrink-0 w-40 aspect-video relative rounded-md overflow-hidden">
-                            <img 
-                              src={video.thumbnail} 
-                              alt={video.title}
-                              className="w-full h-full object-cover"
-                            />
-                            <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
-                            <Play className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-6 w-6 text-white opacity-80 group-hover:opacity-100 transition-opacity" />
-                          </div>
-                          
-                          {/* Video Info */}
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-medium text-sm mb-2 group-hover:text-primary transition-colors line-clamp-2">
-                              {video.title}
-                            </h4>
-                            <div className="flex items-center justify-between text-xs text-muted-foreground">
-                              <span>{video.platform}</span>
-                              <span className="font-semibold">{video.views}</span>
-                            </div>
-                            <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
-                              <span className="flex items-center gap-1">
-                                <Eye className="h-3 w-3" />
-                                {video.views}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Play className="h-3 w-3" />
-                                Video #{index + 1}
-                              </span>
-                            </div>
+                        {/* Video Thumbnail - Full Width Landscape */}
+                        <div className="w-full aspect-video relative rounded-t-lg overflow-hidden">
+                          <img 
+                            src={video.thumbnail} 
+                            alt={video.title}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
+                          <Play className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-8 w-8 text-white opacity-80 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                        
+                        {/* Video Info - Below Thumbnail */}
+                        <div className="p-4">
+                          <h4 className="font-medium text-sm mb-2 group-hover:text-primary transition-colors line-clamp-2">
+                            {video.title}
+                          </h4>
+                          <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Play className="h-3 w-3" />
+                              {video.platform}
+                            </span>
+                            <span className="font-semibold flex items-center gap-1">
+                              <Eye className="h-3 w-3" />
+                              {video.views}
+                            </span>
                           </div>
                         </div>
                       </div>
