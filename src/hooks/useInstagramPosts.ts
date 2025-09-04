@@ -8,6 +8,8 @@ interface InstagramPostData {
   likes: number;
   comments: number;  
   shares: number;
+  saves?: number;
+  reach?: number;
   image_url?: string;
 }
 
@@ -15,10 +17,14 @@ interface FormattedInstagramPost {
   title: string;
   platform: string;
   likes: string;
+  likesNumber: number;
   image: string;
   engagement: string;
+  engagementRate: number;
   comments: number;
   shares: number;
+  saves: number;
+  reach: number;
   url: string;
 }
 
@@ -27,29 +33,57 @@ const defaultInstagramPosts = [
     title: "Perfect barrel at Snapper Rocks",
     platform: "Instagram",
     likes: "2.8K likes",
+    likesNumber: 2800,
     image: "https://images.unsplash.com/photo-1581852017103-68ac65514cf7?w=500&h=500&fit=crop&crop=center",
-    engagement: "8.2%"
+    engagement: "8.2%",
+    engagementRate: 8.2,
+    comments: 45,
+    shares: 12,
+    saves: 156,
+    reach: 34000,
+    url: '#'
   },
   {
     title: "Dawn patrol magic hours",
     platform: "Instagram", 
     likes: "2.1K likes",
+    likesNumber: 2100,
     image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&h=500&fit=crop&crop=center",
-    engagement: "7.8%"
+    engagement: "7.8%",
+    engagementRate: 7.8,
+    comments: 38,
+    shares: 8,
+    saves: 142,
+    reach: 29500,
+    url: '#'
   },
   {
     title: "Behind the scenes setup",
     platform: "Instagram",
-    likes: "1.9K likes", 
+    likes: "1.9K likes",
+    likesNumber: 1900,
     image: "https://images.unsplash.com/photo-1519018307286-6e2407875739?w=500&h=500&fit=crop&crop=center",
-    engagement: "9.1%"
+    engagement: "9.1%",
+    engagementRate: 9.1,
+    comments: 52,
+    shares: 15,
+    saves: 98,
+    reach: 22800,
+    url: '#'
   },
   {
     title: "Post-session recovery",
     platform: "Instagram",
     likes: "1.6K likes",
+    likesNumber: 1600,
     image: "https://images.unsplash.com/photo-1490730141103-6cac27aaab94?w=500&h=500&fit=crop&crop=center", 
-    engagement: "7.5%"
+    engagement: "7.5%",
+    engagementRate: 7.5,
+    comments: 29,
+    shares: 6,
+    saves: 87,
+    reach: 23100,
+    url: '#'
   }
 ];
 
@@ -66,6 +100,19 @@ export const useInstagramPosts = () => {
     return `${Math.round(n)}`;
   };
 
+  // Calculate engagement rate for individual posts
+  const calculateEngagementRate = (post: InstagramPostData, followerCount: number = 38700) => {
+    const totalEngagement = post.likes + post.comments + post.shares + (post.saves || 0);
+    
+    // Use reach if available, otherwise estimate reach as 20-30% of follower count (typical organic reach)
+    const estimatedReach = post.reach || Math.floor(followerCount * 0.25);
+    
+    // Engagement Rate = (Total Engagement / Reach) * 100
+    const engagementRate = (totalEngagement / estimatedReach) * 100;
+    
+    return Math.max(0.1, Math.min(25, engagementRate)); // Cap between 0.1% and 25% for realism
+  };
+
   const fetchPosts = async () => {
     try {
       setLoading(true);
@@ -76,13 +123,15 @@ export const useInstagramPosts = () => {
       // Fetch Instagram platform stats which contains post analysis
       const { data, error: fetchError } = await supabase
         .from('platform_stats')
-        .select('additional_metrics, engagement_rate')
+        .select('additional_metrics, engagement_rate, follower_count')
         .eq('platform', 'instagram')
         .single();
 
       if (fetchError && fetchError.code !== 'PGRST116') {
         throw fetchError;
       }
+
+      const followerCount = data?.follower_count || 38700;
 
       if (data?.additional_metrics && 
           typeof data.additional_metrics === 'object' && 
@@ -93,37 +142,44 @@ export const useInstagramPosts = () => {
           console.log('✅ Found admin Instagram posts:', metrics.post_analysis);
           
           const adminPosts = metrics.post_analysis as InstagramPostData[];
-          const engagementStr = typeof data.engagement_rate === 'number' 
-            ? `${data.engagement_rate}%` 
-            : '8.2%';
 
-          const formattedPosts: FormattedInstagramPost[] = adminPosts.map((post, index) => ({
-            title: post.url 
-              ? `Instagram Post ${post.post_number || index + 1}` 
-              : defaultInstagramPosts[index]?.title || `Post ${index + 1}`,
-            platform: "Instagram",
-            likes: post.likes ? `${formatNumberShort(post.likes)} likes` : defaultInstagramPosts[index]?.likes || "0 likes",
-            image: post.image_url || defaultInstagramPosts[index]?.image || "https://images.unsplash.com/photo-1581852017103-68ac65514cf7?w=500&h=500&fit=crop&crop=center",
-            engagement: engagementStr,
-            comments: post.comments || 0,
-            shares: post.shares || 0,
-            url: post.url || '#'
-          })).slice(0, 4); // Only show first 4 posts
+          const formattedPosts: FormattedInstagramPost[] = adminPosts.map((post, index) => {
+            const likesNum = post.likes || 0;
+            const engagementRate = calculateEngagementRate(post, followerCount);
+            const estimatedReach = post.reach || Math.floor(followerCount * 0.25);
+            
+            return {
+              title: post.url 
+                ? `Instagram Post ${post.post_number || index + 1}` 
+                : defaultInstagramPosts[index]?.title || `Post ${index + 1}`,
+              platform: "Instagram",
+              likes: post.likes ? `${formatNumberShort(post.likes)} likes` : defaultInstagramPosts[index]?.likes || "0 likes",
+              likesNumber: likesNum,
+              image: post.image_url || defaultInstagramPosts[index]?.image || "https://images.unsplash.com/photo-1581852017103-68ac65514cf7?w=500&h=500&fit=crop&crop=center",
+              engagement: `${engagementRate.toFixed(1)}%`,
+              engagementRate: engagementRate,
+              comments: post.comments || 0,
+              shares: post.shares || 0,
+              saves: post.saves || 0,
+              reach: estimatedReach,
+              url: post.url || '#'
+            };
+          }).slice(0, 4); // Only show first 4 posts
 
           setPosts(formattedPosts);
         } else {
           console.log('⚠️ No admin post analysis found, using default posts');
-          setPosts(defaultInstagramPosts.map(p => ({ ...p, url: '#', comments: 0, shares: 0 })));
+          setPosts(defaultInstagramPosts);
         }
       } else {
         console.log('⚠️ No additional_metrics found, using default posts');
-        setPosts(defaultInstagramPosts.map(p => ({ ...p, url: '#', comments: 0, shares: 0 })));
+        setPosts(defaultInstagramPosts);
       }
     } catch (err) {
       console.error('Error fetching Instagram posts:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
       // Fallback to default posts
-      setPosts(defaultInstagramPosts.map(p => ({ ...p, url: '#', comments: 0, shares: 0 })));
+      setPosts(defaultInstagramPosts);
     } finally {
       setLoading(false);
     }

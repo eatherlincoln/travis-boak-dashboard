@@ -32,7 +32,12 @@ const Index = () => {
   const totalFollowers = (instagramStats?.follower_count || 38700) + youtubeFollowers + (tiktokStats?.follower_count || 1410);
   const totalViews = youtubeViews + (tiktokStats?.monthly_views || 37000) + (instagramStats?.monthly_views || 730000);
 
-  // Helper function to generate trend indicators (simulated based on typical growth patterns)
+  // Helper to format numbers like 2.8K
+  const formatNumberShort = (n: number) => {
+    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+    if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+    return `${Math.round(n)}`;
+  };
   const getTrend = (platform: string, metric: string) => {
     // Simulate realistic growth trends - in production, this would compare to previous month's data
     const trends = {
@@ -325,8 +330,6 @@ const Index = () => {
 
               <div className="grid grid-cols-2 gap-4 mb-6">
                 {instagramPosts.map((post, index) => {
-                  const engagementRate = parseFloat(post.engagement.replace('%', ''));
-                  const likesNumber = parseInt(post.likes.replace(/[^\d]/g, '')) * (post.likes.includes('K') ? 1000 : 1);
                   const postNumber = index + 1;
                   
                   return (
@@ -348,7 +351,7 @@ const Index = () => {
                             
                             {/* Engagement Rate Badge */}
                             <div className="absolute top-2 right-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-md">
-                              {engagementRate.toFixed(2)}% ER
+                              {post.engagementRate.toFixed(2)}% ER
                             </div>
                             
                             {/* External Link Icon */}
@@ -359,7 +362,7 @@ const Index = () => {
                               <div className="flex items-center gap-3 text-sm font-medium">
                                 <span className="flex items-center gap-1">
                                   <Heart className="h-3 w-3" />
-                                  {Math.floor(likesNumber / 1000) >= 1 ? `${(likesNumber/1000).toFixed(1)}K` : likesNumber}
+                                  {formatNumberShort(post.likesNumber)}
                                 </span>
                                 <span className="flex items-center gap-1">
                                   <MessageCircle className="h-3 w-3" />
@@ -367,7 +370,7 @@ const Index = () => {
                                 </span>
                                 <span className="flex items-center gap-1">
                                   <Share className="h-3 w-3" />
-                                  0
+                                  {post.shares}
                                 </span>
                               </div>
                             </div>
@@ -385,7 +388,7 @@ const Index = () => {
                             
                             {/* Engagement Rate Badge */}
                             <div className="absolute top-2 right-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-md">
-                              {engagementRate.toFixed(2)}% ER
+                              {post.engagementRate.toFixed(2)}% ER
                             </div>
                             
                             {/* Overlay Stats */}
@@ -393,7 +396,7 @@ const Index = () => {
                               <div className="flex items-center gap-3 text-sm font-medium">
                                 <span className="flex items-center gap-1">
                                   <Heart className="h-3 w-3" />
-                                  {Math.floor(likesNumber / 1000) >= 1 ? `${(likesNumber/1000).toFixed(1)}K` : likesNumber}
+                                  {formatNumberShort(post.likesNumber)}
                                 </span>
                                 <span className="flex items-center gap-1">
                                   <MessageCircle className="h-3 w-3" />
@@ -401,7 +404,7 @@ const Index = () => {
                                 </span>
                                 <span className="flex items-center gap-1">
                                   <Share className="h-3 w-3" />
-                                  0
+                                  {post.shares}
                                 </span>
                               </div>
                             </div>
@@ -414,14 +417,14 @@ const Index = () => {
                         <div className="flex justify-between items-start mb-2">
                           <span className="text-xs text-muted-foreground font-medium">Post #{postNumber}</span>
                           <span className="text-xs text-green-600 font-bold">
-                            {engagementRate.toFixed(2)}% ER
+                            {post.engagementRate.toFixed(2)}% ER
                           </span>
                         </div>
                         
                         <div className="grid grid-cols-2 gap-2 text-xs">
                           <div className="flex items-center gap-1">
                             <Heart className="h-3 w-3 text-red-500" />
-                            <span>{Math.floor(likesNumber / 1000) >= 1 ? `${(likesNumber/1000).toFixed(1)}K` : likesNumber}</span>
+                            <span>{formatNumberShort(post.likesNumber)}</span>
                           </div>
                           <div className="flex items-center gap-1">
                             <MessageCircle className="h-3 w-3 text-blue-500" />
@@ -429,19 +432,17 @@ const Index = () => {
                           </div>
                           <div className="flex items-center gap-1">
                             <Share className="h-3 w-3 text-green-500" />
-                            <span>0</span>
+                            <span>{post.shares}</span>
                           </div>
                           <div className="flex items-center gap-1">
                             <Bookmark className="h-3 w-3 text-orange-500" />
-                            <span>0</span>
+                            <span>{post.saves}</span>
                           </div>
                         </div>
                         
-                        {post.url !== '#' && (
-                          <div className="mt-2 text-xs text-muted-foreground">
-                            Reach: 78.0K
-                          </div>
-                        )}
+                        <div className="mt-2 text-xs text-muted-foreground">
+                          Reach: {formatNumberShort(post.reach)}
+                        </div>
                       </div>
                     </div>
                   );
