@@ -1,8 +1,18 @@
 import { PlatformCard } from './PlatformCard';
 import { useSocialMetrics } from '../hooks/useSocialMetrics';
+import { useState, useEffect } from 'react';
+import { getThumbUrl } from '../utils/signedUrls';
 
 export function YouTubeCard() {
   const { metrics, updatedAt, loading, err } = useSocialMetrics('youtube');
+  const [iconUrl, setIconUrl] = useState('');
+  
+  useEffect(() => {
+    (async () => {
+      const url = await getThumbUrl('youtube-icon.png', '/lovable-uploads/9aa87b25-88f0-439d-890a-7c2d475c22f5.png');
+      setIconUrl(url);
+    })();
+  }, []);
   
   if (loading) return <div className="animate-pulse bg-muted h-64 rounded-lg"></div>;
   if (err) return <div className="text-destructive">Error loading YouTube data</div>;
@@ -17,7 +27,7 @@ export function YouTubeCard() {
       platform="YouTube"
       handle="@sheldonsimkus"
       followers={`${(subscribers / 1000).toFixed(1)}K`}
-      icon={<img src="/lovable-uploads/9aa87b25-88f0-439d-890a-7c2d475c22f5.png" className="h-6 w-6" alt="YouTube" />}
+      icon={iconUrl ? <img src={iconUrl} className="h-6 w-6" alt="YouTube" /> : <div className="h-6 w-6 bg-muted animate-pulse rounded" />}
       accentColor="red-500"
       metrics={[
         { label: "Monthly Views", value: `${Math.round(monthlyViews / 1000)}K`, trend: "+15.2%" },
