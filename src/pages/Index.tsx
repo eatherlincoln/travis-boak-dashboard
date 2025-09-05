@@ -1,6 +1,9 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { MetricCard } from "@/components/MetricCard";
 import { PlatformCard } from "@/components/PlatformCard";
+import { InstagramCard } from "@/components/InstagramCard";
+import { YouTubeCard } from "@/components/YouTubeCard";
+import { TikTokCard } from "@/components/TikTokCard";
 import { AudienceChart } from "@/components/AudienceChart";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -278,65 +281,9 @@ const Index = () => {
 
         {/* Platform-specific cards */}
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {/* Instagram */}
-          <PlatformCard
-            platform="Instagram"
-            handle="@sheldonsimkus"
-            followers={`${((instagramStats?.follower_count || 38700) / 1000).toFixed(1)}K`}
-            icon={<img src="/lovable-uploads/502a8d59-4e94-4c4a-94c8-4e5f78e6decf.png" className="h-6 w-6" alt="Instagram" />}
-            accentColor="pink-500"
-            metrics={[
-              { label: "Video Views", value: `${Math.round((instagramStats?.monthly_views || 730000) / 1000)}K`, trend: getTrend('instagram', 'views').value },
-              { label: "Monthly Likes", value: `${Math.round((instagramStats?.additional_metrics?.likes || 15000) / 1000)}K`, trend: getTrend('instagram', 'likes').value },
-              { label: "Engagement Rate", value: `${calculatedInstagramER.toFixed(1)}%`, trend: getTrend('instagram', 'engagement').value },
-              { label: "Followers", value: `${((instagramStats?.follower_count || 38700) / 1000).toFixed(1)}K`, trend: getTrend('instagram', 'followers').value }
-            ]}
-            highlights={[
-              `${calculatedInstagramER.toFixed(1)}% engagement rate ${calculatedInstagramER > 3.5 ? '(above industry avg)' : '(growing)'}`,
-              `${Math.round(((instagramStats?.additional_metrics?.likes || 15000) + (instagramStats?.additional_metrics?.comments || 2000) + (instagramStats?.additional_metrics?.shares || 800)) / 1000)}K monthly interactions`,
-              `${instagramStats?.follower_count ? `${((instagramStats.follower_count || 38700) / 1000).toFixed(1)}K` : '38.7K'} engaged followers with ${instagramStats?.additional_metrics?.saves ? `${Math.round(instagramStats.additional_metrics.saves / 1000)}K saves` : 'strong save rate'}`
-            ]}
-          />
-
-          {/* YouTube */}
-          <PlatformCard
-            platform="YouTube"
-            handle="@sheldonsimkus"
-            followers={`${(youtubeFollowers / 1000).toFixed(1)}K`}
-            icon={<img src="/lovable-uploads/9aa87b25-88f0-439d-890a-7c2d475c22f5.png" className="h-6 w-6" alt="YouTube" />}
-            accentColor="red-500"
-            metrics={[
-              { label: "Monthly Views", value: `${Math.round((youtubeStats?.monthly_views || 86800) / 1000)}K`, trend: getTrend('youtube', 'views').value },
-              { label: "Subscribers", value: `${(youtubeFollowers / 1000).toFixed(1)}K`, trend: getTrend('youtube', 'followers').value },
-              { label: "Engagement Rate", value: `${youtubeStats?.engagement_rate || 6.5}%`, trend: getTrend('youtube', 'engagement').value },
-              { label: "Avg Watch Time", value: "3.2 min", trend: "+8.3%" }
-            ]}
-            highlights={[
-              `${youtubeFollowers.toLocaleString()} subscribers with consistent growth`,
-              `${Math.round((youtubeStats?.monthly_views || 86800) / 1000)}K monthly views (updated from ViewStats)`,
-              `POV surf content averaging ${Math.round((youtubeStats?.monthly_views || 86800) / 4 / 1000)}K+ views per video`
-            ]}
-          />
-
-          {/* TikTok */}
-          <PlatformCard
-            platform="TikTok"
-            handle="@sheldonsimkus"
-            followers={`${((tiktokStats?.follower_count || 1410) / 1000).toFixed(1)}K`}
-            icon={<img src="/lovable-uploads/d3d646ba-e348-45c2-9a7b-d3f53ff73b4c.png" className="h-6 w-6" alt="TikTok" />}
-            accentColor="black"
-            metrics={[
-              { label: "Video Views", value: `${Math.round((tiktokStats?.monthly_views || 37000) / 1000)}K`, trend: getTrend('tiktok', 'views').value },
-              { label: "Monthly Likes", value: `${Math.round((tiktokStats?.additional_metrics?.likes || 8000) / 1000)}K`, trend: getTrend('tiktok', 'likes').value },
-              { label: "Engagement Rate", value: `${tiktokStats?.engagement_rate || 9.1}%`, trend: getTrend('tiktok', 'engagement').value },
-              { label: "Followers", value: `${((tiktokStats?.follower_count || 1410) / 1000).toFixed(1)}K`, trend: getTrend('tiktok', 'followers').value }
-            ]}
-            highlights={[
-              `${tiktokStats?.engagement_rate ? `${tiktokStats.engagement_rate}%` : '9.1%'} engagement rate ${(tiktokStats?.engagement_rate || 9.1) > 8 ? '(excellent performance)' : '(growing)'}`,
-              `${Math.round(((tiktokStats?.additional_metrics?.likes || 8000) + (tiktokStats?.additional_metrics?.comments || 600) + (tiktokStats?.additional_metrics?.shares || 1200)) / 1000)}K monthly interactions`,
-              `Growing platform with ${((tiktokStats?.follower_count || 1410) / 1000).toFixed(1)}K followers and high viral potential`
-            ]}
-          />
+          <InstagramCard />
+          <YouTubeCard />
+          <TikTokCard />
         </div>
 
         {/* Audience Demographics - Full Width */}
