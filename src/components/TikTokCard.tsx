@@ -7,7 +7,7 @@ import { getAssetUrl } from '../utils/signedUrls';
 export function TikTokCard() {
   const { metrics, updatedAt, loading, err } = useSocialMetrics('tiktok');
   const { asset, loading: assetLoading } = useSocialAssets('tiktok');
-  const [iconUrl, setIconUrl] = useState('');
+  const [iconUrl, setIconUrl] = useState('/lovable-uploads/d3d646ba-e348-45c2-9a7b-d3f53ff73b4c.png');
   
   useEffect(() => {
     if (asset) {
@@ -17,12 +17,12 @@ export function TikTokCard() {
           asset.updated_at, 
           '/lovable-uploads/d3d646ba-e348-45c2-9a7b-d3f53ff73b4c.png'
         );
-        setIconUrl(url);
+        if (url) setIconUrl(url);
       })();
     }
   }, [asset]);
   
-  if (loading || assetLoading) return <div className="animate-pulse bg-muted h-64 rounded-lg"></div>;
+  if (loading) return <div className="animate-pulse bg-muted h-64 rounded-lg"></div>;
   if (err) return <div className="text-destructive">Error loading TikTok data</div>;
 
   const followers = metrics['followers']?.value ?? 1410;
@@ -35,7 +35,7 @@ export function TikTokCard() {
       platform="TikTok"
       handle="@sheldonsimkus"
       followers={`${(followers / 1000).toFixed(1)}K`}
-      icon={iconUrl ? <img src={iconUrl} className="h-6 w-6" alt="TikTok" /> : <div className="h-6 w-6 bg-muted animate-pulse rounded" />}
+      icon={<img src={iconUrl} className="h-6 w-6" alt="TikTok" />}
       accentColor="black"
       metrics={[
         { label: "Video Views", value: `${Math.round(videoViews / 1000)}K`, trend: "+23.4%" },
