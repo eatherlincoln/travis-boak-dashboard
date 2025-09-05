@@ -1,20 +1,28 @@
 import { PlatformCard } from './PlatformCard';
 import { useSocialMetrics } from '../hooks/useSocialMetrics';
+import { useSocialAssets } from '../hooks/useSocialAssets';
 import { useState, useEffect } from 'react';
-import { getThumbUrl } from '../utils/signedUrls';
+import { getAssetUrl } from '../utils/signedUrls';
 
 export function YouTubeCard() {
   const { metrics, updatedAt, loading, err } = useSocialMetrics('youtube');
+  const { asset, loading: assetLoading } = useSocialAssets('youtube');
   const [iconUrl, setIconUrl] = useState('');
   
   useEffect(() => {
-    (async () => {
-      const url = await getThumbUrl('youtube-icon.png', '/lovable-uploads/9aa87b25-88f0-439d-890a-7c2d475c22f5.png');
-      setIconUrl(url);
-    })();
-  }, []);
+    if (asset) {
+      (async () => {
+        const url = await getAssetUrl(
+          asset.thumb_path, 
+          asset.updated_at, 
+          '/lovable-uploads/9aa87b25-88f0-439d-890a-7c2d475c22f5.png'
+        );
+        setIconUrl(url);
+      })();
+    }
+  }, [asset]);
   
-  if (loading) return <div className="animate-pulse bg-muted h-64 rounded-lg"></div>;
+  if (loading || assetLoading) return <div className="animate-pulse bg-muted h-64 rounded-lg"></div>;
   if (err) return <div className="text-destructive">Error loading YouTube data</div>;
 
   const subscribers = metrics['subscribers']?.value ?? 8800;

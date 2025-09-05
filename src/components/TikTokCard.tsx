@@ -1,20 +1,28 @@
 import { PlatformCard } from './PlatformCard';
 import { useSocialMetrics } from '../hooks/useSocialMetrics';
+import { useSocialAssets } from '../hooks/useSocialAssets';
 import { useState, useEffect } from 'react';
-import { getThumbUrl } from '../utils/signedUrls';
+import { getAssetUrl } from '../utils/signedUrls';
 
 export function TikTokCard() {
   const { metrics, updatedAt, loading, err } = useSocialMetrics('tiktok');
+  const { asset, loading: assetLoading } = useSocialAssets('tiktok');
   const [iconUrl, setIconUrl] = useState('');
   
   useEffect(() => {
-    (async () => {
-      const url = await getThumbUrl('tiktok-icon.png', '/lovable-uploads/d3d646ba-e348-45c2-9a7b-d3f53ff73b4c.png');
-      setIconUrl(url);
-    })();
-  }, []);
+    if (asset) {
+      (async () => {
+        const url = await getAssetUrl(
+          asset.thumb_path, 
+          asset.updated_at, 
+          '/lovable-uploads/d3d646ba-e348-45c2-9a7b-d3f53ff73b4c.png'
+        );
+        setIconUrl(url);
+      })();
+    }
+  }, [asset]);
   
-  if (loading) return <div className="animate-pulse bg-muted h-64 rounded-lg"></div>;
+  if (loading || assetLoading) return <div className="animate-pulse bg-muted h-64 rounded-lg"></div>;
   if (err) return <div className="text-destructive">Error loading TikTok data</div>;
 
   const followers = metrics['followers']?.value ?? 1410;

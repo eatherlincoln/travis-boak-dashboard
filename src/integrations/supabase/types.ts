@@ -215,6 +215,24 @@ export type Database = {
         }
         Relationships: []
       }
+      social_media_assets: {
+        Row: {
+          source: string
+          thumb_path: string
+          updated_at: string
+        }
+        Insert: {
+          source: string
+          thumb_path: string
+          updated_at?: string
+        }
+        Update: {
+          source?: string
+          thumb_path?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       youtube_stats: {
         Row: {
           channel_id: string
