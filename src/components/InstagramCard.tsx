@@ -26,9 +26,9 @@ export function InstagramCard() {
   if (err) return <div className="text-destructive">Error loading Instagram data</div>;
 
   const followers = metrics['followers']?.value ?? 38700;
-  const videoViews = metrics['video_views']?.value ?? 730000;
+  const videoViews = metrics['monthly_views']?.value ?? 314500;
   const monthlyLikes = metrics['monthly_likes']?.value ?? 15000;
-  const engagementRate = metrics['engagement_rate']?.value ?? 4.2;
+  const engagementRate = metrics['engagement_rate']?.value ?? 0.41;
 
   return (
     <PlatformCard
