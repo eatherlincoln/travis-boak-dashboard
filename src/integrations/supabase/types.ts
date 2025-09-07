@@ -122,6 +122,45 @@ export type Database = {
         }
         Relationships: []
       }
+      instagram_posts_public: {
+        Row: {
+          caption: string | null
+          comment_count: number | null
+          like_count: number | null
+          media_id: string
+          media_url: string | null
+          permalink: string | null
+          reach: number | null
+          saves: number | null
+          timestamp: string | null
+          updated_at: string
+        }
+        Insert: {
+          caption?: string | null
+          comment_count?: number | null
+          like_count?: number | null
+          media_id: string
+          media_url?: string | null
+          permalink?: string | null
+          reach?: number | null
+          saves?: number | null
+          timestamp?: string | null
+          updated_at?: string
+        }
+        Update: {
+          caption?: string | null
+          comment_count?: number | null
+          like_count?: number | null
+          media_id?: string
+          media_url?: string | null
+          permalink?: string | null
+          reach?: number | null
+          saves?: number | null
+          timestamp?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       platform_audience: {
         Row: {
           age_groups: Json | null
