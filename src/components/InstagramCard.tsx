@@ -1,12 +1,14 @@
 import { PlatformCard } from './PlatformCard';
 import { useSocialMetrics } from '../hooks/useSocialMetrics';
 import { useSocialAssets } from '../hooks/useSocialAssets';
+import { useInstagramMonthlyLikes } from '../hooks/useInstagramMonthlyLikes';
 import { useState, useEffect } from 'react';
 import { getAssetUrl } from '../utils/signedUrls';
 
 export function InstagramCard() {
   const { metrics, updatedAt, loading, err } = useSocialMetrics('instagram');
   const { asset, loading: assetLoading } = useSocialAssets('instagram');
+  const { map: monthlyLikesMap, loading: likesLoading } = useInstagramMonthlyLikes();
   const [iconUrl, setIconUrl] = useState('/lovable-uploads/502a8d59-4e94-4c4a-94c8-4e5f78e6decf.png');
   
   useEffect(() => {
@@ -22,12 +24,16 @@ export function InstagramCard() {
     }
   }, [asset]);
   
-  if (loading) return <div className="animate-pulse bg-muted h-64 rounded-lg"></div>;
+  if (loading || likesLoading) return <div className="animate-pulse bg-muted h-64 rounded-lg"></div>;
   if (err) return <div className="text-destructive">Error loading Instagram data</div>;
 
   const followers = metrics['followers']?.value ?? 38700;
   const videoViews = metrics['monthly_views']?.value ?? 314500;
-  const monthlyLikes = metrics['monthly_likes']?.value ?? 15000;
+  
+  // Get current month's likes from unified calculation
+  const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
+  const monthlyLikes = monthlyLikesMap[currentMonth] ?? 15000;
+  
   const engagementRate = metrics['engagement_rate']?.value ?? 0.41;
 
   return (
