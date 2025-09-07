@@ -4,6 +4,7 @@ import { useSocialAssets } from '../hooks/useSocialAssets';
 import { useInstagramMonthlyLikes } from '../hooks/useInstagramMonthlyLikes';
 import { useState, useEffect } from 'react';
 import { getAssetUrl } from '../utils/signedUrls';
+import { erByReach, formatPct } from '../utils/engagement';
 
 export function InstagramCard() {
   const { metrics, updatedAt, loading, err } = useSocialMetrics('instagram');
@@ -34,7 +35,12 @@ export function InstagramCard() {
   const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
   const monthlyLikes = monthlyLikesMap[currentMonth] ?? 15000;
   
-  const engagementRate = metrics['engagement_rate']?.value ?? 0.41;
+  // Calculate engagement rate using standardized formula (by reach)
+  const likes = monthlyLikes;
+  const comments = Math.round(likes * 0.15); // Estimate comments as 15% of likes
+  const saves = Math.round(likes * 0.05); // Estimate saves as 5% of likes
+  const reach = videoViews; // Use monthly views as reach proxy
+  const engagementRate = erByReach({ likes, comments, saves, reach });
 
   return (
     <PlatformCard
@@ -46,11 +52,11 @@ export function InstagramCard() {
       metrics={[
         { label: "Video Views", value: `${Math.round(videoViews / 1000)}K`, trend: "+8.7%" },
         { label: "Monthly Likes", value: `${Math.round(monthlyLikes / 1000)}K`, trend: "+12.1%" },
-        { label: "Engagement Rate", value: `${engagementRate.toFixed(1)}%`, trend: "+0.5%" },
+        { label: "Engagement Rate (by reach)", value: formatPct(engagementRate), trend: "+0.5%" },
         { label: "Followers", value: `${(followers / 1000).toFixed(1)}K`, trend: "+2.3%" }
       ]}
       highlights={[
-        `${engagementRate.toFixed(1)}% engagement rate ${engagementRate > 3.5 ? '(above industry avg)' : '(growing)'}`,
+        `${formatPct(engagementRate)} engagement rate ${engagementRate && engagementRate > 0.035 ? '(above industry avg)' : '(growing)'}`,
         `${Math.round((monthlyLikes + (monthlyLikes * 0.15) + (monthlyLikes * 0.05)) / 1000)}K monthly interactions`,
         `${(followers / 1000).toFixed(1)}K engaged followers with strong save rate`,
         updatedAt ? `Updated: ${new Date(updatedAt).toLocaleString()}` : ''

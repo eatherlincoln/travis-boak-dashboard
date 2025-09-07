@@ -100,16 +100,22 @@ export const useInstagramPosts = () => {
     return `${Math.round(n)}`;
   };
 
-  // Calculate engagement rate for individual posts
-  const calculateEngagementRate = (post: InstagramPostData, followerCount: number = 38700) => {
-    const totalEngagement = post.likes + post.comments + post.shares + (post.saves || 0);
+  // Calculate engagement rate for individual posts using standardized formula
+  const calculateEngagementRate = (post: InstagramPostData, reach: number = 0) => {
+    const { likes, comments, shares, saves = 0 } = post;
     
-    // For Instagram, engagement rate is typically calculated as:
-    // (Total Engagement / Follower Count) * 100
-    // This is the industry standard method
-    const engagementRate = (totalEngagement / followerCount) * 100;
+    // Use reach if available, otherwise fall back to follower-based calculation
+    if (reach > 0) {
+      const engagementRate = (likes + comments + saves) / reach;
+      return Math.max(0.001, Math.min(0.15, engagementRate)); // Cap between 0.1% and 15% for realism
+    }
     
-    return Math.max(0.1, Math.min(15, engagementRate)); // Cap between 0.1% and 15% for realism
+    // Fallback to follower-based calculation if no reach data
+    const followerCount = 38700; // Default follower count
+    const totalEngagement = likes + comments + shares + saves;
+    const engagementRate = (totalEngagement / followerCount);
+    
+    return Math.max(0.001, Math.min(0.15, engagementRate)); // Cap between 0.1% and 15% for realism
   };
 
   const fetchPosts = async () => {
@@ -144,9 +150,9 @@ export const useInstagramPosts = () => {
 
           const formattedPosts: FormattedInstagramPost[] = adminPosts.map((post, index) => {
             const likesNum = post.likes || 0;
-            const engagementRate = calculateEngagementRate(post, followerCount);
             // Use actual reach if provided, otherwise estimate as 2-3x follower count for viral content
             const estimatedReach = post.reach || Math.floor(followerCount * 2.5);
+            const engagementRate = calculateEngagementRate(post, estimatedReach);
             
             return {
               title: post.url 
@@ -156,8 +162,8 @@ export const useInstagramPosts = () => {
               likes: post.likes ? `${formatNumberShort(post.likes)} likes` : defaultInstagramPosts[index]?.likes || "0 likes",
               likesNumber: likesNum,
               image: post.image_url || defaultInstagramPosts[index]?.image || "https://images.unsplash.com/photo-1581852017103-68ac65514cf7?w=500&h=500&fit=crop&crop=center",
-              engagement: `${engagementRate.toFixed(1)}%`,
-              engagementRate: engagementRate,
+              engagement: `${(engagementRate * 100).toFixed(1)}%`,
+              engagementRate: engagementRate * 100,
               comments: post.comments || 0,
               shares: post.shares || 0,
               saves: post.saves || 0,

@@ -13,6 +13,7 @@ import { Settings, LogOut, Save, ArrowLeft, Instagram, Youtube, Video, RotateCcw
 import { Link } from 'react-router-dom';
 import InstagramPostForm from '@/components/InstagramPostForm';
 import { PublicDashboard } from '@/components/PublicDashboard';
+import { erByReach, formatPct } from '@/utils/engagement';
 
 
 interface PlatformStats {
@@ -195,17 +196,17 @@ const Admin = () => {
 
   const calculateEngagementRate = (platform: string) => {
     const stat = editingStats[platform];
-    if (!stat || !stat.additional_metrics) return 0;
+    if (!stat || !stat.additional_metrics) return null;
     
-    const { likes = 0, comments = 0, shares = 0, saves = 0 } = stat.additional_metrics;
-    const totalEngagements = likes + comments + shares + (platform === 'instagram' ? saves : 0);
+    const { likes = 0, comments = 0, saves = 0 } = stat.additional_metrics;
+    const reach = stat.monthly_views; // Use monthly_views as reach proxy
     
-    // Realistic calculation: Assume 30 posts per month, calculate average engagement per post
-    const estimatedPostsPerMonth = 30;
-    const avgEngagementPerPost = totalEngagements / estimatedPostsPerMonth;
-    const engagementRate = stat.follower_count > 0 ? (avgEngagementPerPost / stat.follower_count) * 100 : 0;
+    if (!reach || reach <= 0) return null; // Return null if no reach data
     
-    return Math.round(engagementRate * 100) / 100; // Round to 2 decimal places
+    // Use standardized reach-based calculation
+    const engagementRate = (likes + comments + saves) / reach;
+    
+    return Math.round(engagementRate * 10000) / 100; // Convert to percentage and round to 2 decimal places
   };
 
   const updatePlatformStats = async (platform: string) => {
@@ -213,7 +214,7 @@ const Admin = () => {
     
     setLoading(true);
     try {
-      // Auto-calculate engagement rate
+      // Auto-calculate engagement rate using standardized formula
       const calculatedEngagementRate = calculateEngagementRate(platform);
       
       const { error } = await supabase
@@ -232,7 +233,7 @@ const Admin = () => {
 
       toast({
         title: "Updated!",
-        description: `${platform} statistics updated successfully (Engagement: ${calculatedEngagementRate}%)`
+        description: `${platform} statistics updated successfully (Engagement: ${formatPct(calculatedEngagementRate)})`
       });
       
       await fetchStats();
@@ -564,16 +565,16 @@ const Admin = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Engagement Rate (Auto-calculated)</Label>
+                  <Label>Engagement Rate (by reach) - Auto-calculated</Label>
                   <Input
                     type="number"
-                    step="0.1"
-                    value={calculateEngagementRate('instagram')}
+                    step="0.01"
+                    value={calculateEngagementRate('instagram') || 0}
                     disabled
                     className="bg-muted/50"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Calculated from avg engagement per post (monthly total ÷ 30 posts) ÷ followers × 100
+                    Calculated as (likes + comments + saves) / reach. Uses monthly views as reach proxy.
                   </p>
                 </div>
 
@@ -751,16 +752,16 @@ const Admin = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Engagement Rate (Auto-calculated)</Label>
+                  <Label>Engagement Rate (by reach) - Auto-calculated</Label>
                   <Input
                     type="number"
-                    step="0.1"
-                    value={calculateEngagementRate('youtube')}
+                    step="0.01"
+                    value={calculateEngagementRate('youtube') || 0}
                     disabled
                     className="bg-muted/50"
                   />
                   <p className="text-xs text-muted-foreground">
-                    YouTube engagement = avg per video (monthly total ÷ 10 videos) ÷ subscribers × 100
+                    Calculated as (likes + comments) / reach. Uses monthly views as reach proxy.
                   </p>
                 </div>
 

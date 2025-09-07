@@ -3,6 +3,7 @@ import { useSocialMetrics } from '../hooks/useSocialMetrics';
 import { useSocialAssets } from '../hooks/useSocialAssets';
 import { useState, useEffect } from 'react';
 import { getAssetUrl } from '../utils/signedUrls';
+import { erByReach, formatPct } from '../utils/engagement';
 
 export function TikTokCard() {
   const { metrics, updatedAt, loading, err } = useSocialMetrics('tiktok');
@@ -28,7 +29,13 @@ export function TikTokCard() {
   const followers = metrics['followers']?.value ?? 1410;
   const videoViews = metrics['video_views']?.value ?? 37000;
   const monthlyLikes = metrics['monthly_likes']?.value ?? 8000;
-  const engagementRate = metrics['engagement_rate']?.value ?? 9.1;
+  
+  // Calculate engagement rate using standardized formula (by reach)
+  const likes = monthlyLikes;
+  const comments = Math.round(likes * 0.08); // Estimate comments as 8% of likes (TikTok ratio)
+  const saves = Math.round(likes * 0.15); // Estimate saves as 15% of likes (TikTok higher save rate)
+  const reach = videoViews; // Use video views as reach
+  const engagementRate = erByReach({ likes, comments, saves, reach });
 
   return (
     <PlatformCard
@@ -40,11 +47,11 @@ export function TikTokCard() {
       metrics={[
         { label: "Video Views", value: `${Math.round(videoViews / 1000)}K`, trend: "+23.4%" },
         { label: "Monthly Likes", value: `${Math.round(monthlyLikes / 1000)}K`, trend: "+28.9%" },
-        { label: "Engagement Rate", value: `${engagementRate.toFixed(1)}%`, trend: "+3.2%" },
+        { label: "Engagement Rate (by reach)", value: formatPct(engagementRate), trend: "+3.2%" },
         { label: "Followers", value: `${(followers / 1000).toFixed(1)}K`, trend: "+18.5%" }
       ]}
       highlights={[
-        `${engagementRate.toFixed(1)}% engagement rate ${engagementRate > 8 ? '(excellent performance)' : '(growing)'}`,
+        `${formatPct(engagementRate)} engagement rate ${engagementRate && engagementRate > 0.08 ? '(excellent performance)' : '(growing)'}`,
         `${Math.round((monthlyLikes + (monthlyLikes * 0.08) + (monthlyLikes * 0.15)) / 1000)}K monthly interactions`,
         `Growing platform with ${(followers / 1000).toFixed(1)}K followers and high viral potential`,
         updatedAt ? `Updated: ${new Date(updatedAt).toLocaleString()}` : ''
