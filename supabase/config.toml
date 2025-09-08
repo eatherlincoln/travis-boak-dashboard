@@ -9,5 +9,8 @@ verify_jwt = true
 [functions.refresh-social-stats]
 verify_jwt = false
 
+[functions.refresh-ig-media]
+verify_jwt = false
+
 [functions.upsert-analytics]
 verify_jwt = false

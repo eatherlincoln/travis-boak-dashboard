@@ -412,6 +412,52 @@ const Admin = () => {
       description: `Thumbnail ${index + 1} has been removed.`
     });
   };
+  const refreshThumbnails = async () => {
+    if (!user) return;
+    
+    setLoading(true);
+    try {
+      // Get all Instagram post IDs from the database
+      const { data: posts, error: fetchError } = await supabase
+        .from('instagram_posts_public')
+        .select('media_id');
+        
+      if (fetchError) throw fetchError;
+      
+      if (!posts || posts.length === 0) {
+        toast({
+          title: "No Posts Found",
+          description: "No Instagram posts found to refresh"
+        });
+        return;
+      }
+      
+      const mediaIds = posts.map(p => p.media_id);
+      
+      // Call the edge function
+      const { data, error } = await supabase.functions.invoke('refresh-ig-media', {
+        body: { media_ids: mediaIds }
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Thumbnails Refreshed!",
+        description: `Updated ${data.updated} of ${data.processed} media URLs. ${data.errors || 0} errors.`
+      });
+      
+    } catch (error) {
+      console.error('Error refreshing thumbnails:', error);
+      toast({
+        title: "Refresh Failed",
+        description: "Failed to refresh thumbnails. Check console for details.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
@@ -578,14 +624,26 @@ const Admin = () => {
                   </p>
                 </div>
 
-                <Button 
-                  onClick={() => updatePlatformStats('instagram')}
-                  disabled={loading}
-                  className="w-full"
-                >
-                  <Save className="mr-2 h-4 w-4" />
-                  {loading ? 'Saving...' : 'Save Changes'}
-                </Button>
+                <div className="space-y-2">
+                  <Button 
+                    onClick={() => updatePlatformStats('instagram')}
+                    disabled={loading}
+                    className="w-full"
+                  >
+                    <Save className="mr-2 h-4 w-4" />
+                    {loading ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                  
+                  <Button 
+                    onClick={refreshThumbnails}
+                    disabled={loading}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    Refresh Thumbnails
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           )}

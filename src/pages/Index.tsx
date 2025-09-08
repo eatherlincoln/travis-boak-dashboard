@@ -324,12 +324,7 @@ const Index = () => {
                               className="w-full h-full object-cover"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                            
-                            {/* Engagement Rate Badge */}
-                            <div className="absolute top-2 right-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-md">
-                              {post.engagementRate.toFixed(2)}% ER
-                            </div>
-                            
+                             
                             {/* External Link Icon */}
                             <ExternalLink className="absolute top-2 left-2 h-4 w-4 text-white opacity-80" />
                             
@@ -361,12 +356,7 @@ const Index = () => {
                               className="w-full h-full object-cover"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                            
-                            {/* Engagement Rate Badge */}
-                            <div className="absolute top-2 right-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-md">
-                              {post.engagementRate.toFixed(2)}% ER
-                            </div>
-                            
+                             
                             {/* Overlay Stats */}
                             <div className="absolute bottom-2 left-2 text-white">
                               <div className="flex items-center gap-3 text-sm font-medium">
