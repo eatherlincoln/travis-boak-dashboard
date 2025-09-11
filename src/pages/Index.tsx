@@ -532,12 +532,6 @@ const Index = () => {
           </CardContent>
         </Card>
 
-        {/* Live Analytics Dashboard */}
-        <Card className="shadow-card border-border/50">
-          <CardContent className="p-6">
-            <PublicDashboard />
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
