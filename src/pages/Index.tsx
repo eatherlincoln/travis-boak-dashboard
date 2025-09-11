@@ -382,9 +382,6 @@ const Index = () => {
                       <div className="p-3">
                         <div className="flex justify-between items-start mb-2">
                           <span className="text-xs text-muted-foreground font-medium">Post #{postNumber}</span>
-                          <span className="text-xs text-green-600 font-bold">
-                            {post.engagementRate.toFixed(2)}% ER
-                          </span>
                         </div>
                         
                         <div className="grid grid-cols-2 gap-2 text-xs">

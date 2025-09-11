@@ -123,68 +123,46 @@ export const useInstagramPosts = () => {
       setLoading(true);
       setError(null);
 
-      console.log('🔍 Fetching Instagram posts from platform_stats...');
-      
-      // Fetch Instagram platform stats which contains post analysis
-      const { data, error: fetchError } = await supabase
-        .from('platform_stats')
-        .select('additional_metrics, engagement_rate, follower_count')
-        .eq('platform', 'instagram')
-        .single();
+      console.log('🔍 Fetching Instagram posts via edge function...');
+      const { data: resp, error: funcError } = await supabase.functions.invoke('get-instagram-posts');
 
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        throw fetchError;
-      }
+      if (funcError) throw funcError;
 
-      const followerCount = data?.follower_count || 38700;
+      const followerCount = (resp as any)?.follower_count || 38700;
+      const adminPosts = ((resp as any)?.posts || []) as InstagramPostData[];
 
-      if (data?.additional_metrics && 
-          typeof data.additional_metrics === 'object' && 
-          data.additional_metrics !== null) {
-        
-        const metrics = data.additional_metrics as any;
-        if (metrics.post_analysis && Array.isArray(metrics.post_analysis)) {
-          console.log('✅ Found admin Instagram posts:', metrics.post_analysis);
-          
-          const adminPosts = metrics.post_analysis as InstagramPostData[];
+      if (adminPosts.length > 0) {
+        const formattedPosts: FormattedInstagramPost[] = adminPosts.slice(0, 4).map((post, index) => {
+          const likesNum = post.likes || 0;
+          const estimatedReach = post.reach || Math.floor(followerCount * 2.5);
+          const engagementRate = calculateEngagementRate(post, estimatedReach);
 
-          const formattedPosts: FormattedInstagramPost[] = adminPosts.map((post, index) => {
-            const likesNum = post.likes || 0;
-            // Use actual reach if provided, otherwise estimate as 2-3x follower count for viral content
-            const estimatedReach = post.reach || Math.floor(followerCount * 2.5);
-            const engagementRate = calculateEngagementRate(post, estimatedReach);
-            
-            return {
-              title: post.url 
-                ? `Instagram Post ${post.post_number || index + 1}` 
-                : defaultInstagramPosts[index]?.title || `Post ${index + 1}`,
-              platform: "Instagram",
-              likes: post.likes ? `${formatNumberShort(post.likes)} likes` : defaultInstagramPosts[index]?.likes || "0 likes",
-              likesNumber: likesNum,
-              image: post.image_url || defaultInstagramPosts[index]?.image || "https://images.unsplash.com/photo-1581852017103-68ac65514cf7?w=500&h=500&fit=crop&crop=center",
-              engagement: `${(engagementRate * 100).toFixed(1)}%`,
-              engagementRate: engagementRate * 100,
-              comments: post.comments || 0,
-              shares: post.shares || 0,
-              saves: post.saves || 0,
-              reach: estimatedReach,
-              url: post.url || '#'
-            };
-          }).slice(0, 4); // Only show first 4 posts
+          return {
+            title: post.url
+              ? `Instagram Post ${post.post_number || index + 1}`
+              : defaultInstagramPosts[index]?.title || `Post ${index + 1}`,
+            platform: 'Instagram',
+            likes: post.likes ? `${formatNumberShort(post.likes)} likes` : defaultInstagramPosts[index]?.likes || '0 likes',
+            likesNumber: likesNum,
+            image: post.image_url || defaultInstagramPosts[index]?.image || 'https://images.unsplash.com/photo-1581852017103-68ac65514cf7?w=500&h=500&fit=crop&crop=center',
+            engagement: `${(engagementRate * 100).toFixed(1)}%`,
+            engagementRate: engagementRate * 100,
+            comments: post.comments || 0,
+            shares: post.shares || 0,
+            saves: post.saves || 0,
+            reach: estimatedReach,
+            url: post.url || '#',
+          };
+        });
 
-          setPosts(formattedPosts);
-        } else {
-          console.log('⚠️ No admin post analysis found, using default posts');
-          setPosts(defaultInstagramPosts);
-        }
+        setPosts(formattedPosts);
       } else {
-        console.log('⚠️ No additional_metrics found, using default posts');
+        console.log('⚠️ No posts returned by function, using default posts');
         setPosts(defaultInstagramPosts);
       }
     } catch (err) {
       console.error('Error fetching Instagram posts:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
-      // Fallback to default posts
       setPosts(defaultInstagramPosts);
     } finally {
       setLoading(false);
