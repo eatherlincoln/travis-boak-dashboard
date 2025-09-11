@@ -13,7 +13,7 @@ import { Settings, LogOut, Save, ArrowLeft, Instagram, Youtube, Video, RotateCcw
 import { Link } from 'react-router-dom';
 import InstagramPostForm from '@/components/InstagramPostForm';
 import { PublicDashboard } from '@/components/PublicDashboard';
-import { erByReach, formatPct } from '@/utils/engagement';
+import { erByReach, formatPct, instagramEngagementRate, tiktokEngagementRate, youtubeEngagementRate } from '@/utils/engagement';
 
 
 interface PlatformStats {
@@ -27,6 +27,8 @@ interface PlatformStats {
     comments?: number;
     shares?: number;
     saves?: number;
+    reach?: number; // For Instagram
+    total_views?: number; // For TikTok/YouTube
     top_posts_urls?: string[]; // Instagram post URLs for reference
   };
   image_urls: string[]; // Direct image URLs for thumbnails
@@ -198,15 +200,34 @@ const Admin = () => {
     const stat = editingStats[platform];
     if (!stat || !stat.additional_metrics) return null;
     
-    const { likes = 0, comments = 0, saves = 0 } = stat.additional_metrics;
-    const reach = stat.monthly_views; // Use monthly_views as reach proxy
-    
-    if (!reach || reach <= 0) return null; // Return null if no reach data
-    
-    // Use standardized reach-based calculation
-    const engagementRate = (likes + comments + saves) / reach;
-    
-    return Math.round(engagementRate * 10000) / 100; // Convert to percentage and round to 2 decimal places
+    const { 
+      likes = 0, 
+      comments = 0, 
+      shares = 0, 
+      saves = 0, 
+      reach = 0, 
+      total_views = 0 
+    } = stat.additional_metrics;
+
+    switch (platform) {
+      case 'instagram':
+        // Instagram: ((Likes + Comments + Saves) / Reach) × 100
+        const instagramReach = reach || stat.monthly_views; // Use reach or fallback to monthly views
+        return instagramEngagementRate({ likes, comments, saves, reach: instagramReach });
+      
+      case 'tiktok':
+        // TikTok: ((Likes + Comments + Shares + Saves) / Total Views) × 100
+        const tiktokViews = total_views || stat.monthly_views;
+        return tiktokEngagementRate({ likes, comments, shares, saves, totalViews: tiktokViews });
+      
+      case 'youtube':
+        // YouTube: Average of((Likes + Comments + Shares) / Total Views) × 100
+        const youtubeViews = total_views || stat.monthly_views;
+        return youtubeEngagementRate({ likes, comments, shares, totalViews: youtubeViews });
+      
+      default:
+        return null;
+    }
   };
 
   const updatePlatformStats = async (platform: string) => {
@@ -233,7 +254,7 @@ const Admin = () => {
 
       toast({
         title: "Updated!",
-        description: `${platform} statistics updated successfully (Engagement: ${formatPct(calculatedEngagementRate)})`
+        description: `${platform} statistics updated successfully (Engagement: ${calculatedEngagementRate ? formatPct(calculatedEngagementRate) : 'N/A'})`
       });
       
       await fetchStats();
@@ -573,7 +594,7 @@ const Admin = () => {
                 </div>
 
                 <div className="space-y-4 p-3 bg-muted/30 rounded-lg">
-                  <Label className="text-sm font-medium">Instagram Metrics</Label>
+                  <Label className="text-sm font-medium">Instagram Engagement Metrics</Label>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <Label className="text-xs">Monthly Likes</Label>
@@ -592,14 +613,6 @@ const Admin = () => {
                       />
                     </div>
                     <div>
-                      <Label className="text-xs">Monthly Shares</Label>
-                      <Input
-                        type="number"
-                        value={editingStats['instagram']?.additional_metrics?.shares || 0}
-                        onChange={(e) => updateMetricValue('instagram', 'shares', e.target.value)}
-                      />
-                    </div>
-                    <div>
                       <Label className="text-xs">Monthly Saves</Label>
                       <Input
                         type="number"
@@ -607,20 +620,28 @@ const Admin = () => {
                         onChange={(e) => updateMetricValue('instagram', 'saves', e.target.value)}
                       />
                     </div>
+                    <div>
+                      <Label className="text-xs">Reach (optional)</Label>
+                      <Input
+                        type="number"
+                        value={editingStats['instagram']?.additional_metrics?.reach || 0}
+                        onChange={(e) => updateMetricValue('instagram', 'reach', e.target.value)}
+                        placeholder="Falls back to monthly views"
+                      />
+                    </div>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Engagement Rate (by reach) - Auto-calculated</Label>
+                  <Label>Instagram Engagement Rate - Auto-calculated</Label>
                   <Input
-                    type="number"
-                    step="0.01"
-                    value={calculateEngagementRate('instagram') || 0}
+                    type="text"
+                    value={calculateEngagementRate('instagram') ? formatPct(calculateEngagementRate('instagram')) : '0%'}
                     disabled
                     className="bg-muted/50"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Calculated as (likes + comments + saves) / reach. Uses monthly views as reach proxy.
+                    Instagram formula: ((Likes + Comments + Saves) / Reach) × 100. Uses monthly views if reach not specified.
                   </p>
                 </div>
 
@@ -809,17 +830,55 @@ const Admin = () => {
                   />
                 </div>
 
+                <div className="space-y-4 p-3 bg-muted/30 rounded-lg">
+                  <Label className="text-sm font-medium">YouTube Engagement Metrics</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-xs">Monthly Likes</Label>
+                      <Input
+                        type="number"
+                        value={editingStats['youtube']?.additional_metrics?.likes || 0}
+                        onChange={(e) => updateMetricValue('youtube', 'likes', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Monthly Comments</Label>
+                      <Input
+                        type="number"
+                        value={editingStats['youtube']?.additional_metrics?.comments || 0}
+                        onChange={(e) => updateMetricValue('youtube', 'comments', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Monthly Shares</Label>
+                      <Input
+                        type="number"
+                        value={editingStats['youtube']?.additional_metrics?.shares || 0}
+                        onChange={(e) => updateMetricValue('youtube', 'shares', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Total Views (optional)</Label>
+                      <Input
+                        type="number"
+                        value={editingStats['youtube']?.additional_metrics?.total_views || 0}
+                        onChange={(e) => updateMetricValue('youtube', 'total_views', e.target.value)}
+                        placeholder="Falls back to monthly views"
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <Label>Engagement Rate (by reach) - Auto-calculated</Label>
+                  <Label>YouTube Engagement Rate - Auto-calculated</Label>
                   <Input
-                    type="number"
-                    step="0.01"
-                    value={calculateEngagementRate('youtube') || 0}
+                    type="text"
+                    value={calculateEngagementRate('youtube') ? formatPct(calculateEngagementRate('youtube')) : '0%'}
                     disabled
                     className="bg-muted/50"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Calculated as (likes + comments) / reach. Uses monthly views as reach proxy.
+                    YouTube formula: ((Likes + Comments + Shares) / Total Views) × 100. Uses monthly views if total views not specified.
                   </p>
                 </div>
 
@@ -865,8 +924,8 @@ const Admin = () => {
                 </div>
 
                 <div className="space-y-4 p-3 bg-muted/30 rounded-lg">
-                  <Label className="text-sm font-medium">TikTok Metrics</Label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <Label className="text-sm font-medium">TikTok Engagement Metrics</Label>
+                  <div className="grid grid-cols-2 gap-2">
                     <div>
                       <Label className="text-xs">Monthly Likes</Label>
                       <Input
@@ -891,20 +950,36 @@ const Admin = () => {
                         onChange={(e) => updateMetricValue('tiktok', 'shares', e.target.value)}
                       />
                     </div>
+                    <div>
+                      <Label className="text-xs">Monthly Saves</Label>
+                      <Input
+                        type="number"
+                        value={editingStats['tiktok']?.additional_metrics?.saves || 0}
+                        onChange={(e) => updateMetricValue('tiktok', 'saves', e.target.value)}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label className="text-xs">Total Views (optional)</Label>
+                      <Input
+                        type="number"
+                        value={editingStats['tiktok']?.additional_metrics?.total_views || 0}
+                        onChange={(e) => updateMetricValue('tiktok', 'total_views', e.target.value)}
+                        placeholder="Falls back to monthly views"
+                      />
+                    </div>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Engagement Rate (Auto-calculated)</Label>
+                  <Label>TikTok Engagement Rate - Auto-calculated</Label>
                   <Input
-                    type="number"
-                    step="0.1"
-                    value={calculateEngagementRate('tiktok')}
+                    type="text"
+                    value={calculateEngagementRate('tiktok') ? formatPct(calculateEngagementRate('tiktok')) : '0%'}
                     disabled
                     className="bg-muted/50"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Calculated from total engagements ÷ followers × 100
+                    TikTok formula: ((Likes + Comments + Shares + Saves) / Total Views) × 100. Uses monthly views if total views not specified.
                   </p>
                 </div>
 

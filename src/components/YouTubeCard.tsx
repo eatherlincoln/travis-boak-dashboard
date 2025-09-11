@@ -3,7 +3,7 @@ import { useSocialMetrics } from '../hooks/useSocialMetrics';
 import { useSocialAssets } from '../hooks/useSocialAssets';
 import { useState, useEffect } from 'react';
 import { getAssetUrl } from '../utils/signedUrls';
-import { erByReach, formatPct } from '../utils/engagement';
+import { youtubeEngagementRate, formatPct } from '../utils/engagement';
 
 export function YouTubeCard() {
   const { metrics, updatedAt, loading, err } = useSocialMetrics('youtube');
@@ -30,13 +30,12 @@ export function YouTubeCard() {
   const monthlyViews = metrics['monthly_views']?.value ?? 86800;
   const avgWatchTime = metrics['avg_watch_time']?.value ?? 3.2;
   
-  // Calculate engagement rate using standardized formula (by reach)
-  // For YouTube, estimate engagement from views
+  // Calculate YouTube engagement rate: Average of((Likes + Comments + Shares) / Total Views) × 100
   const likes = Math.round(monthlyViews * 0.03); // Estimate likes as 3% of views
   const comments = Math.round(likes * 0.10); // Estimate comments as 10% of likes
-  const saves = 0; // YouTube doesn't have saves like Instagram/TikTok
-  const reach = monthlyViews; // Use monthly views as reach
-  const engagementRate = erByReach({ likes, comments, saves, reach });
+  const shares = Math.round(likes * 0.05); // Estimate shares as 5% of likes
+  const totalViews = monthlyViews; // Total views for YouTube calculation
+  const engagementRate = youtubeEngagementRate({ likes, comments, shares, totalViews });
 
   return (
     <PlatformCard

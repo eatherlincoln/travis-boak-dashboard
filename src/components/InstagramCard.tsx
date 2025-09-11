@@ -4,7 +4,7 @@ import { useSocialAssets } from '../hooks/useSocialAssets';
 import { useInstagramMonthlyLikes } from '../hooks/useInstagramMonthlyLikes';
 import { useState, useEffect } from 'react';
 import { getAssetUrl } from '../utils/signedUrls';
-import { erByReach, formatPct } from '../utils/engagement';
+import { instagramEngagementRate, formatPct } from '../utils/engagement';
 
 export function InstagramCard() {
   const { metrics, updatedAt, loading, err } = useSocialMetrics('instagram');
@@ -35,12 +35,12 @@ export function InstagramCard() {
   const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
   const monthlyLikes = monthlyLikesMap[currentMonth] ?? 15000;
   
-  // Calculate engagement rate using standardized formula (by reach)
+  // Calculate Instagram engagement rate: ((Likes + Comments + Saves) / Reach) × 100
   const likes = monthlyLikes;
   const comments = Math.round(likes * 0.15); // Estimate comments as 15% of likes
   const saves = Math.round(likes * 0.05); // Estimate saves as 5% of likes
   const reach = videoViews; // Use monthly views as reach proxy
-  const engagementRate = erByReach({ likes, comments, saves, reach });
+  const engagementRate = instagramEngagementRate({ likes, comments, saves, reach });
 
   return (
     <PlatformCard
