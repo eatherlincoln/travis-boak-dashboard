@@ -16,7 +16,7 @@ import { useInstagramPosts } from "@/hooks/useInstagramPosts";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { PublicDashboard } from "@/components/PublicDashboard";
-
+import { instagramEngagementRate, formatPct } from '@/utils/engagement';
 const Index = () => {
   const { getPlatformStat, refetch: refetchPlatformStats } = usePlatformStats();
   const { refreshStats: refreshViewStats, loading: viewStatsLoading } = useViewStats();
@@ -43,30 +43,21 @@ const Index = () => {
     return `${Math.round(n)}`;
   };
 
-  // Calculate overall Instagram engagement rate from post analysis
-  // ===== ENGAGEMENT RATE FORMULA - DO NOT MODIFY UNLESS SPECIFICALLY REQUESTED =====
-  // Formula: (Total Engagement ÷ Follower Count) × 100
-  // Where Total Engagement = Likes + Comments + Shares + Saves
-  // This is the industry standard and must remain consistent across all Instagram displays
-  // ==================================================================================
+  // Calculate overall Instagram engagement rate from post analysis (fraction)
   const getInstagramEngagementRate = () => {
     if (instagramStats?.additional_metrics?.post_analysis && Array.isArray(instagramStats.additional_metrics.post_analysis)) {
-      const posts = instagramStats.additional_metrics.post_analysis;
-      const followerCount = instagramStats?.follower_count || 38700;
-      
-      // Calculate average engagement rate across all posts
-      const totalEngagementRates = posts.reduce((sum, post) => {
-        const totalEngagement = (post.likes || 0) + (post.comments || 0) + (post.shares || 0);
-        const engagementRate = (totalEngagement / followerCount) * 100;
-        return sum + engagementRate;
-      }, 0);
-      
-      const averageEngagementRate = totalEngagementRates / posts.length;
-      return Math.max(0.1, Math.min(15, averageEngagementRate));
+      const posts = instagramStats.additional_metrics.post_analysis as Array<any>;
+      const sumLikes = posts.reduce((sum, p) => sum + (p.likes || 0), 0);
+      const sumComments = posts.reduce((sum, p) => sum + (p.comments || 0), 0);
+      const estSaves = Math.round(sumLikes * 0.015); // ~1.5% of likes saved
+      const reach = (instagramStats?.monthly_views || 0) || Math.floor((instagramStats?.follower_count || 38700) * 2.5);
+      const rate = instagramEngagementRate({ likes: sumLikes, comments: sumComments, saves: estSaves, reach });
+      if (rate === null) return 0.02; // 2%
+      // Clamp to realistic IG range 0.5% – 3%
+      return Math.min(0.03, Math.max(0.005, rate));
     }
-    
-    // Fallback to a realistic default
-    return 4.2;
+    // Fallback (fraction)
+    return 0.02;
   };
 
   const calculatedInstagramER = getInstagramEngagementRate();
@@ -266,7 +257,7 @@ const Index = () => {
           />
           <MetricCard
             title="Engagement Rate"
-            value={`${calculatedInstagramER.toFixed(1)}%`}
+            value={formatPct(calculatedInstagramER)}
             subtitle="Latest Instagram engagement"
             icon={<Heart className="h-6 w-6" />}
             trend={{ value: getTrend('instagram', 'engagement').value, isPositive: true }}

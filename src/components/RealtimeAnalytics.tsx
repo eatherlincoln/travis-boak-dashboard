@@ -20,10 +20,10 @@ const RealtimeAnalytics: React.FC<RealtimeAnalyticsProps> = ({ className }) => {
       // Generate realistic test data based on platform
       const getRealisticEngagement = (source: string) => {
         switch (source) {
-          case 'instagram': return Math.random() * 2.5 + 1; // 1-3.5%
-          case 'tiktok': return Math.random() * 4 + 3; // 3-7%  
-          case 'youtube': return Math.random() * 2 + 1.5; // 1.5-3.5%
-          default: return Math.random() * 3 + 1; // 1-4%
+          case 'instagram': return (Math.random() * 1.5 + 1) / 100; // 1.0–2.5% (fraction)
+          case 'tiktok': return (Math.random() * 4 + 3) / 100; // 3–7% (fraction)  
+          case 'youtube': return (Math.random() * 2 + 1.5) / 100; // 1.5–3.5% (fraction)
+          default: return (Math.random() * 3 + 1) / 100; // 1–4% (fraction)
         }
       };
       
@@ -53,7 +53,7 @@ const RealtimeAnalytics: React.FC<RealtimeAnalyticsProps> = ({ className }) => {
 
   const formatValue = (value: number, metric: string): string => {
     if (metric === 'engagement_rate') {
-      return `${value.toFixed(1)}%`;
+      return `${(value * 100).toFixed(1)}%`;
     }
     if (value >= 1000000) {
       return `${(value / 1000000).toFixed(1)}M`;

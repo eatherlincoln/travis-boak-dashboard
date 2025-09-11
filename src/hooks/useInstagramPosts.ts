@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { formatPct } from '@/utils/engagement';
 
 interface InstagramPostData {
   post_number: number;
@@ -107,7 +108,7 @@ export const useInstagramPosts = () => {
     // Use reach if available, otherwise fall back to follower-based calculation
     if (reach > 0) {
       const engagementRate = (likes + comments + saves) / reach;
-      return Math.max(0.001, Math.min(0.06, engagementRate)); // Cap between 0.1% and 6% for realism
+      return Math.max(0.003, Math.min(0.035, engagementRate)); // Cap ~0.3%–3.5%
     }
     
     // Fallback to follower-based calculation if no reach data
@@ -115,7 +116,7 @@ export const useInstagramPosts = () => {
     const totalEngagement = likes + comments + shares + saves;
     const engagementRate = (totalEngagement / followerCount);
     
-    return Math.max(0.001, Math.min(0.06, engagementRate)); // Cap between 0.1% and 6% for realism
+    return Math.max(0.003, Math.min(0.035, engagementRate)); // Cap ~0.3%–3.5% for realism
   };
 
   const fetchPosts = async () => {
@@ -145,8 +146,8 @@ export const useInstagramPosts = () => {
             likes: post.likes ? `${formatNumberShort(post.likes)} likes` : defaultInstagramPosts[index]?.likes || '0 likes',
             likesNumber: likesNum,
             image: post.image_url || defaultInstagramPosts[index]?.image || 'https://images.unsplash.com/photo-1581852017103-68ac65514cf7?w=500&h=500&fit=crop&crop=center',
-            engagement: `${(engagementRate * 100).toFixed(1)}%`,
-            engagementRate: engagementRate * 100,
+            engagement: formatPct(engagementRate),
+            engagementRate: engagementRate,
             comments: post.comments || 0,
             shares: post.shares || 0,
             saves: post.saves || 0,

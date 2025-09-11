@@ -54,7 +54,7 @@ export const usePlatformStats = () => {
             platform: 'instagram',
             follower_count: 38700,
             monthly_views: 730000,
-            engagement_rate: 2.1, // Realistic Instagram rate
+            engagement_rate: 0.021, // Realistic Instagram rate
             additional_metrics: {},
             updated_at: new Date().toISOString()
           },
@@ -62,7 +62,7 @@ export const usePlatformStats = () => {
             platform: 'youtube',
             follower_count: 8800,
             monthly_views: 86800,
-            engagement_rate: 2.8, // Realistic YouTube rate
+            engagement_rate: 0.028, // Realistic YouTube rate
             additional_metrics: {},
             updated_at: new Date().toISOString()
           },
@@ -70,7 +70,7 @@ export const usePlatformStats = () => {
             platform: 'tiktok',
             follower_count: 1410,
             monthly_views: 37000,
-            engagement_rate: 5.2, // Realistic TikTok rate
+            engagement_rate: 0.052, // Realistic TikTok rate
             additional_metrics: {},
             updated_at: new Date().toISOString()
           }
@@ -86,7 +86,7 @@ export const usePlatformStats = () => {
           platform: 'instagram',
           follower_count: 38700,
           monthly_views: 730000,
-          engagement_rate: 2.1, // Realistic Instagram rate
+          engagement_rate: 0.021, // Realistic Instagram rate
           additional_metrics: {},
           updated_at: new Date().toISOString()
         },
@@ -94,7 +94,7 @@ export const usePlatformStats = () => {
           platform: 'youtube',
           follower_count: 8800,
           monthly_views: 86800,
-          engagement_rate: 2.8, // Realistic YouTube rate
+          engagement_rate: 0.028, // Realistic YouTube rate
           additional_metrics: {},
           updated_at: new Date().toISOString()
         },
@@ -102,7 +102,7 @@ export const usePlatformStats = () => {
           platform: 'tiktok',
           follower_count: 1410,
           monthly_views: 37000,
-          engagement_rate: 5.2, // Realistic TikTok rate
+          engagement_rate: 0.052, // Realistic TikTok rate
           additional_metrics: {},
           updated_at: new Date().toISOString()
         }

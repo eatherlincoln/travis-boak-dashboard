@@ -1017,7 +1017,7 @@ const Admin = () => {
                     <p className="text-sm text-muted-foreground">Followers</p>
                     <p className="text-lg font-semibold">{stat.monthly_views.toLocaleString()}</p>
                     <p className="text-sm text-muted-foreground">Monthly Views</p>
-                    <p className="text-lg font-semibold">{stat.engagement_rate}%</p>
+                    <p className="text-lg font-semibold">{formatPct(stat.engagement_rate || 0)}</p>
                     <p className="text-sm text-muted-foreground">Engagement</p>
                   </div>
                 </div>
