@@ -35,10 +35,10 @@ export function InstagramCard() {
   const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
   const monthlyLikes = monthlyLikesMap[currentMonth] ?? 15000;
   
-  // Calculate Instagram engagement rate: ((Likes + Comments + Saves) / Reach) × 100
+  // Calculate Instagram engagement rate with realistic ratios: ((Likes + Comments + Saves) / Reach) × 100
   const likes = monthlyLikes;
-  const comments = Math.round(likes * 0.15); // Estimate comments as 15% of likes
-  const saves = Math.round(likes * 0.05); // Estimate saves as 5% of likes
+  const comments = Math.round(likes * 0.025); // Realistic: 2.5% of likes become comments
+  const saves = Math.round(likes * 0.015); // Realistic: 1.5% of likes become saves  
   const reach = videoViews; // Use monthly views as reach proxy
   const engagementRate = instagramEngagementRate({ likes, comments, saves, reach });
 
@@ -56,8 +56,8 @@ export function InstagramCard() {
         { label: "Followers", value: `${(followers / 1000).toFixed(1)}K`, trend: "+2.3%" }
       ]}
       highlights={[
-        `${formatPct(engagementRate)} engagement rate ${engagementRate && engagementRate > 0.035 ? '(above industry avg)' : '(growing)'}`,
-        `${Math.round((monthlyLikes + (monthlyLikes * 0.15) + (monthlyLikes * 0.05)) / 1000)}K monthly interactions`,
+        `${formatPct(engagementRate)} engagement rate ${engagementRate && engagementRate > 0.025 ? '(above industry avg)' : '(growing)'}`,
+        `${Math.round((monthlyLikes + (monthlyLikes * 0.025) + (monthlyLikes * 0.015)) / 1000)}K monthly interactions`,
         `${(followers / 1000).toFixed(1)}K engaged followers with strong save rate`,
         updatedAt ? `Updated: ${new Date(updatedAt).toLocaleString()}` : ''
       ].filter(Boolean)}

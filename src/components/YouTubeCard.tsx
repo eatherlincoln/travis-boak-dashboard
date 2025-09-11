@@ -30,10 +30,10 @@ export function YouTubeCard() {
   const monthlyViews = metrics['monthly_views']?.value ?? 86800;
   const avgWatchTime = metrics['avg_watch_time']?.value ?? 3.2;
   
-  // Calculate YouTube engagement rate: Average of((Likes + Comments + Shares) / Total Views) × 100
-  const likes = Math.round(monthlyViews * 0.03); // Estimate likes as 3% of views
-  const comments = Math.round(likes * 0.10); // Estimate comments as 10% of likes
-  const shares = Math.round(likes * 0.05); // Estimate shares as 5% of likes
+  // Calculate YouTube engagement rate with realistic ratios: Average of((Likes + Comments + Shares) / Total Views) × 100
+  const likes = Math.round(monthlyViews * 0.008); // Realistic: 0.8% of views become likes
+  const comments = Math.round(likes * 0.08); // Realistic: 8% of likes become comments
+  const shares = Math.round(likes * 0.025); // Realistic: 2.5% of likes become shares
   const totalViews = monthlyViews; // Total views for YouTube calculation
   const engagementRate = youtubeEngagementRate({ likes, comments, shares, totalViews });
 

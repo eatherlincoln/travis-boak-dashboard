@@ -35,8 +35,8 @@ const defaultInstagramPosts = [
     likes: "2.8K likes",
     likesNumber: 2800,
     image: "https://images.unsplash.com/photo-1581852017103-68ac65514cf7?w=500&h=500&fit=crop&crop=center",
-    engagement: "4.2%",
-    engagementRate: 4.2,
+    engagement: "2.1%",
+    engagementRate: 2.1,
     comments: 45,
     shares: 12,
     saves: 156,
@@ -49,8 +49,8 @@ const defaultInstagramPosts = [
     likes: "2.1K likes",
     likesNumber: 2100,
     image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&h=500&fit=crop&crop=center",
-    engagement: "3.8%",
-    engagementRate: 3.8,
+    engagement: "1.8%",
+    engagementRate: 1.8,
     comments: 38,
     shares: 8,
     saves: 142,
@@ -63,8 +63,8 @@ const defaultInstagramPosts = [
     likes: "1.9K likes",
     likesNumber: 1900,
     image: "https://images.unsplash.com/photo-1519018307286-6e2407875739?w=500&h=500&fit=crop&crop=center",
-    engagement: "5.1%",
-    engagementRate: 5.1,
+    engagement: "2.8%",
+    engagementRate: 2.8,
     comments: 52,
     shares: 15,
     saves: 98,
@@ -77,8 +77,8 @@ const defaultInstagramPosts = [
     likes: "1.6K likes",
     likesNumber: 1600,
     image: "https://images.unsplash.com/photo-1490730141103-6cac27aaab94?w=500&h=500&fit=crop&crop=center", 
-    engagement: "3.5%",
-    engagementRate: 3.5,
+    engagement: "1.9%",
+    engagementRate: 1.9,
     comments: 29,
     shares: 6,
     saves: 87,
@@ -107,7 +107,7 @@ export const useInstagramPosts = () => {
     // Use reach if available, otherwise fall back to follower-based calculation
     if (reach > 0) {
       const engagementRate = (likes + comments + saves) / reach;
-      return Math.max(0.001, Math.min(0.15, engagementRate)); // Cap between 0.1% and 15% for realism
+      return Math.max(0.001, Math.min(0.06, engagementRate)); // Cap between 0.1% and 6% for realism
     }
     
     // Fallback to follower-based calculation if no reach data
@@ -115,7 +115,7 @@ export const useInstagramPosts = () => {
     const totalEngagement = likes + comments + shares + saves;
     const engagementRate = (totalEngagement / followerCount);
     
-    return Math.max(0.001, Math.min(0.15, engagementRate)); // Cap between 0.1% and 15% for realism
+    return Math.max(0.001, Math.min(0.06, engagementRate)); // Cap between 0.1% and 6% for realism
   };
 
   const fetchPosts = async () => {

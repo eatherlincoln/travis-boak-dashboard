@@ -30,11 +30,11 @@ export function TikTokCard() {
   const videoViews = metrics['video_views']?.value ?? 37000;
   const monthlyLikes = metrics['monthly_likes']?.value ?? 8000;
   
-  // Calculate TikTok engagement rate: ((Likes + Comments + Shares + Saves) / Total Views) × 100
+  // Calculate TikTok engagement rate with realistic ratios: ((Likes + Comments + Shares + Saves) / Total Views) × 100
   const likes = monthlyLikes;
-  const comments = Math.round(likes * 0.08); // Estimate comments as 8% of likes
-  const shares = Math.round(likes * 0.12); // Estimate shares as 12% of likes (TikTok sharing)
-  const saves = Math.round(likes * 0.15); // Estimate saves as 15% of likes
+  const comments = Math.round(likes * 0.035); // Realistic: 3.5% of likes become comments
+  const shares = Math.round(likes * 0.055); // Realistic: 5.5% of likes become shares
+  const saves = Math.round(likes * 0.020); // Realistic: 2% of likes become saves
   const totalViews = videoViews; // Total views for TikTok calculation
   const engagementRate = tiktokEngagementRate({ likes, comments, shares, saves, totalViews });
 
@@ -52,8 +52,8 @@ export function TikTokCard() {
         { label: "Followers", value: `${(followers / 1000).toFixed(1)}K`, trend: "+18.5%" }
       ]}
       highlights={[
-        `${formatPct(engagementRate)} engagement rate ${engagementRate && engagementRate > 0.08 ? '(excellent performance)' : '(growing)'}`,
-        `${Math.round((monthlyLikes + (monthlyLikes * 0.08) + (monthlyLikes * 0.12) + (monthlyLikes * 0.15)) / 1000)}K monthly interactions`,
+        `${formatPct(engagementRate)} engagement rate ${engagementRate && engagementRate > 0.06 ? '(excellent performance)' : '(growing)'}`,
+        `${Math.round((monthlyLikes + (monthlyLikes * 0.035) + (monthlyLikes * 0.055) + (monthlyLikes * 0.020)) / 1000)}K monthly interactions`,
         `Growing platform with ${(followers / 1000).toFixed(1)}K followers and high viral potential`,
         updatedAt ? `Updated: ${new Date(updatedAt).toLocaleString()}` : ''
       ].filter(Boolean)}

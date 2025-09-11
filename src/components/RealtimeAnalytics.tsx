@@ -17,11 +17,20 @@ const RealtimeAnalytics: React.FC<RealtimeAnalyticsProps> = ({ className }) => {
 
   const handleTestUpdate = async (source: 'instagram' | 'tiktok' | 'youtube') => {
     try {
-      // Generate some test data
+      // Generate realistic test data based on platform
+      const getRealisticEngagement = (source: string) => {
+        switch (source) {
+          case 'instagram': return Math.random() * 2.5 + 1; // 1-3.5%
+          case 'tiktok': return Math.random() * 4 + 3; // 3-7%  
+          case 'youtube': return Math.random() * 2 + 1.5; // 1.5-3.5%
+          default: return Math.random() * 3 + 1; // 1-4%
+        }
+      };
+      
       const metrics = [
         { metric: 'followers', value: Math.floor(Math.random() * 50000) + 10000 },
         { metric: 'monthly_views', value: Math.floor(Math.random() * 500000) + 50000 },
-        { metric: 'engagement_rate', value: Math.floor(Math.random() * 10) + 1 },
+        { metric: 'engagement_rate', value: getRealisticEngagement(source) },
       ];
 
       for (const { metric, value } of metrics) {
