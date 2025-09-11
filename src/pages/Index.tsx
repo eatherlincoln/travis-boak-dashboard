@@ -403,35 +403,6 @@ const Index = () => {
                 })}
               </div>
 
-              {/* Summary Stats */}
-              <div className="border-t pt-4">
-                <div className="grid grid-cols-6 gap-4 text-center">
-                  <div>
-                    <div className="text-lg font-bold text-blue-600">22.3K</div>
-                    <div className="text-xs text-muted-foreground">Total Likes (30d)</div>
-                  </div>
-                  <div>
-                    <div className="text-lg font-bold text-blue-400">684</div>
-                    <div className="text-xs text-muted-foreground">Total Comments (30d)</div>
-                  </div>
-                  <div>
-                    <div className="text-lg font-bold text-green-600">1.1K</div>
-                    <div className="text-xs text-muted-foreground">Total Shares (30d)</div>
-                  </div>
-                  <div>
-                    <div className="text-lg font-bold text-orange-500">2.2K</div>
-                    <div className="text-xs text-muted-foreground">Total Saves (30d)</div>
-                  </div>
-                  <div>
-                    <div className="text-lg font-bold text-green-500">5.6K</div>
-                    <div className="text-xs text-muted-foreground">Avg Likes</div>
-                  </div>
-                  <div>
-                    <div className="text-lg font-bold text-orange-600">3.06</div>
-                    <div className="text-xs text-muted-foreground">Comments Ratio</div>
-                  </div>
-                </div>
-              </div>
             </CardContent>
           </Card>
           
