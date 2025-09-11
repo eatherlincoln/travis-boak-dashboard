@@ -148,47 +148,47 @@ const Index = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent" />
         
-        <div className="relative z-10 container mx-auto px-6 h-full flex items-center">
+        <div className="relative z-10 container mx-auto px-4 md:px-6 h-full flex items-center">
           <div className="max-w-2xl text-white">
-            <h1 className="text-6xl font-bold mb-2">
+            <h1 className="text-4xl md:text-6xl font-bold mb-2">
               Sheldon Simkus
             </h1>
-            <p className="text-2xl mb-8 text-white/90">
+            <p className="text-lg md:text-2xl mb-6 md:mb-8 text-white/90">
               Professional Surfer and Content Creator
             </p>
             
-            <div className="flex gap-3 flex-wrap mb-8">
-              <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 text-base font-medium">
+            <div className="flex gap-2 md:gap-3 flex-wrap mb-6 md:mb-8">
+              <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 md:px-4 py-1 md:py-2 text-sm md:text-base font-medium">
                 {totalFollowers.toLocaleString()} Total Followers
               </div>
-              <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 text-base font-medium">
+              <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 md:px-4 py-1 md:py-2 text-sm md:text-base font-medium">
                 {Math.round(totalViews / 1000)}K Total Views
               </div>
               <Link to="/auth">
-                <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 text-base font-medium hover:bg-white/20 transition-colors cursor-pointer flex items-center gap-2">
-                  <Settings className="h-4 w-4" />
+                <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 md:px-4 py-1 md:py-2 text-sm md:text-base font-medium hover:bg-white/20 transition-colors cursor-pointer flex items-center gap-2">
+                  <Settings className="h-3 w-3 md:h-4 md:w-4" />
                   Admin
                 </div>
               </Link>
             </div>
             
             {/* Social Media Icons with Follower Counts */}
-            <div className="flex gap-6 items-center mb-6">
+            <div className="flex gap-4 md:gap-6 items-center mb-4 md:mb-6 justify-center md:justify-start">
               <a href="https://instagram.com/sheldonsimkus" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-white/90 hover:text-white transition-colors">
-                <img src="/lovable-uploads/502a8d59-4e94-4c4a-94c8-4e5f78e6decf.png" className="h-6 w-6" alt="Instagram" />
-                <span className="text-lg font-bold">{((instagramStats?.follower_count || 38700) / 1000).toFixed(1)}K</span>
+                <img src="/lovable-uploads/502a8d59-4e94-4c4a-94c8-4e5f78e6decf.png" className="h-5 w-5 md:h-6 md:w-6" alt="Instagram" />
+                <span className="text-base md:text-lg font-bold">{((instagramStats?.follower_count || 38700) / 1000).toFixed(1)}K</span>
               </a>
               <a href="https://www.youtube.com/@sheldonsimkus" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-white/90 hover:text-white transition-colors">
-                <img src="/lovable-uploads/9aa87b25-88f0-439d-890a-7c2d475c22f5.png" className="h-6 w-6" alt="YouTube" />
-                <span className="text-lg font-bold">{(youtubeFollowers / 1000).toFixed(1)}K</span>
+                <img src="/lovable-uploads/9aa87b25-88f0-439d-890a-7c2d475c22f5.png" className="h-5 w-5 md:h-6 md:w-6" alt="YouTube" />
+                <span className="text-base md:text-lg font-bold">{(youtubeFollowers / 1000).toFixed(1)}K</span>
               </a>
               <a href="https://www.tiktok.com/@sheldonsimkus" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-white/90 hover:text-white transition-colors">
-                <img src="/lovable-uploads/d3d646ba-e348-45c2-9a7b-d3f53ff73b4c.png" className="h-6 w-6" alt="TikTok" />
-                <span className="text-lg font-bold">{((tiktokStats?.follower_count || 1410) / 1000).toFixed(1)}K</span>
+                <img src="/lovable-uploads/d3d646ba-e348-45c2-9a7b-d3f53ff73b4c.png" className="h-5 w-5 md:h-6 md:w-6" alt="TikTok" />
+                <span className="text-base md:text-lg font-bold">{((tiktokStats?.follower_count || 1410) / 1000).toFixed(1)}K</span>
               </a>
             </div>
             
-            <div className="flex gap-3">
+            <div className="flex gap-3 justify-center md:justify-start">
               <Button
                 variant="secondary"
                 size="sm"
@@ -198,9 +198,9 @@ const Index = () => {
                   await refetchPosts();
                 }}
                 disabled={viewStatsLoading}
-                className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20"
+                className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 text-sm md:text-base"
               >
-                <RotateCcw className={`mr-2 h-4 w-4 ${viewStatsLoading ? 'animate-spin' : ''}`} />
+                <RotateCcw className={`mr-2 h-3 w-3 md:h-4 md:w-4 ${viewStatsLoading ? 'animate-spin' : ''}`} />
                 Refresh Stats
               </Button>
             </div>
@@ -208,29 +208,29 @@ const Index = () => {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8 space-y-8">
-        {/* About Sheldon Section - Matching Layout */}
+      <div className="container mx-auto px-4 md:px-6 py-6 md:py-8 space-y-6 md:space-y-8">
+        {/* About Sheldon Section - Mobile Optimized */}
         <Card className="shadow-card border-border/50">
-          <CardContent className="p-8">
-            <div className="flex items-start gap-8">
+          <CardContent className="p-4 md:p-8">
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8">
               <img 
                 src="/lovable-uploads/593bbc81-f03e-419e-a492-8024f176fd1a.png" 
                 alt="Sheldon Simkus" 
-                className="w-32 h-32 rounded-lg object-cover flex-shrink-0"
+                className="w-40 h-40 md:w-32 md:h-32 rounded-lg object-cover flex-shrink-0"
               />
-              <div className="flex-1">
-                <h2 className="text-2xl font-bold mb-4 text-primary">About Sheldon</h2>
-                <p className="text-muted-foreground mb-6 leading-relaxed">
+              <div className="flex-1 text-center md:text-left">
+                <h2 className="text-xl md:text-2xl font-bold mb-4 text-primary">About Sheldon</h2>
+                <p className="text-muted-foreground mb-6 leading-relaxed text-sm md:text-base">
                   Sheldon Simkus is a professional surfer with a proven global reach, a trusted voice in surf culture, and a track record of delivering measurable value for partners. His ability to combine high-performance surfing with authentic, creative storytelling has established him as a unique content creator whose work consistently generates strong exposure and return on investment.
                 </p>
-                <div className="flex gap-2 flex-wrap">
-                  <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50">
+                <div className="flex gap-2 flex-wrap justify-center md:justify-start">
+                  <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50 text-xs md:text-sm">
                     Professional Surfer
                   </Badge>
-                  <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
+                  <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50 text-xs md:text-sm">
                     Content Creator
                   </Badge>
-                  <Badge variant="outline" className="text-purple-600 border-purple-200 bg-purple-50">
+                  <Badge variant="outline" className="text-purple-600 border-purple-200 bg-purple-50 text-xs md:text-sm">
                     Global Influencer
                   </Badge>
                 </div>
@@ -240,7 +240,7 @@ const Index = () => {
         </Card>
 
         {/* Key Metrics Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
           <MetricCard
             title="Total Reach"
             value={`${totalFollowers.toLocaleString()}`}
@@ -271,7 +271,7 @@ const Index = () => {
         </div>
 
         {/* Platform-specific cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
           <InstagramCard />
           <YouTubeCard />
           <TikTokCard />
@@ -281,10 +281,10 @@ const Index = () => {
         <AudienceChart data={audienceData} />
 
         {/* Top Content Performance - Side by Side */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           {/* Top Instagram Posts */}
           <Card className="shadow-card border-border/50">
-            <CardContent className="p-6">
+            <CardContent className="p-4 md:p-6">
               <div className="mb-6">
                 <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
                   <Instagram className="h-5 w-5 text-primary" />
@@ -295,7 +295,7 @@ const Index = () => {
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 mb-6">
                 {instagramPosts.map((post, index) => {
                   const postNumber = index + 1;
                   
@@ -473,59 +473,59 @@ const Index = () => {
 
         {/* Partnership Opportunities */}
         <Card className="shadow-ocean border-primary/20 bg-gradient-ocean">
-          <CardContent className="p-8">
-            <h2 className="text-3xl font-bold text-primary-foreground mb-6 text-center">
+          <CardContent className="p-4 md:p-8">
+            <h2 className="text-2xl md:text-3xl font-bold text-primary-foreground mb-4 md:mb-6 text-center">
               Partnership Opportunities
             </h2>
-            <p className="text-primary-foreground/90 text-lg mb-8 text-center max-w-4xl mx-auto">
+            <p className="text-primary-foreground/90 text-base md:text-lg mb-6 md:mb-8 text-center max-w-4xl mx-auto leading-relaxed">
               Partner with Sheldon Simkus — a rising force in surf media whose authentic lifestyle content and world-class surfing consistently engage audiences across Australia and globally. With proven performance metrics, a loyal following, and the credibility to cut through in surf culture, Sheldon offers brands a unique opportunity to align with a content creator who delivers both reach and real impact.
             </p>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
               {/* Content Collaborations */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
-                <h3 className="text-xl font-semibold text-primary-foreground mb-3">1. Content Collaborations</h3>
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 md:p-6">
+                <h3 className="text-lg md:text-xl font-semibold text-primary-foreground mb-2 md:mb-3">1. Content Collaborations</h3>
                 <p className="text-primary-foreground/90 text-sm leading-relaxed">
                   Custom video and photo content created with your brand seamlessly integrated into Sheldon's authentic surf lifestyle. Ideal for brands looking to tap into the energy of surf culture with credibility and creativity.
                 </p>
               </div>
 
               {/* Brand Ambassador */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
-                <h3 className="text-xl font-semibold text-primary-foreground mb-3">2. Brand Ambassador</h3>
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 md:p-6">
+                <h3 className="text-lg md:text-xl font-semibold text-primary-foreground mb-2 md:mb-3">2. Brand Ambassador</h3>
                 <p className="text-primary-foreground/90 text-sm leading-relaxed">
                   Ongoing partnerships that put your products front and center across Sheldon's platforms and surf career. A powerful way to build trust, consistency, and long-term brand equity with his engaged audience.
                 </p>
               </div>
 
               {/* Event & Travel Integration */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
-                <h3 className="text-xl font-semibold text-primary-foreground mb-3">3. Event & Travel Integration</h3>
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 md:p-6">
+                <h3 className="text-lg md:text-xl font-semibold text-primary-foreground mb-2 md:mb-3">3. Event & Travel Integration</h3>
                 <p className="text-primary-foreground/90 text-sm leading-relaxed">
                   Leverage Sheldon's global surf schedule, trips, and competitions to position your brand in premium, culturally relevant moments. From contest appearances to surf edits in iconic locations, this is high-visibility exposure with impact.
                 </p>
               </div>
 
               {/* Custom Campaigns */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
-                <h3 className="text-xl font-semibold text-primary-foreground mb-3">4. Custom Campaigns</h3>
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 md:p-6">
+                <h3 className="text-lg md:text-xl font-semibold text-primary-foreground mb-2 md:mb-3">4. Custom Campaigns</h3>
                 <p className="text-primary-foreground/90 text-sm leading-relaxed">
                   Tailored programs that align with your specific goals — whether that's launching a new product, targeting a key demographic, or creating buzz across surf and lifestyle media.
                 </p>
               </div>
             </div>
             
-            <div className="flex flex-wrap justify-center gap-4">
-              <Badge variant="secondary" className="text-base px-4 py-2">
+            <div className="flex flex-wrap justify-center gap-2 md:gap-4">
+              <Badge variant="secondary" className="text-sm md:text-base px-3 md:px-4 py-1 md:py-2">
                 Authentic Audience
               </Badge>
-              <Badge variant="secondary" className="text-base px-4 py-2">
+              <Badge variant="secondary" className="text-sm md:text-base px-3 md:px-4 py-1 md:py-2">
                 Growing Revenue
               </Badge>
-              <Badge variant="secondary" className="text-base px-4 py-2">
+              <Badge variant="secondary" className="text-sm md:text-base px-3 md:px-4 py-1 md:py-2">
                 Multi-Platform Reach
               </Badge>
-              <Badge variant="secondary" className="text-base px-4 py-2">
+              <Badge variant="secondary" className="text-sm md:text-base px-3 md:px-4 py-1 md:py-2">
                 Professional Content
               </Badge>
             </div>
