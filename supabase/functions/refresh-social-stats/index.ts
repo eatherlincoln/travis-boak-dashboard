@@ -52,11 +52,28 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Optional: read handles from request body
+    let tiktokHandle = 'sheldonsimkus';
+    let instagramHandle = 'sheldonsimkus';
+    try {
+      const body = await req.json().catch(() => ({}));
+      if (typeof body?.tiktokHandle === 'string' && body.tiktokHandle.trim()) {
+        tiktokHandle = body.tiktokHandle.replace(/^@/, '').trim();
+      }
+      if (typeof body?.instagramHandle === 'string' && body.instagramHandle.trim()) {
+        instagramHandle = body.instagramHandle.replace(/^@/, '').trim();
+      }
+    } catch (_) {
+      // ignore
+    }
+
     console.log('Refreshing all social platform stats as user', userId, '...');
 
     // Refresh ViewStats (YouTube)
     console.log('1. Fetching YouTube data from ViewStats...');
-    const viewStatsResponse = await supabase.functions.invoke('fetch-viewstats');
+    const viewStatsResponse = await supabase.functions.invoke('fetch-viewstats', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
     
     let youtubeSuccess = false;
     if (viewStatsResponse.data?.success) {
@@ -87,12 +104,30 @@ Deno.serve(async (req) => {
       console.log('❌ YouTube ViewStats update failed:', viewStatsResponse.error);
     }
 
+    // Helper to parse counts with K/M/B suffixes
+    const parseNumber = (str: string): number | null => {
+      if (!str) return null;
+      const s = String(str).trim();
+      const m = s.match(/^([\d.,]+)\s*([KkMmBb])?$/) || s.match(/"([\d.,]+)\s*([KkMmBb])?\s*Followers"/i) || s.match(/([\d.,]+)\s*([KkMmBb])?\s*followers/i);
+      if (!m) {
+        // Try raw digits
+        const d = s.replace(/[^\d.]/g, '');
+        const n = parseFloat(d);
+        return Number.isFinite(n) ? Math.round(n) : null;
+      }
+      const num = parseFloat(m[1].replace(/,/g, ''));
+      if (!Number.isFinite(num)) return null;
+      const suf = (m[2] || '').toUpperCase();
+      const mult = suf === 'K' ? 1e3 : suf === 'M' ? 1e6 : suf === 'B' ? 1e9 : 1;
+      return Math.round(num * mult);
+    };
+
     // Attempt to fetch Instagram data (limited due to API restrictions)
     console.log('2. Attempting Instagram data refresh...');
     let instagramData = null;
     try {
       // Try to fetch Instagram profile page (public data only)
-      const instagramResponse = await fetch('https://www.instagram.com/sheldonsimkus/', {
+      const instagramResponse = await fetch(`https://www.instagram.com/${instagramHandle}/`, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
@@ -102,13 +137,15 @@ Deno.serve(async (req) => {
         const html = await instagramResponse.text();
         
         // Extract follower count from meta tags or structured data
-        const followerMatch = html.match(/"edge_followed_by":{"count":(\d+)}/i) || 
-                             html.match(/(\d+(?:,\d{3})*)\s*followers/i);
+        const followerMatch = html.match(/"edge_followed_by":\{"count":(\d+)\}/i) ||
+                             html.match(/([\d.,]+\s*[KkMmBb]?)\s*followers/i);
         
         if (followerMatch) {
-          const followers = parseInt(followerMatch[1].replace(/,/g, ''));
-          instagramData = { followers };
-          console.log('✅ Instagram follower count extracted:', followers);
+          const followers = followerMatch[1] ? (parseNumber(followerMatch[1]) ?? parseInt(followerMatch[1].replace(/,/g, ''))) : null;
+          if (followers && followers > 0) {
+            instagramData = { followers };
+            console.log('✅ Instagram follower count extracted:', followers);
+          }
         }
       }
     } catch (error) {
@@ -133,7 +170,7 @@ Deno.serve(async (req) => {
     let tiktokData: { followers?: number } | null = null;
     try {
       // TikTok is heavily protected, but we can try basic page scraping
-      const tiktokResponse = await fetch('https://www.tiktok.com/@sheldonsimkus', {
+      const tiktokResponse = await fetch(`https://www.tiktok.com/@${tiktokHandle}`, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
@@ -141,12 +178,16 @@ Deno.serve(async (req) => {
       
       if (tiktokResponse.ok) {
         const html = await tiktokResponse.text();
-        // Try a couple of patterns
-        const followersMatch = html.match(/"fans":(\d+)/i) || html.match(/([\d.,]+)\s*Followers/i);
+        // Try multiple patterns and parse K/M/B suffixes
+        const followersMatch = html.match(/"fans":(\d+)/i) 
+          || html.match(/"FollowerCount"\s*:\s*"([^"]+)"/i)
+          || html.match(/([\d.,]+\s*[KkMmBb]?)\s*Followers/i);
+
         if (followersMatch) {
-          const raw = followersMatch[1].replace(/,/g, '');
-          const followers = Math.round(parseFloat(raw));
-          if (!Number.isNaN(followers) && followers > 0) {
+          const raw = followersMatch[1] ?? followersMatch[0];
+          const parsed = parseNumber(String(raw).replace(/^[^\d]*/, ''));
+          if (parsed && parsed > 0) {
+            const followers = parsed;
             tiktokData = { followers };
             console.log('✅ TikTok follower count extracted (best-effort):', followers);
           }

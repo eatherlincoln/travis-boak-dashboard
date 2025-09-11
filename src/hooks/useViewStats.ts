@@ -20,7 +20,9 @@ export const useViewStats = () => {
       if (error) throw error;
 
       // Also trigger platform-wide refresh to sync platform_stats for dashboard
-      await supabase.functions.invoke('refresh-social-stats');
+      await supabase.functions.invoke('refresh-social-stats', {
+        body: { tiktokHandle: 'sheldonsimkus', instagramHandle: 'sheldonsimkus' }
+      });
 
       if (data.success) {
         toast({
