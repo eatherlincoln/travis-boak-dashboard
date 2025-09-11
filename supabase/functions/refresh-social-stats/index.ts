@@ -21,7 +21,38 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    console.log('Refreshing all social platform stats...');
+    // Authenticate the caller and ensure they are an admin
+    const authHeader = req.headers.get('Authorization') || '';
+    if (!authHeader.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const token = authHeader.replace('Bearer ', '');
+    const { data: authData, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !authData?.user) {
+      return new Response(JSON.stringify({ success: false, error: 'Invalid token' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const userId = authData.user.id;
+
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .single();
+
+    if (profileError || profile?.role !== 'admin') {
+      return new Response(JSON.stringify({ success: false, error: 'Forbidden' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log('Refreshing all social platform stats as user', userId, '...');
 
     // Refresh ViewStats (YouTube)
     console.log('1. Fetching YouTube data from ViewStats...');
@@ -31,6 +62,27 @@ Deno.serve(async (req) => {
     if (viewStatsResponse.data?.success) {
       youtubeSuccess = true;
       console.log('✅ YouTube stats updated from ViewStats');
+
+      // Also sync into platform_stats for dashboard consistency
+      try {
+        const yt = viewStatsResponse.data?.data || {};
+        const followerCount = typeof yt.subscriberCount === 'number' ? yt.subscriberCount : null;
+        const monthlyViews = typeof yt.monthlyViews === 'number' ? Math.round(yt.monthlyViews) : undefined;
+        const updatePayload: Record<string, number | string | null> = { updated_at: new Date().toISOString() } as any;
+        if (followerCount !== null) updatePayload.follower_count = followerCount;
+        if (typeof monthlyViews === 'number') updatePayload.monthly_views = monthlyViews;
+
+        if (Object.keys(updatePayload).length > 0) {
+          const { error: psErr } = await supabase
+            .from('platform_stats')
+            .update(updatePayload)
+            .eq('user_id', userId)
+            .eq('platform', 'youtube');
+          if (psErr) console.log('⚠️ Failed to update platform_stats (YouTube):', psErr.message);
+        }
+      } catch (e) {
+        console.log('⚠️ Error syncing YouTube into platform_stats:', (e as any)?.message);
+      }
     } else {
       console.log('❌ YouTube ViewStats update failed:', viewStatsResponse.error);
     }
@@ -63,9 +115,22 @@ Deno.serve(async (req) => {
       console.log('❌ Instagram data fetch failed (expected due to restrictions):', error.message);
     }
 
+    // Sync Instagram followers into platform_stats when available
+    if (instagramData?.followers) {
+      try {
+        const { error: igErr } = await supabase
+          .from('platform_stats')
+          .update({ follower_count: instagramData.followers, updated_at: new Date().toISOString() })
+          .eq('user_id', userId)
+          .eq('platform', 'instagram');
+        if (igErr) console.log('⚠️ Failed to update platform_stats (Instagram):', igErr.message);
+      } catch (e) {
+        console.log('⚠️ Error syncing Instagram into platform_stats:', (e as any)?.message);
+      }
+    }
     // Attempt to fetch TikTok data (very limited)
     console.log('3. Attempting TikTok data refresh...');
-    let tiktokData = null;
+    let tiktokData: { followers?: number } | null = null;
     try {
       // TikTok is heavily protected, but we can try basic page scraping
       const tiktokResponse = await fetch('https://www.tiktok.com/@sheldonsimkus', {
@@ -76,10 +141,35 @@ Deno.serve(async (req) => {
       
       if (tiktokResponse.ok) {
         const html = await tiktokResponse.text();
-        console.log('TikTok page accessed, but data extraction is limited due to dynamic loading');
+        // Try a couple of patterns
+        const followersMatch = html.match(/"fans":(\d+)/i) || html.match(/([\d.,]+)\s*Followers/i);
+        if (followersMatch) {
+          const raw = followersMatch[1].replace(/,/g, '');
+          const followers = Math.round(parseFloat(raw));
+          if (!Number.isNaN(followers) && followers > 0) {
+            tiktokData = { followers };
+            console.log('✅ TikTok follower count extracted (best-effort):', followers);
+          }
+        } else {
+          console.log('ℹ️ TikTok follower pattern not found');
+        }
       }
     } catch (error) {
-      console.log('❌ TikTok data fetch failed (expected due to restrictions):', error.message);
+      console.log('❌ TikTok data fetch failed (expected due to restrictions):', (error as any)?.message);
+    }
+
+    // Sync TikTok followers into platform_stats when available
+    if (tiktokData?.followers) {
+      try {
+        const { error: tkErr } = await supabase
+          .from('platform_stats')
+          .update({ follower_count: tiktokData.followers, updated_at: new Date().toISOString() })
+          .eq('user_id', userId)
+          .eq('platform', 'tiktok');
+        if (tkErr) console.log('⚠️ Failed to update platform_stats (TikTok):', tkErr.message);
+      } catch (e) {
+        console.log('⚠️ Error syncing TikTok into platform_stats:', (e as any)?.message);
+      }
     }
 
     // Return results

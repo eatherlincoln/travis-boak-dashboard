@@ -19,6 +19,9 @@ export const useViewStats = () => {
 
       if (error) throw error;
 
+      // Also trigger platform-wide refresh to sync platform_stats for dashboard
+      await supabase.functions.invoke('refresh-social-stats');
+
       if (data.success) {
         toast({
           title: "Success!",
