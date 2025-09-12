@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Youtube, Instagram, Music, Users, Eye, Play, Heart, Share, MessageCircle, ExternalLink, Settings, RotateCcw, TrendingUp, TrendingDown, Bookmark } from "lucide-react";
 import { useState } from "react";
 import heroImage from "/lovable-uploads/350aac33-19a1-4c3e-bac9-1e7258ac89b7.png";
+import surferActionImage from "/lovable-uploads/18016eb8-2534-4985-b632-e025251442b2.png";
 import { usePlatformStats } from "@/hooks/usePlatformStats";
 import { useViewStats } from "@/hooks/useViewStats";
 import { useInstagramPosts } from "@/hooks/useInstagramPosts";
@@ -141,80 +142,88 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-wave">
       {/* Hero Section - Mobile Optimized */}
-      <div className="relative h-[70vh] md:h-[60vh] bg-gradient-deep overflow-hidden">
+      <div className="relative h-[80vh] md:h-[60vh] bg-gradient-deep overflow-hidden">
         <div 
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${heroImage})` }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/20" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/30" />
         
-        <div className="relative z-10 container mx-auto px-4 md:px-6 h-full flex flex-col justify-end md:justify-center pb-8 md:pb-0">
-          <div className="max-w-2xl text-white w-full">
-            <h1 className="text-4xl md:text-6xl font-bold mb-2">
+        <div className="relative z-10 container mx-auto px-4 md:px-6 h-full flex flex-col justify-center items-center text-center">
+          {/* Header Text - Centered */}
+          <div className="text-white mb-8">
+            <h1 className="text-4xl md:text-6xl font-bold mb-3">
               Sheldon Simkus
             </h1>
-            <p className="text-lg md:text-2xl mb-6 text-white/90">
+            <p className="text-lg md:text-2xl text-white/90">
               Professional Surfer and Content Creator
             </p>
-            
-            {/* Stats Badge - Single Badge on Mobile */}
-            <div className="mb-6">
-              <div className="inline-block bg-white/15 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 text-base font-medium">
-                {totalFollowers.toLocaleString()} Total Followers
-              </div>
+          </div>
+          
+          {/* Action Image in Gap */}
+          <div className="mb-8 flex justify-center">
+            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-white/30 shadow-2xl">
+              <img 
+                src={surferActionImage} 
+                alt="Sheldon surfing" 
+                className="w-full h-full object-cover"
+              />
             </div>
-            
-            {/* Views Badge - Separate */}
-            <div className="mb-6">
-              <div className="inline-block bg-white/15 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 text-base font-medium">
-                {Math.round(totalViews / 1000)}K Total Views
-              </div>
+          </div>
+          
+          {/* Stats Badges - Centered */}
+          <div className="flex flex-col sm:flex-row gap-3 mb-8">
+            <div className="bg-white/15 backdrop-blur-sm border border-white/20 rounded-full px-6 py-3 text-base font-medium text-white">
+              {Math.round(totalViews / 1000)}K Total Views
             </div>
-            
-            {/* Social Media Icons - Horizontal Layout */}
-            <div className="flex justify-center md:justify-start gap-8 mb-8">
-              <a href="https://instagram.com/sheldonsimkus" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-white hover:text-white/80 transition-colors">
-                <img src="/lovable-uploads/502a8d59-4e94-4c4a-94c8-4e5f78e6decf.png" className="h-6 w-6" alt="Instagram" />
-                <span className="text-lg font-bold">{((instagramStats?.follower_count || 38700) / 1000).toFixed(1)}K</span>
-              </a>
-              <a href="https://www.youtube.com/@sheldonsimkus" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-white hover:text-white/80 transition-colors">
-                <img src="/lovable-uploads/9aa87b25-88f0-439d-890a-7c2d475c22f5.png" className="h-6 w-6" alt="YouTube" />
-                <span className="text-lg font-bold">{(youtubeFollowers / 1000).toFixed(1)}K</span>
-              </a>
-              <a href="https://www.tiktok.com/@sheldonsimkus" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-white hover:text-white/80 transition-colors">
-                <img src="/lovable-uploads/d3d646ba-e348-45c2-9a7b-d3f53ff73b4c.png" className="h-6 w-6" alt="TikTok" />
-                <span className="text-lg font-bold">{((tiktokStats?.follower_count || 1410) / 1000).toFixed(1)}K</span>
-              </a>
+            <div className="bg-white/15 backdrop-blur-sm border border-white/20 rounded-full px-6 py-3 text-base font-medium text-white">
+              {totalFollowers.toLocaleString()} Total Followers
             </div>
+          </div>
+          
+          {/* Social Media Icons - Centered */}
+          <div className="flex justify-center gap-8 mb-8">
+            <a href="https://instagram.com/sheldonsimkus" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-white hover:text-white/80 transition-colors">
+              <img src="/lovable-uploads/502a8d59-4e94-4c4a-94c8-4e5f78e6decf.png" className="h-6 w-6" alt="Instagram" />
+              <span className="text-lg font-bold">{((instagramStats?.follower_count || 38700) / 1000).toFixed(1)}K</span>
+            </a>
+            <a href="https://www.youtube.com/@sheldonsimkus" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-white hover:text-white/80 transition-colors">
+              <img src="/lovable-uploads/9aa87b25-88f0-439d-890a-7c2d475c22f5.png" className="h-6 w-6" alt="YouTube" />
+              <span className="text-lg font-bold">{(youtubeFollowers / 1000).toFixed(1)}K</span>
+            </a>
+            <a href="https://www.tiktok.com/@sheldonsimkus" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-white hover:text-white/80 transition-colors">
+              <img src="/lovable-uploads/d3d646ba-e348-45c2-9a7b-d3f53ff73b4c.png" className="h-6 w-6" alt="TikTok" />
+              <span className="text-lg font-bold">{((tiktokStats?.follower_count || 1410) / 1000).toFixed(1)}K</span>
+            </a>
+          </div>
+          
+          {/* Bottom Action Buttons - Centered */}
+          <div className="flex justify-center gap-4">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={async () => {
+                await refreshViewStats();
+                await refetchPlatformStats();
+                await refetchPosts();
+              }}
+              disabled={viewStatsLoading}
+              className="bg-white/15 backdrop-blur-sm border-white/20 text-white hover:bg-white/25 px-4 py-2"
+            >
+              <RotateCcw className={`mr-2 h-4 w-4 ${viewStatsLoading ? 'animate-spin' : ''}`} />
+              Refresh Stats
+            </Button>
             
-            {/* Bottom Action Buttons */}
-            <div className="flex justify-center md:justify-start gap-4">
+            <Link to="/auth">
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={async () => {
-                  await refreshViewStats();
-                  await refetchPlatformStats();
-                  await refetchPosts();
-                }}
-                disabled={viewStatsLoading}
                 className="bg-white/15 backdrop-blur-sm border-white/20 text-white hover:bg-white/25 px-4 py-2"
               >
-                <RotateCcw className={`mr-2 h-4 w-4 ${viewStatsLoading ? 'animate-spin' : ''}`} />
-                Refresh Stats
+                <Settings className="mr-2 h-4 w-4" />
+                Admin
               </Button>
-              
-              <Link to="/auth">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="bg-white/15 backdrop-blur-sm border-white/20 text-white hover:bg-white/25 px-4 py-2"
-                >
-                  <Settings className="mr-2 h-4 w-4" />
-                  Admin
-                </Button>
-              </Link>
-            </div>
+            </Link>
           </div>
         </div>
       </div>
