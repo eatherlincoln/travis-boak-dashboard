@@ -141,59 +141,54 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-wave">
       {/* Hero Section - Mobile Optimized */}
-      <div className="relative h-[50vh] min-h-[400px] md:h-[60vh] md:min-h-[500px] bg-gradient-deep overflow-hidden">
+      <div className="relative h-[70vh] md:h-[60vh] bg-gradient-deep overflow-hidden">
         <div 
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${heroImage})` }}
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/20" />
         
-        <div className="relative z-10 container mx-auto px-4 md:px-6 h-full flex items-center">
+        <div className="relative z-10 container mx-auto px-4 md:px-6 h-full flex flex-col justify-end md:justify-center pb-8 md:pb-0">
           <div className="max-w-2xl text-white w-full">
-            <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-2 md:mb-4">
+            <h1 className="text-4xl md:text-6xl font-bold mb-2">
               Sheldon Simkus
             </h1>
-            <p className="text-base sm:text-lg md:text-2xl mb-4 md:mb-6 text-white/90">
+            <p className="text-lg md:text-2xl mb-6 text-white/90">
               Professional Surfer and Content Creator
             </p>
             
-            {/* Stats Badges - Better Mobile Layout */}
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mb-4 md:mb-6">
-              <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 text-sm md:text-base font-medium text-center">
+            {/* Stats Badge - Single Badge on Mobile */}
+            <div className="mb-6">
+              <div className="inline-block bg-white/15 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 text-base font-medium">
                 {totalFollowers.toLocaleString()} Total Followers
               </div>
-              <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 text-sm md:text-base font-medium text-center">
+            </div>
+            
+            {/* Views Badge - Separate */}
+            <div className="mb-6">
+              <div className="inline-block bg-white/15 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 text-base font-medium">
                 {Math.round(totalViews / 1000)}K Total Views
               </div>
             </div>
             
-            {/* Admin Link - Separate on Mobile */}
-            <div className="mb-4 md:mb-6">
-              <Link to="/auth">
-                <div className="inline-flex bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 text-sm md:text-base font-medium hover:bg-white/20 transition-colors cursor-pointer items-center gap-2">
-                  <Settings className="h-4 w-4" />
-                  Admin
-                </div>
-              </Link>
-            </div>
-            
-            {/* Social Media Icons - Better Mobile Spacing */}
-            <div className="flex gap-6 md:gap-8 items-center mb-6 md:mb-8 justify-center md:justify-start">
-              <a href="https://instagram.com/sheldonsimkus" target="_blank" rel="noopener noreferrer" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 text-white/90 hover:text-white transition-colors min-w-0">
-                <img src="/lovable-uploads/502a8d59-4e94-4c4a-94c8-4e5f78e6decf.png" className="h-6 w-6 flex-shrink-0" alt="Instagram" />
-                <span className="text-sm sm:text-base md:text-lg font-bold">{((instagramStats?.follower_count || 38700) / 1000).toFixed(1)}K</span>
+            {/* Social Media Icons - Horizontal Layout */}
+            <div className="flex justify-center md:justify-start gap-8 mb-8">
+              <a href="https://instagram.com/sheldonsimkus" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-white hover:text-white/80 transition-colors">
+                <img src="/lovable-uploads/502a8d59-4e94-4c4a-94c8-4e5f78e6decf.png" className="h-6 w-6" alt="Instagram" />
+                <span className="text-lg font-bold">{((instagramStats?.follower_count || 38700) / 1000).toFixed(1)}K</span>
               </a>
-              <a href="https://www.youtube.com/@sheldonsimkus" target="_blank" rel="noopener noreferrer" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 text-white/90 hover:text-white transition-colors min-w-0">
-                <img src="/lovable-uploads/9aa87b25-88f0-439d-890a-7c2d475c22f5.png" className="h-6 w-6 flex-shrink-0" alt="YouTube" />
-                <span className="text-sm sm:text-base md:text-lg font-bold">{(youtubeFollowers / 1000).toFixed(1)}K</span>
+              <a href="https://www.youtube.com/@sheldonsimkus" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-white hover:text-white/80 transition-colors">
+                <img src="/lovable-uploads/9aa87b25-88f0-439d-890a-7c2d475c22f5.png" className="h-6 w-6" alt="YouTube" />
+                <span className="text-lg font-bold">{(youtubeFollowers / 1000).toFixed(1)}K</span>
               </a>
-              <a href="https://www.tiktok.com/@sheldonsimkus" target="_blank" rel="noopener noreferrer" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 text-white/90 hover:text-white transition-colors min-w-0">
-                <img src="/lovable-uploads/d3d646ba-e348-45c2-9a7b-d3f53ff73b4c.png" className="h-6 w-6 flex-shrink-0" alt="TikTok" />
-                <span className="text-sm sm:text-base md:text-lg font-bold">{((tiktokStats?.follower_count || 1410) / 1000).toFixed(1)}K</span>
+              <a href="https://www.tiktok.com/@sheldonsimkus" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-white hover:text-white/80 transition-colors">
+                <img src="/lovable-uploads/d3d646ba-e348-45c2-9a7b-d3f53ff73b4c.png" className="h-6 w-6" alt="TikTok" />
+                <span className="text-lg font-bold">{((tiktokStats?.follower_count || 1410) / 1000).toFixed(1)}K</span>
               </a>
             </div>
             
-            <div className="flex justify-center md:justify-start">
+            {/* Bottom Action Buttons */}
+            <div className="flex justify-center md:justify-start gap-4">
               <Button
                 variant="secondary"
                 size="sm"
@@ -203,11 +198,22 @@ const Index = () => {
                   await refetchPosts();
                 }}
                 disabled={viewStatsLoading}
-                className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 text-sm md:text-base px-6 py-2"
+                className="bg-white/15 backdrop-blur-sm border-white/20 text-white hover:bg-white/25 px-4 py-2"
               >
                 <RotateCcw className={`mr-2 h-4 w-4 ${viewStatsLoading ? 'animate-spin' : ''}`} />
                 Refresh Stats
               </Button>
+              
+              <Link to="/auth">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="bg-white/15 backdrop-blur-sm border-white/20 text-white hover:bg-white/25 px-4 py-2"
+                >
+                  <Settings className="mr-2 h-4 w-4" />
+                  Admin
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
