@@ -149,9 +149,9 @@ const Index = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/30" />
         
-        <div className="relative z-10 container mx-auto px-4 md:px-6 h-full flex flex-col justify-center items-center text-center">
-          {/* Header Text - Centered */}
-          <div className="text-white mb-8">
+        <div className="relative z-10 container mx-auto px-4 md:px-6 h-full flex flex-col items-center text-center">
+          {/* Header Text - Moved Higher */}
+          <div className="text-white mt-16 mb-20">
             <h1 className="text-4xl md:text-6xl font-bold mb-3">
               Sheldon Simkus
             </h1>
@@ -160,70 +160,62 @@ const Index = () => {
             </p>
           </div>
           
-          {/* Action Image in Gap */}
-          <div className="mb-8 flex justify-center">
-            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-white/30 shadow-2xl">
-              <img 
-                src={surferActionImage} 
-                alt="Sheldon surfing" 
-                className="w-full h-full object-cover"
-              />
+          {/* Bottom Section - Stats, Social Icons, Buttons */}
+          <div className="mt-auto pb-12 space-y-6">
+            {/* Stats Badges */}
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <div className="bg-white/15 backdrop-blur-sm border border-white/20 rounded-full px-6 py-3 text-base font-medium text-white">
+                {Math.round(totalViews / 1000)}K Total Views
+              </div>
+              <div className="bg-white/15 backdrop-blur-sm border border-white/20 rounded-full px-6 py-3 text-base font-medium text-white">
+                {totalFollowers.toLocaleString()} Total Followers
+              </div>
             </div>
-          </div>
-          
-          {/* Stats Badges - Centered */}
-          <div className="flex flex-col sm:flex-row gap-3 mb-8">
-            <div className="bg-white/15 backdrop-blur-sm border border-white/20 rounded-full px-6 py-3 text-base font-medium text-white">
-              {Math.round(totalViews / 1000)}K Total Views
-            </div>
-            <div className="bg-white/15 backdrop-blur-sm border border-white/20 rounded-full px-6 py-3 text-base font-medium text-white">
-              {totalFollowers.toLocaleString()} Total Followers
-            </div>
-          </div>
-          
-          {/* Social Media Icons - Centered */}
-          <div className="flex justify-center gap-8 mb-8">
-            <a href="https://instagram.com/sheldonsimkus" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-white hover:text-white/80 transition-colors">
-              <img src="/lovable-uploads/502a8d59-4e94-4c4a-94c8-4e5f78e6decf.png" className="h-6 w-6" alt="Instagram" />
-              <span className="text-lg font-bold">{((instagramStats?.follower_count || 38700) / 1000).toFixed(1)}K</span>
-            </a>
-            <a href="https://www.youtube.com/@sheldonsimkus" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-white hover:text-white/80 transition-colors">
-              <img src="/lovable-uploads/9aa87b25-88f0-439d-890a-7c2d475c22f5.png" className="h-6 w-6" alt="YouTube" />
-              <span className="text-lg font-bold">{(youtubeFollowers / 1000).toFixed(1)}K</span>
-            </a>
-            <a href="https://www.tiktok.com/@sheldonsimkus" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-white hover:text-white/80 transition-colors">
-              <img src="/lovable-uploads/d3d646ba-e348-45c2-9a7b-d3f53ff73b4c.png" className="h-6 w-6" alt="TikTok" />
-              <span className="text-lg font-bold">{((tiktokStats?.follower_count || 1410) / 1000).toFixed(1)}K</span>
-            </a>
-          </div>
-          
-          {/* Bottom Action Buttons - Centered */}
-          <div className="flex justify-center gap-4">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={async () => {
-                await refreshViewStats();
-                await refetchPlatformStats();
-                await refetchPosts();
-              }}
-              disabled={viewStatsLoading}
-              className="bg-white/15 backdrop-blur-sm border-white/20 text-white hover:bg-white/25 px-4 py-2"
-            >
-              <RotateCcw className={`mr-2 h-4 w-4 ${viewStatsLoading ? 'animate-spin' : ''}`} />
-              Refresh Stats
-            </Button>
             
-            <Link to="/auth">
+            {/* Social Media Icons */}
+            <div className="flex justify-center gap-8">
+              <a href="https://instagram.com/sheldonsimkus" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-white hover:text-white/80 transition-colors">
+                <img src="/lovable-uploads/502a8d59-4e94-4c4a-94c8-4e5f78e6decf.png" className="h-6 w-6" alt="Instagram" />
+                <span className="text-lg font-bold">{((instagramStats?.follower_count || 38700) / 1000).toFixed(1)}K</span>
+              </a>
+              <a href="https://www.youtube.com/@sheldonsimkus" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-white hover:text-white/80 transition-colors">
+                <img src="/lovable-uploads/9aa87b25-88f0-439d-890a-7c2d475c22f5.png" className="h-6 w-6" alt="YouTube" />
+                <span className="text-lg font-bold">{(youtubeFollowers / 1000).toFixed(1)}K</span>
+              </a>
+              <a href="https://www.tiktok.com/@sheldonsimkus" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-white hover:text-white/80 transition-colors">
+                <img src="/lovable-uploads/d3d646ba-e348-45c2-9a7b-d3f53ff73b4c.png" className="h-6 w-6" alt="TikTok" />
+                <span className="text-lg font-bold">{((tiktokStats?.follower_count || 1410) / 1000).toFixed(1)}K</span>
+              </a>
+            </div>
+            
+            {/* Action Buttons */}
+            <div className="flex justify-center gap-4">
               <Button
                 variant="secondary"
                 size="sm"
+                onClick={async () => {
+                  await refreshViewStats();
+                  await refetchPlatformStats();
+                  await refetchPosts();
+                }}
+                disabled={viewStatsLoading}
                 className="bg-white/15 backdrop-blur-sm border-white/20 text-white hover:bg-white/25 px-4 py-2"
               >
-                <Settings className="mr-2 h-4 w-4" />
-                Admin
+                <RotateCcw className={`mr-2 h-4 w-4 ${viewStatsLoading ? 'animate-spin' : ''}`} />
+                Refresh Stats
               </Button>
-            </Link>
+              
+              <Link to="/auth">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="bg-white/15 backdrop-blur-sm border-white/20 text-white hover:bg-white/25 px-4 py-2"
+                >
+                  <Settings className="mr-2 h-4 w-4" />
+                  Admin
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
