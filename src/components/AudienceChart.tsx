@@ -1,4 +1,9 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
 import { Users, MapPin, Calendar } from "lucide-react";
 
 interface AudienceData {
@@ -24,11 +29,13 @@ export function AudienceChart({ data }: AudienceChartProps) {
       <CardContent className="space-y-6">
         {/* Gender Distribution */}
         <div className="space-y-2">
-          <p className="text-sm font-medium text-muted-foreground">Gender Split</p>
+          <p className="text-sm font-medium text-muted-foreground">
+            Gender Split
+          </p>
           <div className="flex space-x-2">
             <div className="flex-1 bg-primary/20 rounded-full h-2 relative overflow-hidden">
-              <div 
-                className="bg-primary h-full rounded-full transition-all duration-500" 
+              <div
+                className="bg-primary h-full rounded-full transition-all duration-500"
                 style={{ width: `${data.gender.men}%` }}
               />
             </div>
@@ -53,9 +60,15 @@ export function AudienceChart({ data }: AudienceChartProps) {
                   <span>{group.percentage}%</span>
                 </div>
                 <div className="bg-muted rounded-full h-1.5 overflow-hidden">
-                  <div 
-                    className="bg-accent h-full rounded-full transition-all duration-500" 
-                    style={{ width: `${(group.percentage / Math.max(...data.age.map(g => g.percentage))) * 100}%` }}
+                  <div
+                    className="bg-accent h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: `${
+                        (group.percentage /
+                          Math.max(...data.age.map((g) => g.percentage))) *
+                        100
+                      }%`,
+                    }}
                   />
                 </div>
               </div>
@@ -74,13 +87,17 @@ export function AudienceChart({ data }: AudienceChartProps) {
               <div key={index} className="bg-muted/30 p-2 rounded-md">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">{country.country}</span>
-                  <span className="text-sm text-muted-foreground">{country.percentage}%</span>
+                  <span className="text-sm text-muted-foreground">
+                    {country.percentage}%
+                  </span>
                 </div>
               </div>
             ))}
           </div>
           <div className="mt-2">
-            <p className="text-xs text-muted-foreground">Top Cities: {data.cities.join(", ")}</p>
+            <p className="text-xs text-muted-foreground">
+              Top Cities: {data.cities.join(", ")}
+            </p>
           </div>
         </div>
       </CardContent>

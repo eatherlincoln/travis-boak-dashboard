@@ -1,14 +1,26 @@
-import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { Upload, X, Save } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "../components/ui/form";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Upload, X, Save } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface PostMetrics {
   likes: number;
@@ -34,16 +46,18 @@ const InstagramPostForm = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [uploading, setUploading] = useState<{ [key: string]: boolean }>({});
-  const [thumbnailPreviews, setThumbnailPreviews] = useState<{ [key: string]: string }>({});
+  const [thumbnailPreviews, setThumbnailPreviews] = useState<{
+    [key: string]: string;
+  }>({});
   const [loading, setLoading] = useState(true);
 
   const form = useForm<FormData>({
     defaultValues: {
-      post1: { url: '', metrics: { likes: 0, comments: 0, shares: 0 } },
-      post2: { url: '', metrics: { likes: 0, comments: 0, shares: 0 } },
-      post3: { url: '', metrics: { likes: 0, comments: 0, shares: 0 } },
-      post4: { url: '', metrics: { likes: 0, comments: 0, shares: 0 } },
-    }
+      post1: { url: "", metrics: { likes: 0, comments: 0, shares: 0 } },
+      post2: { url: "", metrics: { likes: 0, comments: 0, shares: 0 } },
+      post3: { url: "", metrics: { likes: 0, comments: 0, shares: 0 } },
+      post4: { url: "", metrics: { likes: 0, comments: 0, shares: 0 } },
+    },
   });
 
   // Load existing Instagram post data on mount
@@ -54,41 +68,46 @@ const InstagramPostForm = () => {
       try {
         setLoading(true);
         const { data, error } = await supabase
-          .from('platform_stats')
-          .select('additional_metrics')
-          .eq('user_id', user.id)
-          .eq('platform', 'instagram')
+          .from("platform_stats")
+          .select("additional_metrics")
+          .eq("user_id", user.id)
+          .eq("platform", "instagram")
           .single();
 
         if (error) {
-          console.log('No existing Instagram posts found');
+          console.log("No existing Instagram posts found");
           return;
         }
 
-        if (data?.additional_metrics && typeof data.additional_metrics === 'object' && data.additional_metrics !== null) {
+        if (
+          data?.additional_metrics &&
+          typeof data.additional_metrics === "object" &&
+          data.additional_metrics !== null
+        ) {
           const metrics = data.additional_metrics as any;
           if (metrics.post_analysis) {
             const posts = metrics.post_analysis;
             const formData: Partial<FormData> = {};
-            
+
             posts.forEach((post: any, index: number) => {
               const postKey = `post${index + 1}` as keyof FormData;
-              if (index < 4) { // Only load first 4 posts
+              if (index < 4) {
+                // Only load first 4 posts
                 formData[postKey] = {
-                  url: post.url || '',
+                  url: post.url || "",
                   metrics: {
                     likes: post.likes || 0,
                     comments: post.comments || 0,
                     shares: post.shares || 0,
                   },
-                  thumbnailUrl: post.image_url || ''
+                  thumbnailUrl: post.image_url || "",
                 };
 
                 // Set thumbnail preview if image exists
                 if (post.image_url) {
-                  setThumbnailPreviews(prev => ({
+                  setThumbnailPreviews((prev) => ({
                     ...prev,
-                    [postKey]: post.image_url
+                    [postKey]: post.image_url,
                   }));
                 }
               }
@@ -99,7 +118,7 @@ const InstagramPostForm = () => {
           }
         }
       } catch (error) {
-        console.error('Error loading existing posts:', error);
+        console.error("Error loading existing posts:", error);
       } finally {
         setLoading(false);
       }
@@ -111,12 +130,12 @@ const InstagramPostForm = () => {
   const handleImageUpload = async (file: File, postKey: string) => {
     if (!user) return;
 
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
     if (!allowedTypes.includes(file.type)) {
       toast({
         title: "Invalid File Type",
         description: "Please upload JPEG, PNG, or WebP images only.",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -126,27 +145,29 @@ const InstagramPostForm = () => {
       toast({
         title: "File Too Large",
         description: "Please upload images smaller than 5MB.",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
 
-    setUploading(prev => ({ ...prev, [postKey]: true }));
+    setUploading((prev) => ({ ...prev, [postKey]: true }));
 
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(2)}.${fileExt}`;
       const filePath = `instagram-posts/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('post-images')
+        .from("post-images")
         .upload(filePath, file);
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('post-images')
-        .getPublicUrl(filePath);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("post-images").getPublicUrl(filePath);
 
       // Update form with thumbnail URL
       form.setValue(`${postKey}.thumbnailUrl` as any, publicUrl);
@@ -154,33 +175,32 @@ const InstagramPostForm = () => {
       // Create preview
       const reader = new FileReader();
       reader.onload = (e) => {
-        setThumbnailPreviews(prev => ({ 
-          ...prev, 
-          [postKey]: e.target?.result as string 
+        setThumbnailPreviews((prev) => ({
+          ...prev,
+          [postKey]: e.target?.result as string,
         }));
       };
       reader.readAsDataURL(file);
 
       toast({
         title: "Upload Successful!",
-        description: "Thumbnail uploaded successfully."
+        description: "Thumbnail uploaded successfully.",
       });
-
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error("Upload error:", error);
       toast({
         title: "Upload Failed",
         description: "Failed to upload image. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
-      setUploading(prev => ({ ...prev, [postKey]: false }));
+      setUploading((prev) => ({ ...prev, [postKey]: false }));
     }
   };
 
   const removeThumbnail = (postKey: string) => {
-    form.setValue(`${postKey}.thumbnailUrl` as any, '');
-    setThumbnailPreviews(prev => {
+    form.setValue(`${postKey}.thumbnailUrl` as any, "");
+    setThumbnailPreviews((prev) => {
       const newPreviews = { ...prev };
       delete newPreviews[postKey];
       return newPreviews;
@@ -193,20 +213,20 @@ const InstagramPostForm = () => {
     try {
       const posts = Object.entries(data).map(([key, post]) => ({
         user_id: user.id,
-        title: `Instagram Post ${key.replace('post', '')}`,
+        title: `Instagram Post ${key.replace("post", "")}`,
         post_url: post.url,
         likes_count: post.metrics.likes,
         comments_count: post.metrics.comments,
         shares_count: post.metrics.shares,
         image_url: post.thumbnailUrl || null,
-        content_type: 'image',
+        content_type: "image",
         posted_at: new Date().toISOString(),
       }));
 
       // Save to platform_stats additional_metrics instead until types are updated
       const instagramPost = {
         user_id: user.id,
-        platform: 'instagram',
+        platform: "instagram",
         additional_metrics: {
           post_analysis: posts.map((post, index) => ({
             post_number: index + 1,
@@ -214,35 +234,37 @@ const InstagramPostForm = () => {
             likes: post.likes_count,
             comments: post.comments_count,
             shares: post.shares_count,
-            image_url: post.image_url
-          }))
-        }
+            image_url: post.image_url,
+          })),
+        },
       };
 
       const { error } = await supabase
-        .from('platform_stats')
+        .from("platform_stats")
         .update(instagramPost)
-        .eq('user_id', user.id)
-        .eq('platform', 'instagram');
+        .eq("user_id", user.id)
+        .eq("platform", "instagram");
 
       if (error) throw error;
 
       toast({
         title: "Success!",
-        description: "Instagram post analysis saved successfully."
+        description: "Instagram post analysis saved successfully.",
       });
-
     } catch (error) {
-      console.error('Error saving posts:', error);
+      console.error("Error saving posts:", error);
       toast({
         title: "Error",
         description: "Failed to save Instagram post analysis.",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
 
-  const renderPostForm = (postKey: 'post1' | 'post2' | 'post3' | 'post4', postNumber: number) => {
+  const renderPostForm = (
+    postKey: "post1" | "post2" | "post3" | "post4",
+    postNumber: number
+  ) => {
     const isUploading = uploading[postKey];
     const preview = thumbnailPreviews[postKey];
     const thumbnailUrl = form.watch(`${postKey}.thumbnailUrl`);
@@ -261,10 +283,7 @@ const InstagramPostForm = () => {
               <FormItem>
                 <FormLabel>Post URL</FormLabel>
                 <FormControl>
-                  <Input 
-                    placeholder="https://instagram.com/p/..." 
-                    {...field} 
-                  />
+                  <Input placeholder="https://instagram.com/p/..." {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -280,11 +299,13 @@ const InstagramPostForm = () => {
                 <FormItem>
                   <FormLabel>Likes</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="number" 
+                    <Input
+                      type="number"
                       placeholder="0"
                       {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                      onChange={(e) =>
+                        field.onChange(parseInt(e.target.value) || 0)
+                      }
                     />
                   </FormControl>
                   <FormMessage />
@@ -299,11 +320,13 @@ const InstagramPostForm = () => {
                 <FormItem>
                   <FormLabel>Comments</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="number" 
+                    <Input
+                      type="number"
                       placeholder="0"
                       {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                      onChange={(e) =>
+                        field.onChange(parseInt(e.target.value) || 0)
+                      }
                     />
                   </FormControl>
                   <FormMessage />
@@ -318,11 +341,13 @@ const InstagramPostForm = () => {
                 <FormItem>
                   <FormLabel>Shares</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="number" 
+                    <Input
+                      type="number"
                       placeholder="0"
                       {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                      onChange={(e) =>
+                        field.onChange(parseInt(e.target.value) || 0)
+                      }
                     />
                   </FormControl>
                   <FormMessage />
@@ -335,10 +360,10 @@ const InstagramPostForm = () => {
           <div>
             <Label htmlFor={`thumbnail-${postKey}`}>Thumbnail</Label>
             <div className="mt-2">
-              {(preview || thumbnailUrl) ? (
+              {preview || thumbnailUrl ? (
                 <div className="relative">
-                  <img 
-                    src={preview || thumbnailUrl} 
+                  <img
+                    src={preview || thumbnailUrl}
                     alt={`Post ${postNumber} thumbnail`}
                     className="w-32 h-32 object-cover rounded-lg border border-border"
                   />
@@ -371,7 +396,9 @@ const InstagramPostForm = () => {
                   >
                     <Upload className="h-8 w-8 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">
-                      {isUploading ? "Uploading..." : "Click to upload thumbnail"}
+                      {isUploading
+                        ? "Uploading..."
+                        : "Click to upload thumbnail"}
                     </span>
                   </label>
                 </div>
@@ -388,7 +415,9 @@ const InstagramPostForm = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-foreground">Instagram Post Analysis</h2>
+            <h2 className="text-2xl font-bold text-foreground">
+              Instagram Post Analysis
+            </h2>
             <p className="text-muted-foreground">Loading existing posts...</p>
           </div>
         </div>
@@ -420,10 +449,17 @@ const InstagramPostForm = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">Instagram Post Analysis</h2>
-          <p className="text-muted-foreground">Enter data for your top 4 Instagram posts</p>
+          <h2 className="text-2xl font-bold text-foreground">
+            Instagram Post Analysis
+          </h2>
+          <p className="text-muted-foreground">
+            Enter data for your top 4 Instagram posts
+          </p>
         </div>
-        <Button onClick={form.handleSubmit(onSubmit)} disabled={form.formState.isSubmitting}>
+        <Button
+          onClick={form.handleSubmit(onSubmit)}
+          disabled={form.formState.isSubmitting}
+        >
           <Save className="mr-2 h-4 w-4" />
           Save Posts
         </Button>
@@ -432,10 +468,10 @@ const InstagramPostForm = () => {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {renderPostForm('post1', 1)}
-            {renderPostForm('post2', 2)}
-            {renderPostForm('post3', 3)}
-            {renderPostForm('post4', 4)}
+            {renderPostForm("post1", 1)}
+            {renderPostForm("post2", 2)}
+            {renderPostForm("post3", 3)}
+            {renderPostForm("post4", 4)}
           </div>
         </form>
       </Form>

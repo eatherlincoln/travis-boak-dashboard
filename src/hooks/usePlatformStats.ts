@@ -1,145 +1,77 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useEffect, useState, useCallback } from "react";
+import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "../contexts/AuthContext";
 
-interface PlatformStats {
-  platform: string;
-  follower_count: number;
-  monthly_views: number;
-  engagement_rate: number;
-  additional_metrics: any;
-  updated_at: string;
-  image_urls?: string[];
-}
+type PlatformKey = "instagram" | "youtube" | "tiktok";
+export type PlatformStats = {
+  platform: PlatformKey;
+  follower_count: number | null;
+  monthly_views: number | null;
+  engagement_rate?: number | null;
+  additional_metrics?: Record<string, any>;
+  updated_at?: string | null;
+};
 
-export const usePlatformStats = () => {
-  const [stats, setStats] = useState<PlatformStats[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+const DEFAULTS: Record<PlatformKey, PlatformStats> = {
+  instagram: {
+    platform: "instagram",
+    follower_count: 38700,
+    monthly_views: 730000,
+    engagement_rate: 0.02,
+  },
+  youtube: {
+    platform: "youtube",
+    follower_count: 8800,
+    monthly_views: 86800,
+    engagement_rate: 0.018,
+  },
+  tiktok: {
+    platform: "tiktok",
+    follower_count: 1410,
+    monthly_views: 37000,
+    engagement_rate: 0.024,
+  },
+};
+
+export function usePlatformStats() {
   const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [raw, setRaw] = useState<Record<string, PlatformStats>>({});
+  const [error, setError] = useState<string>();
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
+    setLoading(true);
+    setError(undefined);
     try {
-      setLoading(true);
-      setError(null);
+      const { data, error } = await supabase
+        .from("platform_stats")
+        .select(
+          "platform,follower_count,monthly_views,engagement_rate,additional_metrics,updated_at"
+        );
+      if (error) throw error;
 
-      console.log('🔍 Fetching platform stats...');
-      
-      // Try to fetch stats from database first (for admin updates)
-      const { data: adminStats, error: adminError } = await supabase
-        .from('platform_stats')
-        .select('*')
-        .limit(3); // Get all platform stats from any user
-
-      console.log('📊 Database query result:', { adminStats, adminError });
-
-      // If we have admin stats, use them
-      if (!adminError && adminStats && adminStats.length > 0) {
-        console.log('✅ Using admin stats from database:', adminStats);
-        const formattedStats = adminStats.map(stat => ({
-          platform: stat.platform,
-          follower_count: stat.follower_count || 0,
-          monthly_views: stat.monthly_views || 0,
-          engagement_rate: stat.engagement_rate || 0,
-          additional_metrics: stat.additional_metrics || {},
-          updated_at: stat.updated_at,
-          image_urls: Array.isArray(stat.image_urls) ? stat.image_urls.map(url => String(url)) : []
-        }));
-        setStats(formattedStats);
-      } else {
-        // Fallback to default stats for public view
-        console.log('⚠️ Using fallback stats - no admin data found');
-        setStats([
-          {
-            platform: 'instagram',
-            follower_count: 38700,
-            monthly_views: 730000,
-            engagement_rate: 0.021, // Realistic Instagram rate
-            additional_metrics: {},
-            updated_at: new Date().toISOString()
-          },
-          {
-            platform: 'youtube',
-            follower_count: 8800,
-            monthly_views: 86800,
-            engagement_rate: 0.028, // Realistic YouTube rate
-            additional_metrics: {},
-            updated_at: new Date().toISOString()
-          },
-          {
-            platform: 'tiktok',
-            follower_count: 1410,
-            monthly_views: 37000,
-            engagement_rate: 0.052, // Realistic TikTok rate
-            additional_metrics: {},
-            updated_at: new Date().toISOString()
-          }
-        ]);
-      }
-    } catch (err) {
-      console.error('Error fetching platform stats:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
-      
-      // Fallback to hardcoded stats if API fails
-      setStats([
-        {
-          platform: 'instagram',
-          follower_count: 38700,
-          monthly_views: 730000,
-          engagement_rate: 0.021, // Realistic Instagram rate
-          additional_metrics: {},
-          updated_at: new Date().toISOString()
-        },
-        {
-          platform: 'youtube',
-          follower_count: 8800,
-          monthly_views: 86800,
-          engagement_rate: 0.028, // Realistic YouTube rate
-          additional_metrics: {},
-          updated_at: new Date().toISOString()
-        },
-        {
-          platform: 'tiktok',
-          follower_count: 1410,
-          monthly_views: 37000,
-          engagement_rate: 0.052, // Realistic TikTok rate
-          additional_metrics: {},
-          updated_at: new Date().toISOString()
-        }
-      ]);
+      const map: Record<string, PlatformStats> = {};
+      for (const r of data ?? []) map[r.platform] = r as PlatformStats;
+      setRaw(map);
+    } catch (e: any) {
+      setError(e?.message ?? "Failed to load stats");
+      setRaw({});
+      console.error("usePlatformStats error:", e);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchStats();
+  }, [fetchStats, user?.id]);
 
-    // Set up real-time subscription for platform stats
-    const channel = supabase
-      .channel('platform-stats-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'platform_stats'
-        },
-        (payload) => {
-          console.log('🔄 Platform stats changed:', payload);
-          fetchStats(); // Refetch data when changes occur
-        }
-      )
-      .subscribe();
+  const getPlatformStat = useCallback(
+    (key: PlatformKey) => {
+      return { ...DEFAULTS[key], ...(raw[key] ?? {}) };
+    },
+    [raw]
+  );
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user]); // Re-subscribe when user changes
-
-  const getPlatformStat = (platform: string) => {
-    return stats.find(stat => stat.platform === platform);
-  };
-
-  return { stats, loading, error, refetch: fetchStats, getPlatformStat };
-};
+  return { loading, error, getPlatformStat, refetch: fetchStats, raw };
+}

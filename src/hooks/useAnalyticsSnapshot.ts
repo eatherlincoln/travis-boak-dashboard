@@ -1,7 +1,12 @@
-import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
-type Row = { source: string; metric: string; value: number; updated_at: string };
+type Row = {
+  source: string;
+  metric: string;
+  value: number;
+  updated_at: string;
+};
 
 export function useAnalyticsSnapshot() {
   const [rows, setRows] = useState<Row[]>([]);
@@ -11,9 +16,9 @@ export function useAnalyticsSnapshot() {
   async function load() {
     setLoading(true);
     const { data, error } = await supabase
-      .from('analytics_public')
-      .select('source,metric,value,updated_at')
-      .order('updated_at', { ascending: false });
+      .from("analytics_public")
+      .select("source,metric,value,updated_at")
+      .order("updated_at", { ascending: false });
 
     if (error) setErr(error.message);
     setRows(data ?? []);
@@ -24,11 +29,17 @@ export function useAnalyticsSnapshot() {
     load();
 
     const ch = supabase
-      .channel('analytics_public_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'analytics_public' }, () => load())
+      .channel("analytics_public_changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "analytics_public" },
+        () => load()
+      )
       .subscribe();
 
-    return () => { supabase.removeChannel(ch); };
+    return () => {
+      supabase.removeChannel(ch);
+    };
   }, []);
 
   return { rows, loading, err, reload: load };

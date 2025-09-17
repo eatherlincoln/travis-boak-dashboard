@@ -1,6 +1,11 @@
 import { ReactNode } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
+import { Badge } from "../components/ui/badge";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -19,18 +24,23 @@ interface PlatformCardProps {
   accentColor?: string;
 }
 
-export function PlatformCard({ 
-  platform, 
-  handle, 
-  followers, 
-  icon, 
-  metrics, 
-  highlights, 
+export function PlatformCard({
+  platform,
+  handle,
+  followers,
+  icon,
+  metrics,
+  highlights,
   className,
-  accentColor = "primary"
+  accentColor = "primary",
 }: PlatformCardProps) {
   return (
-    <Card className={cn("shadow-card border-border/50 hover:shadow-ocean transition-all duration-300", className)}>
+    <Card
+      className={cn(
+        "shadow-card border-border/50 hover:shadow-ocean transition-all duration-300",
+        className
+      )}
+    >
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-3 text-xl">
@@ -39,7 +49,9 @@ export function PlatformCard({
             </div>
             <div>
               <div className="font-bold">{platform}</div>
-              <div className="text-sm text-muted-foreground font-normal">{handle}</div>
+              <div className="text-sm text-muted-foreground font-normal">
+                {handle}
+              </div>
             </div>
           </CardTitle>
           <Badge variant="secondary" className="text-lg font-bold px-3 py-1">
@@ -55,14 +67,19 @@ export function PlatformCard({
               <div className="flex items-center gap-2">
                 <p className="font-semibold">{metric.value}</p>
                 {metric.trend && (
-                  <span className={cn(
-                    "text-xs font-medium flex items-center gap-1",
-                    metric.trend.startsWith('+') ? "text-green-600" : "text-red-600"
-                  )}>
-                    {metric.trend.startsWith('+') ? 
-                      <TrendingUp className="h-3 w-3" /> : 
+                  <span
+                    className={cn(
+                      "text-xs font-medium flex items-center gap-1",
+                      metric.trend.startsWith("+")
+                        ? "text-green-600"
+                        : "text-red-600"
+                    )}
+                  >
+                    {metric.trend.startsWith("+") ? (
+                      <TrendingUp className="h-3 w-3" />
+                    ) : (
                       <TrendingDown className="h-3 w-3" />
-                    }
+                    )}
                     {metric.trend}
                   </span>
                 )}
@@ -70,10 +87,12 @@ export function PlatformCard({
             </div>
           ))}
         </div>
-        
+
         {highlights && highlights.length > 0 && (
           <div className="space-y-2">
-            <p className="text-sm font-medium text-muted-foreground">Highlights</p>
+            <p className="text-sm font-medium text-muted-foreground">
+              Highlights
+            </p>
             <div className="space-y-1">
               {highlights.map((highlight, index) => (
                 <p key={index} className="text-sm bg-muted/50 p-2 rounded-md">

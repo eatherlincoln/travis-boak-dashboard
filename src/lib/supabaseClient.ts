@@ -1,14 +1,15 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from "@supabase/supabase-js";
 
-const url = import.meta.env.VITE_SUPABASE_URL as string;
-const anon = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 
-if (!url || !anon) {
-  console.warn('Supabase env vars are missing. Check .env.local');
+if (!supabaseUrl || !supabaseAnonKey) {
+  // Visible in dev console – helps catch missing envs
+  console.warn(
+    "Supabase env not set: VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY"
+  );
 }
 
-export const supabase = createClient(url, anon);
-console.log('ENV CHECK', {
-  url: import.meta.env.VITE_SUPABASE_URL,
-  anon: (import.meta.env.VITE_SUPABASE_ANON_KEY || '').slice(0, 6) + '...'
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: { persistSession: true },
 });

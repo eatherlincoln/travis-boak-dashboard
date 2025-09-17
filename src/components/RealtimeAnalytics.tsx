@@ -1,36 +1,68 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Loader2, RefreshCw, TrendingUp, Users, Eye, Heart } from 'lucide-react';
-import { useRealtimeAnalytics } from '@/hooks/useRealtimeAnalytics';
-import { upsertAnalytics } from '@/api/upsertAnalytics';
-import { useToast } from '@/hooks/use-toast';
+import React from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
+import { Badge } from "../components/ui/badge";
+import { Button } from "../components/ui/button";
+import {
+  Loader2,
+  RefreshCw,
+  TrendingUp,
+  Users,
+  Eye,
+  Heart,
+} from "lucide-react";
+import { useRealtimeAnalytics } from "@/hooks/useRealtimeAnalytics";
+import { upsertAnalytics } from "@/api/upsertAnalytics";
+import { useToast } from "@/hooks/use-toast";
 
 interface RealtimeAnalyticsProps {
   className?: string;
 }
 
 const RealtimeAnalytics: React.FC<RealtimeAnalyticsProps> = ({ className }) => {
-  const { data, loading, error, refetch, getMetricValue, getSourceMetrics, getLatestUpdate } = useRealtimeAnalytics();
+  const {
+    data,
+    loading,
+    error,
+    refetch,
+    getMetricValue,
+    getSourceMetrics,
+    getLatestUpdate,
+  } = useRealtimeAnalytics();
   const { toast } = useToast();
 
-  const handleTestUpdate = async (source: 'instagram' | 'tiktok' | 'youtube') => {
+  const handleTestUpdate = async (
+    source: "instagram" | "tiktok" | "youtube"
+  ) => {
     try {
       // Generate realistic test data based on platform
       const getRealisticEngagement = (source: string) => {
         switch (source) {
-          case 'instagram': return (Math.random() * 1.5 + 1) / 100; // 1.0–2.5% (fraction)
-          case 'tiktok': return (Math.random() * 4 + 3) / 100; // 3–7% (fraction)  
-          case 'youtube': return (Math.random() * 2 + 1.5) / 100; // 1.5–3.5% (fraction)
-          default: return (Math.random() * 3 + 1) / 100; // 1–4% (fraction)
+          case "instagram":
+            return (Math.random() * 1.5 + 1) / 100; // 1.0–2.5% (fraction)
+          case "tiktok":
+            return (Math.random() * 4 + 3) / 100; // 3–7% (fraction)
+          case "youtube":
+            return (Math.random() * 2 + 1.5) / 100; // 1.5–3.5% (fraction)
+          default:
+            return (Math.random() * 3 + 1) / 100; // 1–4% (fraction)
         }
       };
-      
+
       const metrics = [
-        { metric: 'followers', value: Math.floor(Math.random() * 50000) + 10000 },
-        { metric: 'monthly_views', value: Math.floor(Math.random() * 500000) + 50000 },
-        { metric: 'engagement_rate', value: getRealisticEngagement(source) },
+        {
+          metric: "followers",
+          value: Math.floor(Math.random() * 50000) + 10000,
+        },
+        {
+          metric: "monthly_views",
+          value: Math.floor(Math.random() * 500000) + 50000,
+        },
+        { metric: "engagement_rate", value: getRealisticEngagement(source) },
       ];
 
       for (const { metric, value } of metrics) {
@@ -42,7 +74,7 @@ const RealtimeAnalytics: React.FC<RealtimeAnalyticsProps> = ({ className }) => {
         description: `Test data sent for ${source}. Watch the realtime updates!`,
       });
     } catch (error) {
-      console.error('Error updating analytics:', error);
+      console.error("Error updating analytics:", error);
       toast({
         title: "Update Failed",
         description: "Failed to update analytics data",
@@ -52,7 +84,7 @@ const RealtimeAnalytics: React.FC<RealtimeAnalyticsProps> = ({ className }) => {
   };
 
   const formatValue = (value: number, metric: string): string => {
-    if (metric === 'engagement_rate') {
+    if (metric === "engagement_rate") {
       return `${(value * 100).toFixed(1)}%`;
     }
     if (value >= 1000000) {
@@ -66,14 +98,18 @@ const RealtimeAnalytics: React.FC<RealtimeAnalyticsProps> = ({ className }) => {
 
   const getMetricIcon = (metric: string) => {
     switch (metric) {
-      case 'followers': return <Users className="h-4 w-4" />;
-      case 'monthly_views': return <Eye className="h-4 w-4" />;
-      case 'engagement_rate': return <Heart className="h-4 w-4" />;
-      default: return <TrendingUp className="h-4 w-4" />;
+      case "followers":
+        return <Users className="h-4 w-4" />;
+      case "monthly_views":
+        return <Eye className="h-4 w-4" />;
+      case "engagement_rate":
+        return <Heart className="h-4 w-4" />;
+      default:
+        return <TrendingUp className="h-4 w-4" />;
     }
   };
 
-  const platforms = ['instagram', 'tiktok', 'youtube'] as const;
+  const platforms = ["instagram", "tiktok", "youtube"] as const;
 
   if (error) {
     return (
@@ -87,7 +123,12 @@ const RealtimeAnalytics: React.FC<RealtimeAnalyticsProps> = ({ className }) => {
         </CardHeader>
         <CardContent>
           <p className="text-red-600">Failed to load analytics: {error}</p>
-          <Button onClick={refetch} variant="outline" size="sm" className="mt-2">
+          <Button
+            onClick={refetch}
+            variant="outline"
+            size="sm"
+            className="mt-2"
+          >
             <RefreshCw className="h-4 w-4 mr-2" />
             Retry
           </Button>
@@ -124,7 +165,7 @@ const RealtimeAnalytics: React.FC<RealtimeAnalyticsProps> = ({ className }) => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {platforms.map((platform) => {
               const metrics = getSourceMetrics(platform);
-              
+
               return (
                 <Card key={platform} className="border-l-4 border-l-primary">
                   <CardHeader className="pb-3">
@@ -141,14 +182,19 @@ const RealtimeAnalytics: React.FC<RealtimeAnalyticsProps> = ({ className }) => {
                   </CardHeader>
                   <CardContent className="space-y-3">
                     {metrics.length === 0 ? (
-                      <p className="text-muted-foreground text-sm">No data available</p>
+                      <p className="text-muted-foreground text-sm">
+                        No data available
+                      </p>
                     ) : (
                       metrics.map((item) => (
-                        <div key={item.metric} className="flex items-center justify-between">
+                        <div
+                          key={item.metric}
+                          className="flex items-center justify-between"
+                        >
                           <div className="flex items-center gap-2">
                             {getMetricIcon(item.metric)}
                             <span className="text-sm capitalize">
-                              {item.metric.replace('_', ' ')}
+                              {item.metric.replace("_", " ")}
                             </span>
                           </div>
                           <Badge variant="outline">
@@ -166,7 +212,9 @@ const RealtimeAnalytics: React.FC<RealtimeAnalyticsProps> = ({ className }) => {
           {/* Raw Data Table */}
           {data.length > 0 && (
             <div className="mt-6">
-              <h4 className="text-sm font-medium mb-3">Raw Analytics Data ({data.length} records)</h4>
+              <h4 className="text-sm font-medium mb-3">
+                Raw Analytics Data ({data.length} records)
+              </h4>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -179,9 +227,12 @@ const RealtimeAnalytics: React.FC<RealtimeAnalyticsProps> = ({ className }) => {
                   </thead>
                   <tbody>
                     {data.slice(0, 10).map((item, index) => (
-                      <tr key={`${item.source}-${item.metric}`} className="border-b">
+                      <tr
+                        key={`${item.source}-${item.metric}`}
+                        className="border-b"
+                      >
                         <td className="p-2 capitalize">{item.source}</td>
-                        <td className="p-2">{item.metric.replace('_', ' ')}</td>
+                        <td className="p-2">{item.metric.replace("_", " ")}</td>
                         <td className="p-2 text-right font-mono">
                           {formatValue(item.value, item.metric)}
                         </td>

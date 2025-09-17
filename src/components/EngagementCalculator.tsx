@@ -1,11 +1,27 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Calculator, Instagram, Youtube, Video } from 'lucide-react';
-import { useState } from 'react';
-import { instagramEngagementRate, tiktokEngagementRate, youtubeEngagementRate, formatPct } from '@/utils/engagement';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "../components/ui/tabs";
+import { Badge } from "../components/ui/badge";
+import { Calculator, Instagram, Youtube, Video } from "lucide-react";
+import { useState } from "react";
+import {
+  instagramEngagementRate,
+  tiktokEngagementRate,
+  youtubeEngagementRate,
+  formatPct,
+} from "../utils/engagement";
 
 interface EngagementData {
   likes: number;
@@ -23,7 +39,7 @@ export function EngagementCalculator() {
     shares: 0,
     saves: 50,
     reach: 10000,
-    totalViews: 0
+    totalViews: 0,
   });
 
   const [tiktokData, setTiktokData] = useState<EngagementData>({
@@ -32,7 +48,7 @@ export function EngagementCalculator() {
     shares: 96,
     saves: 120,
     reach: 0,
-    totalViews: 8000
+    totalViews: 8000,
   });
 
   const [youtubeData, setYoutubeData] = useState<EngagementData>({
@@ -41,44 +57,52 @@ export function EngagementCalculator() {
     shares: 15,
     saves: 0,
     reach: 0,
-    totalViews: 10000
+    totalViews: 10000,
   });
 
-  const updateData = (platform: 'instagram' | 'tiktok' | 'youtube', field: keyof EngagementData, value: number) => {
+  const updateData = (
+    platform: "instagram" | "tiktok" | "youtube",
+    field: keyof EngagementData,
+    value: number
+  ) => {
     const setters = {
       instagram: setInstagramData,
       tiktok: setTiktokData,
-      youtube: setYoutubeData
+      youtube: setYoutubeData,
     };
-    
-    setters[platform](prev => ({ ...prev, [field]: value }));
+
+    setters[platform]((prev) => ({ ...prev, [field]: value }));
   };
 
-  const calculateRate = (platform: 'instagram' | 'tiktok' | 'youtube') => {
-    const data = { instagram: instagramData, tiktok: tiktokData, youtube: youtubeData }[platform];
-    
+  const calculateRate = (platform: "instagram" | "tiktok" | "youtube") => {
+    const data = {
+      instagram: instagramData,
+      tiktok: tiktokData,
+      youtube: youtubeData,
+    }[platform];
+
     switch (platform) {
-      case 'instagram':
+      case "instagram":
         return instagramEngagementRate({
           likes: data.likes,
           comments: data.comments,
           saves: data.saves,
-          reach: data.reach
+          reach: data.reach,
         });
-      case 'tiktok':
+      case "tiktok":
         return tiktokEngagementRate({
           likes: data.likes,
           comments: data.comments,
           shares: data.shares,
           saves: data.saves,
-          totalViews: data.totalViews
+          totalViews: data.totalViews,
         });
-      case 'youtube':
+      case "youtube":
         return youtubeEngagementRate({
           likes: data.likes,
           comments: data.comments,
           shares: data.shares,
-          totalViews: data.totalViews
+          totalViews: data.totalViews,
         });
       default:
         return null;
@@ -115,18 +139,27 @@ export function EngagementCalculator() {
 
           <TabsContent value="instagram" className="space-y-4 mt-6">
             <div className="text-center mb-4">
-              <Badge variant="outline" className="text-pink-600 border-pink-200">
+              <Badge
+                variant="outline"
+                className="text-pink-600 border-pink-200"
+              >
                 Formula: (Likes + Comments + Saves) / Reach × 100
               </Badge>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Likes</Label>
                 <Input
                   type="number"
                   value={instagramData.likes}
-                  onChange={(e) => updateData('instagram', 'likes', Number(e.target.value) || 0)}
+                  onChange={(e) =>
+                    updateData(
+                      "instagram",
+                      "likes",
+                      Number(e.target.value) || 0
+                    )
+                  }
                 />
               </div>
               <div>
@@ -134,7 +167,13 @@ export function EngagementCalculator() {
                 <Input
                   type="number"
                   value={instagramData.comments}
-                  onChange={(e) => updateData('instagram', 'comments', Number(e.target.value) || 0)}
+                  onChange={(e) =>
+                    updateData(
+                      "instagram",
+                      "comments",
+                      Number(e.target.value) || 0
+                    )
+                  }
                 />
               </div>
               <div>
@@ -142,7 +181,13 @@ export function EngagementCalculator() {
                 <Input
                   type="number"
                   value={instagramData.saves}
-                  onChange={(e) => updateData('instagram', 'saves', Number(e.target.value) || 0)}
+                  onChange={(e) =>
+                    updateData(
+                      "instagram",
+                      "saves",
+                      Number(e.target.value) || 0
+                    )
+                  }
                 />
               </div>
               <div>
@@ -150,14 +195,20 @@ export function EngagementCalculator() {
                 <Input
                   type="number"
                   value={instagramData.reach}
-                  onChange={(e) => updateData('instagram', 'reach', Number(e.target.value) || 0)}
+                  onChange={(e) =>
+                    updateData(
+                      "instagram",
+                      "reach",
+                      Number(e.target.value) || 0
+                    )
+                  }
                 />
               </div>
             </div>
-            
+
             <div className="text-center p-4 bg-pink-50 dark:bg-pink-950/20 rounded-lg">
               <div className="text-2xl font-bold text-pink-600">
-                {formatPct(calculateRate('instagram'))}
+                {formatPct(calculateRate("instagram"))}
               </div>
               <div className="text-sm text-muted-foreground mt-1">
                 Instagram Engagement Rate
@@ -171,14 +222,16 @@ export function EngagementCalculator() {
                 Formula: (Likes + Comments + Shares + Saves) / Total Views × 100
               </Badge>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Likes</Label>
                 <Input
                   type="number"
                   value={tiktokData.likes}
-                  onChange={(e) => updateData('tiktok', 'likes', Number(e.target.value) || 0)}
+                  onChange={(e) =>
+                    updateData("tiktok", "likes", Number(e.target.value) || 0)
+                  }
                 />
               </div>
               <div>
@@ -186,7 +239,13 @@ export function EngagementCalculator() {
                 <Input
                   type="number"
                   value={tiktokData.comments}
-                  onChange={(e) => updateData('tiktok', 'comments', Number(e.target.value) || 0)}
+                  onChange={(e) =>
+                    updateData(
+                      "tiktok",
+                      "comments",
+                      Number(e.target.value) || 0
+                    )
+                  }
                 />
               </div>
               <div>
@@ -194,7 +253,9 @@ export function EngagementCalculator() {
                 <Input
                   type="number"
                   value={tiktokData.shares}
-                  onChange={(e) => updateData('tiktok', 'shares', Number(e.target.value) || 0)}
+                  onChange={(e) =>
+                    updateData("tiktok", "shares", Number(e.target.value) || 0)
+                  }
                 />
               </div>
               <div>
@@ -202,7 +263,9 @@ export function EngagementCalculator() {
                 <Input
                   type="number"
                   value={tiktokData.saves}
-                  onChange={(e) => updateData('tiktok', 'saves', Number(e.target.value) || 0)}
+                  onChange={(e) =>
+                    updateData("tiktok", "saves", Number(e.target.value) || 0)
+                  }
                 />
               </div>
               <div className="col-span-2">
@@ -210,14 +273,20 @@ export function EngagementCalculator() {
                 <Input
                   type="number"
                   value={tiktokData.totalViews}
-                  onChange={(e) => updateData('tiktok', 'totalViews', Number(e.target.value) || 0)}
+                  onChange={(e) =>
+                    updateData(
+                      "tiktok",
+                      "totalViews",
+                      Number(e.target.value) || 0
+                    )
+                  }
                 />
               </div>
             </div>
-            
+
             <div className="text-center p-4 bg-gray-50 dark:bg-gray-950/20 rounded-lg">
               <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                {formatPct(calculateRate('tiktok'))}
+                {formatPct(calculateRate("tiktok"))}
               </div>
               <div className="text-sm text-muted-foreground mt-1">
                 TikTok Engagement Rate
@@ -231,14 +300,16 @@ export function EngagementCalculator() {
                 Formula: (Likes + Comments + Shares) / Total Views × 100
               </Badge>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Likes</Label>
                 <Input
                   type="number"
                   value={youtubeData.likes}
-                  onChange={(e) => updateData('youtube', 'likes', Number(e.target.value) || 0)}
+                  onChange={(e) =>
+                    updateData("youtube", "likes", Number(e.target.value) || 0)
+                  }
                 />
               </div>
               <div>
@@ -246,7 +317,13 @@ export function EngagementCalculator() {
                 <Input
                   type="number"
                   value={youtubeData.comments}
-                  onChange={(e) => updateData('youtube', 'comments', Number(e.target.value) || 0)}
+                  onChange={(e) =>
+                    updateData(
+                      "youtube",
+                      "comments",
+                      Number(e.target.value) || 0
+                    )
+                  }
                 />
               </div>
               <div>
@@ -254,7 +331,9 @@ export function EngagementCalculator() {
                 <Input
                   type="number"
                   value={youtubeData.shares}
-                  onChange={(e) => updateData('youtube', 'shares', Number(e.target.value) || 0)}
+                  onChange={(e) =>
+                    updateData("youtube", "shares", Number(e.target.value) || 0)
+                  }
                 />
               </div>
               <div>
@@ -262,14 +341,20 @@ export function EngagementCalculator() {
                 <Input
                   type="number"
                   value={youtubeData.totalViews}
-                  onChange={(e) => updateData('youtube', 'totalViews', Number(e.target.value) || 0)}
+                  onChange={(e) =>
+                    updateData(
+                      "youtube",
+                      "totalViews",
+                      Number(e.target.value) || 0
+                    )
+                  }
                 />
               </div>
             </div>
-            
+
             <div className="text-center p-4 bg-red-50 dark:bg-red-950/20 rounded-lg">
               <div className="text-2xl font-bold text-red-600">
-                {formatPct(calculateRate('youtube'))}
+                {formatPct(calculateRate("youtube"))}
               </div>
               <div className="text-sm text-muted-foreground mt-1">
                 YouTube Engagement Rate
