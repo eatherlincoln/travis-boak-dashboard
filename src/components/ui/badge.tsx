@@ -1,28 +1,16 @@
-// src/components/ui/badge.tsx
 import * as React from "react";
-import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "../../lib/utils";
+import { cn } from "@/lib/utils";
 
-const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors",
-  {
-    variants: {
-      variant: {
-        default: "bg-primary text-white border-transparent",
-        secondary: "bg-muted text-foreground border-transparent",
-        outline: "text-foreground border-border",
-      },
-    },
-    defaultVariants: { variant: "default" },
-  }
-);
+export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {}
 
-export interface BadgeProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof badgeVariants> {}
-
-export function Badge({ className, variant, ...props }: BadgeProps) {
+export function Badge({ className, ...props }: BadgeProps) {
   return (
-    <div className={cn(badgeVariants({ variant }), className)} {...props} />
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700",
+        className
+      )}
+      {...props}
+    />
   );
 }

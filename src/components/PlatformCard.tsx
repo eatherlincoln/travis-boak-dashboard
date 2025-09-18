@@ -1,108 +1,48 @@
-import { ReactNode } from "react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
+import React from "react";
 import { TrendingUp, TrendingDown } from "lucide-react";
-import { cn } from "@/lib/utils";
 
-interface PlatformCardProps {
-  platform: string;
-  handle: string;
+type Props = {
+  title: string;
   followers: string;
-  icon: ReactNode;
-  metrics: Array<{
-    label: string;
-    value: string;
-    trend?: string;
-  }>;
-  highlights?: string[];
-  className?: string;
-  accentColor?: string;
-}
+  views: string;
+  growthLabel?: string; // e.g. "Followers"
+  growthPct?: string; // e.g. "+2.3%" or "-1.2%"
+  positive?: boolean; // true if growth is positive
+};
 
-export function PlatformCard({
-  platform,
-  handle,
+export default function PlatformCard({
+  title,
   followers,
-  icon,
-  metrics,
-  highlights,
-  className,
-  accentColor = "primary",
-}: PlatformCardProps) {
+  views,
+  growthLabel = "Growth",
+  growthPct = "+0.0%",
+  positive = true,
+}: Props) {
   return (
-    <Card
-      className={cn(
-        "shadow-card border-border/50 hover:shadow-ocean transition-all duration-300",
-        className
-      )}
-    >
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-3 text-xl">
-            <div className={cn("p-2 rounded-lg", `bg-${accentColor}/10`)}>
-              {icon}
-            </div>
-            <div>
-              <div className="font-bold">{platform}</div>
-              <div className="text-sm text-muted-foreground font-normal">
-                {handle}
-              </div>
-            </div>
-          </CardTitle>
-          <Badge variant="secondary" className="text-lg font-bold px-3 py-1">
-            {followers}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="grid grid-cols-2 gap-4">
-          {metrics.map((metric, index) => (
-            <div key={index} className="space-y-1">
-              <p className="text-sm text-muted-foreground">{metric.label}</p>
-              <div className="flex items-center gap-2">
-                <p className="font-semibold">{metric.value}</p>
-                {metric.trend && (
-                  <span
-                    className={cn(
-                      "text-xs font-medium flex items-center gap-1",
-                      metric.trend.startsWith("+")
-                        ? "text-green-600"
-                        : "text-red-600"
-                    )}
-                  >
-                    {metric.trend.startsWith("+") ? (
-                      <TrendingUp className="h-3 w-3" />
-                    ) : (
-                      <TrendingDown className="h-3 w-3" />
-                    )}
-                    {metric.trend}
-                  </span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+    <div className="bg-white rounded-xl shadow-md p-4">
+      <div className="mb-1 text-sm font-semibold text-gray-900">{title}</div>
 
-        {highlights && highlights.length > 0 && (
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-muted-foreground">
-              Highlights
-            </p>
-            <div className="space-y-1">
-              {highlights.map((highlight, index) => (
-                <p key={index} className="text-sm bg-muted/50 p-2 rounded-md">
-                  {highlight}
-                </p>
-              ))}
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      <div className="space-y-1 text-sm text-gray-700">
+        <div>
+          <span className="text-gray-500">Followers:</span>{" "}
+          <span className="font-medium">{followers}</span>
+        </div>
+        <div>
+          <span className="text-gray-500">Views:</span>{" "}
+          <span className="font-medium">{views}</span>
+        </div>
+        <div className="flex items-center gap-1">
+          {positive ? (
+            <TrendingUp className="h-3.5 w-3.5 text-emerald-600" />
+          ) : (
+            <TrendingDown className="h-3.5 w-3.5 text-rose-600" />
+          )}
+          <span className="text-gray-500">{growthLabel}:</span>
+          <span className={positive ? "text-emerald-600" : "text-rose-600"}>
+            {growthPct}
+          </span>
+        </div>
+      </div>
+    </div>
   );
 }

@@ -1,12 +1,16 @@
-import { supabase } from "@/lib/supabaseClient";
+// BEFORE
+// import { supabase } from "../lib/supabaseClient";
+
+// AFTER (use a relative import)
+import { supabase } from "../lib/supabaseClient";
 
 export async function signedThumb(path: string, expiresInSeconds = 60 * 10) {
   const { data, error } = await supabase.storage
     .from("thumbnails")
     .createSignedUrl(path, expiresInSeconds);
 
-  if (error) throw new Error(error.message);
-  return data.signedUrl;
+  if (error) throw error;
+  return data?.signedUrl ?? null;
 }
 
 // Get asset URL with version-based cache busting
