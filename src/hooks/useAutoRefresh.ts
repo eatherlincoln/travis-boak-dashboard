@@ -1,45 +1,40 @@
-import { useEffect, useCallback } from 'react';
-import { useViewStats } from './useViewStats';
-import { useAuth } from '@/contexts/AuthContext';
+// src/hooks/useAutoRefresh.ts
+import { useCallback, useEffect, useState } from "react";
 
-interface AutoRefreshOptions {
-  intervalMinutes?: number;
-  enableExternalRefresh?: boolean;
+type Listener = () => void;
+
+// Module-scoped listener set
+const listeners = new Set<Listener>();
+
+/** Call this if you ever need to trigger a refresh outside React. */
+export function bumpGlobalRefresh() {
+  listeners.forEach((fn) => fn());
 }
 
-export const useAutoRefresh = (options: AutoRefreshOptions = {}) => {
-  const { intervalMinutes = 30, enableExternalRefresh = true } = options;
-  const { refreshStats } = useViewStats();
-  const { session } = useAuth();
-  
-  const refreshExternalData = useCallback(async () => {
-    if (!enableExternalRefresh || !session) return;
-    
-    try {
-      console.log('🔄 Auto-refreshing external data...');
-      await refreshStats();
-      console.log('✅ External data refreshed successfully');
-    } catch (error) {
-      console.error('❌ Auto-refresh failed:', error);
-    }
-  }, [refreshStats, enableExternalRefresh, session]);
+/**
+ * Lightweight pub/sub refresh signal.
+ * - `tick` increments whenever someone calls `bump()`
+ * - Any hook that depends on `tick` will re-run its effect
+ */
+export function useRefreshSignal() {
+  const [tick, setTick] = useState(0);
 
   useEffect(() => {
-    if (!enableExternalRefresh || !session) return;
-
-    // Initial refresh on mount - add small delay to prevent race conditions
-    const initialTimeout = setTimeout(() => {
-      refreshExternalData();
-    }, 1000);
-
-    // Set up interval for periodic refresh
-    const interval = setInterval(refreshExternalData, intervalMinutes * 60 * 1000);
-
+    const cb = () => setTick((t) => t + 1);
+    listeners.add(cb);
     return () => {
-      clearTimeout(initialTimeout);
-      clearInterval(interval);
+      listeners.delete(cb);
     };
-  }, [enableExternalRefresh, session, intervalMinutes]); // Remove refreshExternalData from deps to prevent re-running
+  }, []);
 
-  return { refreshExternalData };
-};
+  const bump = useCallback(() => {
+    listeners.forEach((fn) => fn());
+  }, []);
+
+  return { tick, bump };
+}
+
+/** Back-compat alias (in case anything still imports useAutoRefresh) */
+export function useAutoRefresh() {
+  return useRefreshSignal();
+}

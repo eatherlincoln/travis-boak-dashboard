@@ -1,53 +1,42 @@
 import React from "react";
 
-/**
- * Borderless, subtle-shadow card. Includes profile image
- * from /public/sheldon-profile.png and three small “badge” chips.
- * Extra top margin so it never collides with the banner.
- */
+const AVATAR = "/lovable-uploads/sheldon-profile.png";
+
 export default function AboutSection() {
   return (
-    <section className="container mx-auto px-4 md:px-6 mt-6 md:mt-8">
-      <div className="rounded-xl shadow-sm bg-white">
-        <div className="p-5 md:p-6">
-          <div className="flex items-start gap-4">
-            {/* Profile */}
-            <img
-              src="/sheldon-profile.png"
-              alt="Sheldon Simkus"
-              className="h-14 w-14 md:h-16 md:w-16 rounded-full object-cover ring-2 ring-white/80 shadow-sm"
-            />
+    <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-5">
+      <img
+        src={AVATAR}
+        alt="Sheldon Simkus"
+        className="h-14 w-14 sm:h-16 sm:w-16 rounded-full object-cover ring-1 ring-black/5"
+      />
 
-            {/* Text */}
-            <div className="flex-1">
-              <h2 className="text-xl md:text-2xl font-semibold mb-2">
-                About Sheldon
-              </h2>
-              <p className="text-sm md:text-base text-gray-700 leading-relaxed">
-                Sheldon Simkus is a professional surfer with a proven global
-                reach, a trusted voice in surf culture, and a track record of
-                delivering measurable value for partners. His ability to combine
-                high-performance surfing with authentic, creative storytelling
-                has established him as a unique content creator whose work
-                consistently generates strong exposure and ROI.
-              </p>
+      <div className="flex-1">
+        <h2 className="text-lg sm:text-xl font-semibold text-neutral-900">
+          About Sheldon
+        </h2>
 
-              {/* Chips */}
-              <div className="mt-4 flex flex-wrap gap-2">
-                <span className="inline-flex items-center rounded-full bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 text-xs md:text-sm">
-                  Professional Surfer
-                </span>
-                <span className="inline-flex items-center rounded-full bg-green-50 text-green-700 border border-green-200 px-3 py-1 text-xs md:text-sm">
-                  Content Creator
-                </span>
-                <span className="inline-flex items-center rounded-full bg-purple-50 text-purple-700 border border-purple-200 px-3 py-1 text-xs md:text-sm">
-                  Global Influencer
-                </span>
-              </div>
-            </div>
-          </div>
+        <p className="mt-1 text-[13.5px] sm:text-sm leading-relaxed text-neutral-700">
+          Sheldon Simkus is a professional surfer with a proven global reach, a
+          trusted voice in surf culture, and a track record of delivering
+          measurable value for partners. His ability to combine high-performance
+          surfing with authentic, creative storytelling has established him as a
+          unique content creator whose work consistently generates strong
+          exposure and ROI.
+        </p>
+
+        <div className="mt-3 flex flex-wrap gap-2">
+          <span className="rounded-full bg-blue-50 px-3 py-1 text-[11px] font-medium text-blue-600">
+            Professional Surfer
+          </span>
+          <span className="rounded-full bg-green-50 px-3 py-1 text-[11px] font-medium text-green-600">
+            Content Creator
+          </span>
+          <span className="rounded-full bg-purple-50 px-3 py-1 text-[11px] font-medium text-purple-600">
+            Global Influencer
+          </span>
         </div>
       </div>
-    </section>
+    </div>
   );
 }

@@ -34,3 +34,6 @@ export default function KpiRow() {
     </div>
   );
 }
+<div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-content mx-auto">
+  {/* cards */}
+</div>;

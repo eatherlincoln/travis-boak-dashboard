@@ -1,8 +1,8 @@
 // BEFORE
-// import { supabase } from "../lib/supabaseClient";
+// import { supabase } from "@supabaseClient";
 
 // AFTER (use a relative import)
-import { supabase } from "../lib/supabaseClient";
+import { supabase } from "@supabaseClient";
 
 export async function signedThumb(path: string, expiresInSeconds = 60 * 10) {
   const { data, error } = await supabase.storage

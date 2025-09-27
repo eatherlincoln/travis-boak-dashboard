@@ -28,3 +28,13 @@
   },
   "include": ["src"]
 }
+{
+  "compilerOptions": {
+    "baseUrl": "src",
+    "paths": {
+      "@supabaseClient": ["@supabaseClient"],
+      "@hooks/*": ["hooks/*"],
+      "@components/*": ["components/*"]
+    }
+  }
+}

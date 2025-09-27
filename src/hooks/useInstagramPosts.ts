@@ -1,27 +1,50 @@
-type Post = {
-  image: string;
-  title: string;
-  likesNumber: number;
-  comments: number;
-  shares: number;
-  saves: number;
-  reach: number;
-  url?: string;
+import { useEffect, useState } from "react";
+import { supabase } from "@supabaseClient";
+
+export type InstagramPost = {
+  media_id: string;
+  caption: string | null;
+  permalink: string | null;
+  media_url: string | null;
+  like_count: number | null;
+  comment_count: number | null;
+  reach: number | null;
+  saves: number | null;
+  timestamp: string | null;
+  updated_at: string | null;
 };
-const demo = (i: number): Post => ({
-  image: `https://picsum.photos/seed/surf${i}/600/600`,
-  title: `Post ${i}`,
-  likesNumber: 1200 + i * 100,
-  comments: 40 + i * 3,
-  shares: 20 + i * 2,
-  saves: 60 + i * 4,
-  reach: 15000 + i * 1200,
-  url: "#",
-});
-export function useInstagramPosts() {
-  return {
-    posts: [demo(1), demo(2), demo(3), demo(4)],
-    loading: false,
-    refetch: async () => {},
-  };
+
+export function useInstagramPosts(limit = 6) {
+  const [posts, setPosts] = useState<InstagramPost[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("instagram_posts_public")
+        .select(
+          "media_id, caption, permalink, media_url, like_count, comment_count, reach, saves, timestamp, updated_at"
+        )
+        .order("timestamp", { ascending: false })
+        .limit(limit);
+
+      if (!mounted) return;
+      if (error) {
+        setError(error.message);
+        setPosts([]);
+      } else {
+        setPosts((data || []) as InstagramPost[]);
+      }
+      setLoading(false);
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [limit]);
+
+  return { posts, loading, error };
 }

@@ -71,6 +71,11 @@ export default function PlatformHighlights() {
               value: "86.8K",
               icon: <Eye className="h-3.5 w-3.5" />,
             },
+            {
+              label: "Engagement",
+              value: "2.01%",
+              icon: <Heart className="h-3.5 w-3.5" />,
+            },
           ]}
         />
         <PlatformCard
@@ -86,6 +91,11 @@ export default function PlatformHighlights() {
               label: "Monthly views",
               value: "37.0K",
               icon: <Eye className="h-3.5 w-3.5" />,
+            },
+            {
+              label: "Engagement",
+              value: "2.01%",
+              icon: <Heart className="h-3.5 w-3.5" />,
             },
           ]}
         />

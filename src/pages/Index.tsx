@@ -1,56 +1,106 @@
 import React from "react";
 
-import HeroSection from "../components/HeroSection";
-import AboutSection from "../components/AboutSection";
-import KpiRow from "../components/KpiRow";
-import PlatformRow from "../components/PlatformRow";
-import AudienceChart from "../components/AudienceChart";
-import InstagramTopPosts from "../components/InstagramTopPosts";
-import TopYouTubeContent from "../components/TopYouTubeContent";
-import PartnershipOpportunities from "../components/PartnershipOpportunities";
+/** HERO */
+import HeroSection from "@/components/HeroSection";
+
+/** ABOUT */
+import AboutSection from "@/components/AboutSection";
+
+/** KPI row */
+import KpiRow from "@/components/KpiRow";
+
+/** PLATFORM HIGHLIGHTS */
+import PlatformHighlights from "@/components/PlatformHighlights";
+
+/** AUDIENCE (per-platform) */
+import AudienceDemographics from "@/components/AudienceDemographics";
+
+/** TOP CONTENT */
+import InstagramTopPosts from "@/components/InstagramTopPosts";
+import TopYouTubeContent from "@/components/TopYouTubeContent";
+
+/** PARTNERSHIPS */
+import PartnershipOpportunities from "@/components/PartnershipOpportunities";
 
 export default function Index() {
   return (
-    <main className="bg-gray-50 min-h-screen">
-      <HeroSection />
-      <AboutSection />
-
-      <section className="container mx-auto px-4 md:px-6 mt-6 md:mt-8">
-        <KpiRow />
+    <div className="min-h-dvh bg-gray-50">
+      {/* 1) Hero stays full-bleed */}
+      <section className="relative">
+        <HeroSection />
       </section>
 
-      <section className="container mx-auto px-4 md:px-6 mt-6 md:mt-8">
-        <PlatformRow />
-      </section>
-
-      <section className="container mx-auto px-4 md:px-6 mt-6 md:mt-8">
-        <AudienceChart />
-      </section>
-
-      {/* Top Content */}
-      <section className="container mx-auto px-4 md:px-6 mt-8 md:mt-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-          <div>
-            <h3 className="text-xl md:text-2xl font-semibold mb-4">
-              Top Performing Instagram Posts
-            </h3>
-            {/* rowHeightClass makes the two rows on the left equal the two video cards on the right */}
-            <InstagramTopPosts hideTitle rowHeightClass="lg:h-[360px]" />
+      {/* 2) All page content shares the SAME centered width */}
+      <main className="mx-auto max-w-content px-4">
+        {/* About */}
+        <section className="mt-section">
+          <div className="rounded-2xl border border-neutral-200 bg-white p-6 sm:p-8 shadow-sm">
+            <AboutSection />
           </div>
+        </section>
 
-          <div>
-            <h3 className="text-xl md:text-2xl font-semibold mb-4">
-              Top Performing YouTube Content
-            </h3>
-            <TopYouTubeContent hideTitle rowHeightClass="lg:h-[360px]" />
+        {/* KPI Row */}
+        <section className="mt-6">
+          <KpiRow />
+        </section>
+
+        {/* Platform Highlights */}
+        <section className="mt-6">
+          <PlatformHighlights />
+        </section>
+
+        {/* Audience Demographics — one block per platform */}
+        <section className="mt-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <AudienceDemographics platform="instagram" />
+            <AudienceDemographics platform="youtube" />
+            <AudienceDemographics platform="tiktok" />
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Partnerships footer now padded via container */}
-      <section className="container mx-auto px-4 md:px-6 mt-10 md:mt-12">
-        <PartnershipOpportunities />
-      </section>
-    </main>
+        {/* Top Content (IG + YT) */}
+        <section className="mt-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-sm">
+              <div className="mb-4 flex items-center gap-2">
+                <div className="h-4 w-4 rounded-full bg-pink-500/80" />
+                <h3 className="text-sm font-semibold text-neutral-800">
+                  Top Performing Posts
+                </h3>
+              </div>
+              <InstagramTopPosts />
+            </div>
+
+            <div className="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-sm">
+              <div className="mb-4 flex items-center gap-2">
+                <div className="h-4 w-4 rounded-full bg-red-500/80" />
+                <h3 className="text-sm font-semibold text-neutral-800">
+                  Top Performing YouTube Content
+                </h3>
+              </div>
+              <TopYouTubeContent />
+            </div>
+          </div>
+        </section>
+
+        {/* Partnerships */}
+        <section className="mt-8 mb-12">
+          <div className="rounded-2xl bg-gradient-to-b from-sky-50 to-white border border-neutral-200 p-0 shadow-sm overflow-hidden">
+            <div className="px-6 py-5 border-b border-neutral-200">
+              <h2 className="text-lg font-semibold text-neutral-900">
+                Partnership Opportunities
+              </h2>
+              <p className="mt-1 text-sm text-neutral-600">
+                Partner with Sheldon Simkus — authentic lifestyle content,
+                world-class surfing, and proven audience growth.
+              </p>
+            </div>
+            <div className="p-6">
+              <PartnershipOpportunities />
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
   );
 }

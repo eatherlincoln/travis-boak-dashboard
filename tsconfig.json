@@ -8,9 +8,14 @@
     "strict": true,
     "allowJs": false,
     "skipLibCheck": true,
-    "baseUrl": ".",
+    "baseUrl": "src",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["*"],
+      "@supabaseClient": ["@supabaseClient"],
+      "@hooks/*": ["hooks/*"],
+      "@components/*": ["components/*"],
+      "@pages/*": ["pages/*"],
+      "@contexts/*": ["contexts/*"]
     },
     "types": ["vite/client"]
   },

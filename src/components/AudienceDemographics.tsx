@@ -1,80 +1,112 @@
 import React from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
+import { usePlatformAudience } from "@/hooks";
 
-function Bar({ label, pct }: { label: string; pct: number }) {
-  return (
-    <div>
-      <div className="flex justify-between text-xs text-gray-500">
-        <span>{label}</span>
-        <span>{pct}%</span>
+type Props = {
+  platform: "instagram" | "youtube" | "tiktok";
+  title?: string;
+};
+
+export default function AudienceDemographics({ platform, title }: Props) {
+  const { data, loading, error } = usePlatformAudience(platform);
+
+  const label =
+    title ??
+    {
+      instagram: "Instagram Demographics",
+      youtube: "YouTube Demographics",
+      tiktok: "TikTok Demographics",
+    }[platform];
+
+  if (loading) {
+    return (
+      <div className="rounded-2xl border bg-white p-6 shadow-sm">
+        <div className="text-sm text-neutral-500">Loading {label}…</div>
       </div>
-      <div className="mt-1 h-2.5 rounded-full bg-gray-100 overflow-hidden">
-        <div
-          className="h-full bg-gray-800 rounded-full"
-          style={{ width: `${pct}%` }}
-        />
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="rounded-2xl border bg-white p-6 shadow-sm">
+        <div className="text-sm text-neutral-500">
+          No demographics found for {label}.
+        </div>
+      </div>
+    );
+  }
+
+  // Helpers to render key/value lists
+  const renderKV = (obj?: Record<string, number> | null) => {
+    if (!obj) return <div className="text-sm text-neutral-500">No data.</div>;
+    const entries = Object.entries(obj)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6);
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {entries.map(([k, v]) => (
+          <div
+            key={k}
+            className="flex items-center justify-between rounded-lg border px-3 py-2"
+          >
+            <span className="text-sm text-neutral-700">{k}</span>
+            <span className="text-sm font-medium">{v}%</span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <div className="rounded-2xl border bg-white p-6 shadow-sm">
+      <div className="mb-4 flex items-center gap-2">
+        <div className="h-4 w-4 rounded-full bg-sky-500/80" />
+        <h3 className="text-sm font-semibold text-neutral-800">{label}</h3>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Gender split */}
+        <div>
+          <div className="mb-2 text-sm font-medium text-neutral-700">
+            Gender
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              ["Male", data.gender_male ?? 0],
+              ["Female", data.gender_female ?? 0],
+              ["Other", data.gender_other ?? 0],
+            ].map(([k, v]) => (
+              <div key={k} className="rounded-lg border p-3 text-center">
+                <div className="text-xs text-neutral-500">{k}</div>
+                <div className="text-base font-semibold">{v}%</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Age groups */}
+        <div>
+          <div className="mb-2 text-sm font-medium text-neutral-700">
+            Age Groups
+          </div>
+          {renderKV(data.ages)}
+        </div>
+
+        {/* Top countries / cities */}
+        <div className="grid gap-6">
+          <div>
+            <div className="mb-2 text-sm font-medium text-neutral-700">
+              Top Countries
+            </div>
+            {renderKV(data.countries)}
+          </div>
+          <div>
+            <div className="mb-2 text-sm font-medium text-neutral-700">
+              Top Cities
+            </div>
+            {renderKV(data.cities)}
+          </div>
+        </div>
       </div>
     </div>
-  );
-}
-
-export default function AudienceDemographics() {
-  return (
-    <section className="py-6 md:py-8 bg-gray-50">
-      <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Gender Split</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-3">
-              <div className="flex-1 h-3 rounded-full bg-gray-100 overflow-hidden">
-                <div className="h-full bg-gray-800" style={{ width: "88%" }} />
-              </div>
-              <div className="text-sm text-gray-600">88% Men · 12% Women</div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Top Locations</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm text-gray-600 space-y-1">
-            <div className="flex justify-between">
-              <span>Australia</span>
-              <span>51%</span>
-            </div>
-            <div className="flex justify-between">
-              <span>USA</span>
-              <span>10%</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Japan</span>
-              <span>6%</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Brazil</span>
-              <span>5%</span>
-            </div>
-            <div className="text-xs text-gray-500 mt-2">
-              Cities: Sydney, Gold Coast, Melbourne, Sunshine Coast
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Age Groups</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Bar label="25–34" pct={31} />
-            <Bar label="18–24" pct={22} />
-            <Bar label="35–44" pct={21} />
-            <Bar label="45–54" pct={16} />
-          </CardContent>
-        </Card>
-      </div>
-    </section>
   );
 }
