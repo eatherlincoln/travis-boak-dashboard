@@ -7,35 +7,66 @@ const CONFLICT_KEY = "platform,url";
 
 type PostInput = {
   url: string;
+  image_url?: string;
   thumbnail_url?: string;
+  caption?: string;
   likes?: number | string;
   comments?: number | string;
   shares?: number | string;
 };
 
-const toInt = (v: string | number | undefined | null): number | null => {
-  if (v === undefined || v === null || v === "") return null;
+const toInt = (v: string | number | undefined | null): number => {
+  if (v === undefined || v === null || v === "") return 0;
   const n =
     typeof v === "number" ? v : parseInt(String(v).replace(/[^\d]/g, ""), 10);
-  return Number.isFinite(n) ? n : null;
+  return Number.isFinite(n) ? n : 0;
 };
 
 async function uploadThumbnail(file: File): Promise<string> {
-  const filePath = `${Date.now()}_${file.name}`.replace(/\s+/g, "_");
+  const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+  const path = `tiktok/${Date.now()}_${safeName}`;
   const { error } = await supabase.storage
     .from("thumbnails")
-    .upload(filePath, file, { upsert: true });
+    .upload(path, file, { upsert: true });
   if (error) throw error;
-  const { data } = supabase.storage.from("thumbnails").getPublicUrl(filePath);
+  const { data } = supabase.storage.from("thumbnails").getPublicUrl(path);
   return data.publicUrl;
 }
 
 export default function TikTokPostList() {
   const [posts, setPosts] = useState<PostInput[]>([
-    { url: "", thumbnail_url: "", likes: "", comments: "", shares: "" },
-    { url: "", thumbnail_url: "", likes: "", comments: "", shares: "" },
-    { url: "", thumbnail_url: "", likes: "", comments: "", shares: "" },
-    { url: "", thumbnail_url: "", likes: "", comments: "", shares: "" },
+    {
+      url: "",
+      image_url: "",
+      caption: "",
+      likes: "",
+      comments: "",
+      shares: "",
+    },
+    {
+      url: "",
+      image_url: "",
+      caption: "",
+      likes: "",
+      comments: "",
+      shares: "",
+    },
+    {
+      url: "",
+      image_url: "",
+      caption: "",
+      likes: "",
+      comments: "",
+      shares: "",
+    },
+    {
+      url: "",
+      image_url: "",
+      caption: "",
+      likes: "",
+      comments: "",
+      shares: "",
+    },
   ]);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -51,40 +82,51 @@ export default function TikTokPostList() {
       });
     };
 
-  const onPickFile = async (
-    i: number,
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setMsg("Uploading thumbnail…");
-    try {
-      const publicUrl = await uploadThumbnail(file);
-      setPosts((prev) => {
-        const copy = [...prev];
-        copy[i] = { ...copy[i], thumbnail_url: publicUrl };
-        return copy;
-      });
-      setMsg("Thumbnail uploaded ✅");
-    } catch (err: any) {
-      setMsg(err?.message || "Thumbnail upload failed.");
-    }
-  };
+  const onPickFile =
+    (i: number) => async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      setMsg("Uploading thumbnail…");
+      try {
+        const publicUrl = await uploadThumbnail(file);
+        setPosts((prev) => {
+          const copy = [...prev];
+          copy[i] = { ...copy[i], image_url: publicUrl };
+          return copy;
+        });
+        setMsg("Thumbnail uploaded ✅");
+      } catch (err: any) {
+        console.error(err);
+        setMsg(err?.message || "Thumbnail upload failed.");
+      } finally {
+        e.currentTarget.value = "";
+      }
+    };
 
   const handleSave = async () => {
     setMsg(null);
     setSaving(true);
     try {
       const payload = posts
-        .filter((p) => (p.url || "").trim())
-        .map((p) => ({
-          platform: "tiktok" as const,
-          url: (p.url || "").trim(),
-          thumbnail_url: (p.thumbnail_url || "").trim() || null,
-          likes: toInt(p.likes),
-          comments: toInt(p.comments),
-          shares: toInt(p.shares),
-        }));
+        .filter((p) => (p.url || "").trim().length > 0)
+        .map((p, idx) => {
+          const imageUrl = (
+            (p as any).image_url ||
+            (p as any).thumbnail_url ||
+            ""
+          ).trim();
+          return {
+            platform: "tiktok" as const,
+            rank: idx + 1,
+            url: (p.url || "").trim(),
+            image_url: imageUrl || "",
+            caption: (p.caption ?? "").trim(),
+            likes: toInt(p.likes),
+            comments: toInt(p.comments),
+            shares: toInt(p.shares),
+            meta: {},
+          };
+        });
 
       if (payload.length === 0) {
         setMsg("Nothing to save — add at least one post URL.");
@@ -100,6 +142,7 @@ export default function TikTokPostList() {
 
       setMsg("TikTok posts saved ✅");
     } catch (e: any) {
+      console.error(e);
       setMsg(e?.message || "Failed to save TikTok posts.");
     } finally {
       setSaving(false);
@@ -134,8 +177,14 @@ export default function TikTokPostList() {
                 <input
                   className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
                   placeholder="https://…/image.jpg"
-                  value={p.thumbnail_url || ""}
-                  onChange={setField(i, "thumbnail_url")}
+                  value={p.image_url || p.thumbnail_url || ""}
+                  onChange={(e) =>
+                    setPosts((prev) => {
+                      const copy = [...prev];
+                      copy[i] = { ...copy[i], image_url: e.target.value };
+                      return copy;
+                    })
+                  }
                 />
               </div>
               <div>
@@ -146,10 +195,22 @@ export default function TikTokPostList() {
                   type="file"
                   accept="image/*"
                   className="mt-2 w-full text-sm"
-                  onChange={(e) => onPickFile(i, e)}
+                  onChange={onPickFile(i)}
                 />
               </div>
             </div>
+
+            <label className="block mt-3">
+              <span className="text-[11px] text-neutral-500">
+                Caption (optional)
+              </span>
+              <input
+                className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+                placeholder="Short caption or title"
+                value={p.caption ?? ""}
+                onChange={setField(i, "caption")}
+              />
+            </label>
 
             <div className="mt-3 grid grid-cols-3 gap-3">
               {(["likes", "comments", "shares"] as const).map((k) => (
@@ -166,6 +227,16 @@ export default function TikTokPostList() {
                 </div>
               ))}
             </div>
+
+            {(p.image_url || p.thumbnail_url) && (
+              <div className="mt-3 overflow-hidden rounded-lg border">
+                <img
+                  src={(p.image_url || p.thumbnail_url) as string}
+                  alt=""
+                  className="aspect-video w-full object-cover"
+                />
+              </div>
+            )}
           </div>
         ))}
       </div>
