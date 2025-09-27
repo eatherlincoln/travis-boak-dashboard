@@ -4,6 +4,7 @@ import SaveButton from "@/components/admin/SaveButton";
 
 const POSTS_TABLE = "top_posts";
 const CONFLICT_KEY = "platform,url";
+await supabase.from("top_posts").upsert(payload, { onConflict: CONFLICT_KEY });
 
 type PostInput = {
   url: string;
