@@ -1,18 +1,16 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { supabase } from "@supabaseClient";
 import SaveButton from "@/components/admin/SaveButton";
-import { useRefreshSignal } from "@/hooks"; // safe to keep; remove if you don't have it
 
 const POSTS_TABLE = "top_posts";
 const CONFLICT_KEY = "platform,url";
 
 type PostInput = {
-  id?: string;
   url: string;
   thumbnail_url?: string;
-  likes?: number | string | null;
-  comments?: number | string | null;
-  shares?: number | string | null;
+  likes?: number | string;
+  comments?: number | string;
+  shares?: number | string;
 };
 
 const toInt = (v: string | number | undefined | null): number | null => {
@@ -22,68 +20,55 @@ const toInt = (v: string | number | undefined | null): number | null => {
   return Number.isFinite(n) ? n : null;
 };
 
-const emptyRow = (): PostInput => ({
-  url: "",
-  thumbnail_url: "",
-  likes: null,
-  comments: null,
-  shares: null,
-});
+async function uploadThumbnail(file: File): Promise<string> {
+  const filePath = `${Date.now()}_${file.name}`.replace(/\s+/g, "_");
+  const { error } = await supabase.storage
+    .from("thumbnails")
+    .upload(filePath, file, { upsert: true });
+  if (error) throw error;
+  const { data } = supabase.storage.from("thumbnails").getPublicUrl(filePath);
+  return data.publicUrl;
+}
 
 export default function TikTokPostList() {
   const [posts, setPosts] = useState<PostInput[]>([
-    emptyRow(),
-    emptyRow(),
-    emptyRow(),
-    emptyRow(),
+    { url: "", thumbnail_url: "", likes: "", comments: "", shares: "" },
+    { url: "", thumbnail_url: "", likes: "", comments: "", shares: "" },
+    { url: "", thumbnail_url: "", likes: "", comments: "", shares: "" },
+    { url: "", thumbnail_url: "", likes: "", comments: "", shares: "" },
   ]);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
-  const { tick } = useRefreshSignal?.() ?? { tick: () => {} };
 
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from(POSTS_TABLE)
-        .select("id, url, thumbnail_url, likes, comments, shares")
-        .eq("platform", "tiktok")
-        .order("updated_at", { ascending: false })
-        .limit(4);
-
-      if (!alive) return;
-      if (error) {
-        console.error("Load tiktok posts failed:", error.message);
-        setLoading(false);
-        return;
-      }
-
-      const rows =
-        (data ?? []).map<PostInput>((r) => ({
-          id: r.id,
-          url: r.url ?? "",
-          thumbnail_url: r.thumbnail_url ?? "",
-          likes: r.likes ?? null,
-          comments: r.comments ?? null,
-          shares: r.shares ?? null,
-        })) ?? [];
-
-      const padded = [...rows];
-      while (padded.length < 4) padded.push(emptyRow());
-      setPosts(padded.slice(0, 4));
-      setLoading(false);
-    })();
-    return () => {
-      alive = false;
+  const setField =
+    (i: number, key: keyof PostInput) =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const val = e.target.value;
+      setPosts((prev) => {
+        const copy = [...prev];
+        copy[i] = { ...copy[i], [key]: val };
+        return copy;
+      });
     };
-  }, []);
 
-  const setField = (i: number, patch: Partial<PostInput>) => {
-    setPosts((prev) =>
-      prev.map((p, idx) => (idx === i ? { ...p, ...patch } : p))
-    );
+  const onPickFile = async (
+    i: number,
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setMsg("Uploading thumbnail…");
+    try {
+      const publicUrl = await uploadThumbnail(file);
+      setPosts((prev) => {
+        const copy = [...prev];
+        copy[i] = { ...copy[i], thumbnail_url: publicUrl };
+        return copy;
+      });
+      setMsg("Thumbnail uploaded ✅");
+    } catch (err: any) {
+      setMsg(err?.message || "Thumbnail upload failed.");
+    }
   };
 
   const handleSave = async () => {
@@ -91,9 +76,8 @@ export default function TikTokPostList() {
     setSaving(true);
     try {
       const payload = posts
-        .filter((p) => (p.url || "").trim().length > 0)
+        .filter((p) => (p.url || "").trim())
         .map((p) => ({
-          id: p.id,
           platform: "tiktok" as const,
           url: (p.url || "").trim(),
           thumbnail_url: (p.thumbnail_url || "").trim() || null,
@@ -115,7 +99,6 @@ export default function TikTokPostList() {
       if (error) throw error;
 
       setMsg("TikTok posts saved ✅");
-      tick();
     } catch (e: any) {
       setMsg(e?.message || "Failed to save TikTok posts.");
     } finally {
@@ -125,93 +108,69 @@ export default function TikTokPostList() {
 
   return (
     <div className="rounded-2xl border bg-white p-5 sm:p-6 shadow-sm">
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-medium text-neutral-800">
-          TikTok — Top Videos
-        </h3>
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-sm font-semibold">TikTok — Top Posts</h3>
         <SaveButton onClick={handleSave} saving={saving} label="Save Posts" />
       </div>
 
-      {msg && <p className="mb-3 text-xs text-neutral-600">{msg}</p>}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {posts.map((p, i) => (
+          <div key={i} className="rounded-xl border p-4">
+            <label className="block text-xs font-medium text-neutral-600">
+              Post URL
+            </label>
+            <input
+              className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+              placeholder="https://www.tiktok.com/@user/video/…"
+              value={p.url}
+              onChange={setField(i, "url")}
+            />
 
-      {loading ? (
-        <div className="text-sm text-neutral-500">Loading…</div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {posts.map((p, i) => (
-            <div key={i} className="rounded-lg border border-neutral-200 p-3">
-              <div className="mb-2 text-xs font-medium text-neutral-600">
-                Video {i + 1}
-              </div>
-
-              <label className="block mb-2">
-                <span className="text-[11px] text-neutral-500">Post URL</span>
-                <input
-                  className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
-                  placeholder="https://www.tiktok.com/@…/video/…"
-                  value={p.url}
-                  onChange={(e) => setField(i, { url: e.target.value })}
-                />
-              </label>
-
-              <label className="block mb-3">
-                <span className="text-[11px] text-neutral-500">
+            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-neutral-600">
                   Thumbnail URL (optional)
-                </span>
+                </label>
                 <input
                   className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
                   placeholder="https://…/image.jpg"
-                  value={p.thumbnail_url ?? ""}
-                  onChange={(e) =>
-                    setField(i, { thumbnail_url: e.target.value })
-                  }
+                  value={p.thumbnail_url || ""}
+                  onChange={setField(i, "thumbnail_url")}
                 />
-              </label>
-
-              <div className="grid grid-cols-3 gap-2">
-                <label className="block">
-                  <span className="text-[11px] text-neutral-500">Likes</span>
-                  <input
-                    className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
-                    inputMode="numeric"
-                    value={p.likes ?? ""}
-                    onChange={(e) => setField(i, { likes: e.target.value })}
-                  />
-                </label>
-                <label className="block">
-                  <span className="text-[11px] text-neutral-500">Comments</span>
-                  <input
-                    className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
-                    inputMode="numeric"
-                    value={p.comments ?? ""}
-                    onChange={(e) => setField(i, { comments: e.target.value })}
-                  />
-                </label>
-                <label className="block">
-                  <span className="text-[11px] text-neutral-500">Shares</span>
-                  <input
-                    className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
-                    inputMode="numeric"
-                    value={p.shares ?? ""}
-                    onChange={(e) => setField(i, { shares: e.target.value })}
-                  />
-                </label>
               </div>
+              <div>
+                <label className="block text-xs font-medium text-neutral-600">
+                  Upload Thumbnail
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="mt-2 w-full text-sm"
+                  onChange={(e) => onPickFile(i, e)}
+                />
+              </div>
+            </div>
 
-              {p.thumbnail_url ? (
-                <div className="mt-3 overflow-hidden rounded-lg border">
-                  <img
-                    src={p.thumbnail_url}
-                    alt=""
-                    className="aspect-video w-full object-cover"
-                    loading="lazy"
+            <div className="mt-3 grid grid-cols-3 gap-3">
+              {(["likes", "comments", "shares"] as const).map((k) => (
+                <div key={k}>
+                  <label className="block text-xs font-medium text-neutral-600 capitalize">
+                    {k}
+                  </label>
+                  <input
+                    inputMode="numeric"
+                    className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+                    value={(p[k] as any) ?? ""}
+                    onChange={setField(i, k)}
                   />
                 </div>
-              ) : null}
+              ))}
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
+
+      {msg && <p className="mt-3 text-sm text-neutral-600">{msg}</p>}
     </div>
   );
 }
