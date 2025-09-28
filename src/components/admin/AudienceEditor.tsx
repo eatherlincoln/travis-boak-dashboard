@@ -1,133 +1,205 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "@supabaseClient";
-import SaveButton from "@/components/admin/SaveButton";
+import { useRefreshSignal } from "@/hooks/useAutoRefresh";
+import { cn } from "@/lib/utils"; // if you don't have this helper, just inline className joins
 
 type Platform = "instagram" | "youtube" | "tiktok";
 
-type Gender = { men?: number | ""; women?: number | "" };
-type AgeGroup = { range: string; percentage?: number | "" };
-type Country = { country: string; percentage?: number | "" };
-
-type AudienceDraft = {
-  gender: Gender;
-  age_groups: AgeGroup[];
-  countries: Country[];
-  cities: string[];
+type AudienceRow = {
+  platform: Platform;
+  gender: { men: number | null; women: number | null };
+  age_groups: { range: string; percentage: number | null }[]; // e.g., 25–34, 18–24, 35–44, 45–54
+  countries: { country: string; percentage: number | null }[]; // up to 4
+  cities: string[]; // up to 4
+  updated_at?: string | null;
 };
 
-function n(v: number | string | undefined | null): number | null {
-  if (v === "" || v == null) return null;
-  const x =
-    typeof v === "number" ? v : parseInt(String(v).replace(/[^\d]/g, ""), 10);
-  return Number.isFinite(x) ? x : null;
+type Props = {
+  platform: Platform;
+  title?: string;
+};
+
+const DEFAULT_AGES = [
+  { range: "25–34", percentage: null },
+  { range: "18–24", percentage: null },
+  { range: "35–44", percentage: null },
+  { range: "45–54", percentage: null },
+];
+
+const DEFAULT_COUNTRIES = [
+  { country: "", percentage: null },
+  { country: "", percentage: null },
+  { country: "", percentage: null },
+  { country: "", percentage: null },
+];
+
+function toInt(v: string): number | null {
+  if (v.trim() === "") return null;
+  const n = Number(v.replace(/[^\d.-]/g, ""));
+  return Number.isFinite(n) ? n : null;
 }
 
-export default function AudienceEditor({ platform }: { platform: Platform }) {
-  const [draft, setDraft] = useState<AudienceDraft>({
-    gender: { men: "", women: "" },
-    age_groups: [
-      { range: "18-24", percentage: "" },
-      { range: "25-34", percentage: "" },
-      { range: "35-44", percentage: "" },
-      { range: "45-54", percentage: "" },
-    ],
-    countries: [
-      { country: "", percentage: "" },
-      { country: "", percentage: "" },
-      { country: "", percentage: "" },
-    ],
-    cities: ["", "", ""],
-  });
+export default function AudienceEditor({ platform, title }: Props) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const { tick } = useRefreshSignal();
 
-  // Load existing audience row for this user + platform (if any)
+  const [gender, setGender] = useState<{
+    men: number | null;
+    women: number | null;
+  }>({
+    men: null,
+    women: null,
+  });
+  const [ageGroups, setAgeGroups] =
+    useState<{ range: string; percentage: number | null }[]>(DEFAULT_AGES);
+  const [countries, setCountries] =
+    useState<{ country: string; percentage: number | null }[]>(
+      DEFAULT_COUNTRIES
+    );
+  const [cities, setCities] = useState<string[]>(["", "", "", ""]);
+
+  // Fetch current audience for this platform
   useEffect(() => {
-    let mounted = true;
+    let alive = true;
     (async () => {
       setLoading(true);
       setMsg(null);
+      const { data, error } = await supabase
+        .from<AudienceRow>("platform_audience")
+        .select("*")
+        .eq("platform", platform)
+        .order("updated_at", { ascending: false })
+        .limit(1);
 
-      const { data: sessionData } = await supabase.auth.getSession();
-      const userId = sessionData.session?.user.id;
-      if (!userId) {
-        if (mounted) {
-          setLoading(false);
-          setMsg("Sign in required to edit audience.");
-        }
+      if (!alive) return;
+
+      if (error) {
+        setMsg(error.message);
+        setLoading(false);
         return;
       }
 
-      const { data, error } = await supabase
-        .from("platform_audience")
-        .select("gender, age_groups, countries, cities")
-        .eq("user_id", userId)
-        .eq("platform", platform)
-        .maybeSingle();
-
-      if (!mounted) return;
-
-      if (!error && data) {
-        setDraft({
-          gender: {
-            men: (data.gender?.men ?? "") as number | "",
-            women: (data.gender?.women ?? "") as number | "",
-          },
-          age_groups: (data.age_groups as AgeGroup[])?.length
-            ? data.age_groups
-            : draft.age_groups,
-          countries: (data.countries as Country[])?.length
-            ? data.countries
-            : draft.countries,
-          cities:
-            Array.isArray(data.cities) && data.cities.length
-              ? (data.cities as string[])
-              : draft.cities,
-        });
+      const row = data?.[0];
+      if (row) {
+        setGender(row.gender ?? { men: null, women: null });
+        setAgeGroups(
+          row.age_groups?.length
+            ? normalizeAgeRanges(row.age_groups)
+            : DEFAULT_AGES
+        );
+        setCountries(
+          (row.countries?.length ? row.countries : DEFAULT_COUNTRIES)
+            .slice(0, 4)
+            .concat(
+              Array(Math.max(0, 4 - (row.countries?.length || 0))).fill({
+                country: "",
+                percentage: null,
+              })
+            )
+        );
+        setCities(
+          (row.cities?.length ? row.cities : ["", "", "", ""])
+            .slice(0, 4)
+            .concat(Array(Math.max(0, 4 - (row.cities?.length || 0))).fill(""))
+        );
+      } else {
+        // defaults
+        setGender({ men: null, women: null });
+        setAgeGroups(DEFAULT_AGES);
+        setCountries(DEFAULT_COUNTRIES);
+        setCities(["", "", "", ""]);
       }
-
       setLoading(false);
     })();
+
     return () => {
-      mounted = false;
+      alive = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [platform]);
+
+  // —— derived helpers ——
+  const genderTotal = useMemo(
+    () => (gender.men ?? 0) + (gender.women ?? 0),
+    [gender.men, gender.women]
+  );
+
+  const agesTotal = useMemo(
+    () => ageGroups.reduce((sum, a) => sum + (a.percentage ?? 0), 0),
+    [ageGroups]
+  );
+
+  const canSave = useMemo(() => {
+    // Allow saving even if not perfect, but highlight guidance below.
+    return !saving && !loading;
+  }, [saving, loading]);
+
+  // —— event handlers ——
+  const setAge = (idx: number, value: number | null) => {
+    setAgeGroups((prev) => {
+      const next = [...prev];
+      next[idx] = { ...next[idx], percentage: value };
+      return next;
+    });
+  };
+
+  const setCountry = (
+    idx: number,
+    key: "country" | "percentage",
+    value: string
+  ) => {
+    setCountries((prev) => {
+      const next = [...prev];
+      next[idx] =
+        key === "country"
+          ? { ...next[idx], country: value }
+          : { ...next[idx], percentage: toInt(value) };
+      return next;
+    });
+  };
+
+  const setCity = (idx: number, value: string) => {
+    setCities((prev) => {
+      const next = [...prev];
+      next[idx] = value;
+      return next;
+    });
+  };
 
   const save = async () => {
     setSaving(true);
     setMsg(null);
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const userId = sessionData.session?.user.id;
-      if (!userId) throw new Error("Not signed in.");
-
-      const payload = {
-        user_id: userId,
+      const payload: Partial<AudienceRow> = {
         platform,
         gender: {
-          men: n(draft.gender.men) ?? 0,
-          women: n(draft.gender.women) ?? 0,
+          men: gender.men ?? 0,
+          women: gender.women ?? 0,
         },
-        age_groups: draft.age_groups.map((g) => ({
-          range: g.range,
-          percentage: n(g.percentage) ?? 0,
-        })),
-        countries: draft.countries.map((c) => ({
-          country: c.country?.trim() ?? "",
-          percentage: n(c.percentage) ?? 0,
-        })),
-        cities: draft.cities.map((c) => (c ?? "").trim()).filter(Boolean),
-        updated_at: new Date().toISOString(),
+        age_groups: normalizeAgeRanges(
+          ageGroups.map((a) => ({
+            range: a.range,
+            percentage: a.percentage ?? 0,
+          }))
+        ),
+        countries: countries
+          .filter((c) => c.country.trim() !== "")
+          .map((c) => ({
+            country: c.country.trim(),
+            percentage: c.percentage ?? 0,
+          }))
+          .slice(0, 4),
+        cities: cities.filter((c) => c.trim() !== "").slice(0, 4),
       };
 
       const { error } = await supabase
         .from("platform_audience")
-        .upsert(payload, { onConflict: "user_id,platform" });
+        .upsert(payload, { onConflict: "platform" });
 
       if (error) throw error;
       setMsg("Demographics saved ✅");
+      tick(); // nudge the frontend hooks to refetch
     } catch (e: any) {
       setMsg(e?.message || "Failed to save demographics.");
     } finally {
@@ -135,145 +207,259 @@ export default function AudienceEditor({ platform }: { platform: Platform }) {
     }
   };
 
-  const setGender = (k: keyof Gender, v: string) =>
-    setDraft((d) => ({ ...d, gender: { ...d.gender, [k]: v } }));
-
-  const setAge = (idx: number, v: string) =>
-    setDraft((d) => {
-      const next = [...d.age_groups];
-      next[idx] = { ...next[idx], percentage: v };
-      return { ...d, age_groups: next };
-    });
-
-  const setCountry = (idx: number, key: "country" | "percentage", v: string) =>
-    setDraft((d) => {
-      const next = [...d.countries];
-      next[idx] = { ...next[idx], [key]: v };
-      return { ...d, countries: next };
-    });
-
-  const setCity = (idx: number, v: string) =>
-    setDraft((d) => {
-      const next = [...d.cities];
-      next[idx] = v;
-      return { ...d, cities: next };
-    });
-
+  // —— UI ——
   return (
-    <div className="rounded-2xl border bg-white p-5 sm:p-6 shadow-sm">
-      <div className="mb-3 flex items-center justify-between">
-        <div className="text-sm font-semibold text-neutral-800">
-          Demographics — {platform[0].toUpperCase() + platform.slice(1)}
+    <div className="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-sm">
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-neutral-800">
+          Demographics — {title ?? platformLabel(platform)}
+        </h3>
+        <div className="flex items-center gap-3">
+          <GuidanceBadge
+            ok={genderTotal === 100}
+            label={`Gender ${genderTotal || 0}%`}
+            hint="Men + Women should total 100%"
+          />
+          <GuidanceBadge
+            ok={agesTotal === 100}
+            label={`Ages ${agesTotal || 0}%`}
+            hint="Age groups should total 100%"
+          />
+          <button
+            onClick={save}
+            disabled={!canSave}
+            className={cn(
+              "rounded-md px-3 py-2 text-sm font-medium",
+              canSave
+                ? "bg-neutral-900 text-white hover:bg-neutral-800"
+                : "bg-neutral-200 text-neutral-500 cursor-not-allowed"
+            )}
+          >
+            {saving ? "Saving…" : "Save Demographics"}
+          </button>
         </div>
-        <SaveButton onClick={save} saving={saving} label="Save Demographics" />
       </div>
 
-      {loading ? (
-        <p className="text-sm text-neutral-500">Loading…</p>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Gender */}
-          <div>
-            <div className="text-xs font-medium text-neutral-700 mb-2">
-              Gender Split (%)
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <input
-                type="number"
-                min={0}
-                max={100}
-                placeholder="Men"
-                className="w-full rounded-md border px-3 py-2 text-sm"
-                value={draft.gender.men ?? ""}
-                onChange={(e) => setGender("men", e.target.value)}
+      {/* 2-column (lg: 3-column) spacious layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Gender */}
+        <section className="rounded-xl border border-neutral-200 p-4">
+          <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+            Gender split (%)
+          </h4>
+          <div className="grid grid-cols-2 gap-3">
+            <LabeledNumber
+              label="Men"
+              value={gender.men ?? ""}
+              onChange={(v) => setGender((g) => ({ ...g, men: toInt(v) }))}
+              suffix="%"
+            />
+            <LabeledNumber
+              label="Women"
+              value={gender.women ?? ""}
+              onChange={(v) => setGender((g) => ({ ...g, women: toInt(v) }))}
+              suffix="%"
+            />
+          </div>
+          <ProgressRow total={genderTotal} />
+        </section>
+
+        {/* Age groups */}
+        <section className="rounded-xl border border-neutral-200 p-4">
+          <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+            Age groups (%)
+          </h4>
+          <div className="grid grid-cols-2 gap-3">
+            {ageGroups.map((a, i) => (
+              <LabeledNumber
+                key={a.range}
+                label={a.range}
+                value={a.percentage ?? ""}
+                onChange={(v) => setAge(i, toInt(v))}
+                suffix="%"
               />
-              <input
-                type="number"
-                min={0}
-                max={100}
-                placeholder="Women"
-                className="w-full rounded-md border px-3 py-2 text-sm"
-                value={draft.gender.women ?? ""}
-                onChange={(e) => setGender("women", e.target.value)}
-              />
-            </div>
+            ))}
           </div>
+          <ProgressRow total={agesTotal} />
+        </section>
 
-          {/* Age groups */}
-          <div>
-            <div className="text-xs font-medium text-neutral-700 mb-2">
-              Age Groups (%)
+        {/* Top countries & cities */}
+        <section className="rounded-xl border border-neutral-200 p-4">
+          <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+            Top countries (%) & Top cities
+          </h4>
+
+          <div className="grid grid-cols-1 gap-4">
+            {/* Countries */}
+            <div>
+              <div className="mb-2 text-[11px] font-medium text-neutral-500">
+                Countries (up to 4)
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {countries.map((c, i) => (
+                  <div key={i} className="grid grid-cols-[1fr,80px] gap-2">
+                    <input
+                      className="h-9 rounded-md border border-neutral-300 px-3 text-sm outline-none focus:border-neutral-500"
+                      placeholder={`Country ${i + 1}`}
+                      value={c.country}
+                      onChange={(e) => setCountry(i, "country", e.target.value)}
+                    />
+                    <input
+                      className="h-9 rounded-md border border-neutral-300 px-3 text-sm outline-none text-right focus:border-neutral-500"
+                      placeholder="%"
+                      inputMode="numeric"
+                      value={c.percentage ?? ""}
+                      onChange={(e) =>
+                        setCountry(i, "percentage", e.target.value)
+                      }
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {draft.age_groups.map((g, i) => (
-                <div key={g.range} className="flex items-center gap-2">
-                  <span className="text-xs text-neutral-500 w-12">
-                    {g.range}
-                  </span>
+
+            {/* Cities */}
+            <div>
+              <div className="mb-2 text-[11px] font-medium text-neutral-500">
+                Cities (up to 4)
+              </div>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {cities.map((c, i) => (
                   <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    className="w-full rounded-md border px-3 py-2 text-sm"
-                    value={g.percentage ?? ""}
-                    onChange={(e) => setAge(i, e.target.value)}
+                    key={i}
+                    className="h-9 rounded-md border border-neutral-300 px-3 text-sm outline-none focus:border-neutral-500"
+                    placeholder={`City ${i + 1}`}
+                    value={c}
+                    onChange={(e) => setCity(i, e.target.value)}
                   />
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
+        </section>
+      </div>
 
-          {/* Countries */}
-          <div>
-            <div className="text-xs font-medium text-neutral-700 mb-2">
-              Top Countries
-            </div>
-            <div className="space-y-2">
-              {draft.countries.map((c, i) => (
-                <div key={i} className="grid grid-cols-3 gap-2">
-                  <input
-                    placeholder={`Country ${i + 1}`}
-                    className="col-span-2 rounded-md border px-3 py-2 text-sm"
-                    value={c.country}
-                    onChange={(e) => setCountry(i, "country", e.target.value)}
-                  />
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    placeholder="%"
-                    className="rounded-md border px-3 py-2 text-sm"
-                    value={c.percentage ?? ""}
-                    onChange={(e) =>
-                      setCountry(i, "percentage", e.target.value)
-                    }
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Cities */}
-          <div>
-            <div className="text-xs font-medium text-neutral-700 mb-2">
-              Top Cities
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {draft.cities.map((c, i) => (
-                <input
-                  key={i}
-                  placeholder={`City ${i + 1}`}
-                  className="rounded-md border px-3 py-2 text-sm"
-                  value={c}
-                  onChange={(e) => setCity(i, e.target.value)}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {msg && <p className="mt-3 text-sm text-neutral-600">{msg}</p>}
+      {msg && <p className="mt-4 text-sm text-neutral-600">{msg}</p>}
     </div>
   );
+}
+
+/* ---------- little UI helpers ---------- */
+
+function LabeledNumber({
+  label,
+  value,
+  onChange,
+  suffix,
+}: {
+  label: string;
+  value: number | string;
+  onChange: (v: string) => void;
+  suffix?: string;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-xs font-medium text-neutral-600">
+        {label}
+      </span>
+      <div className="relative">
+        <input
+          className="h-9 w-full rounded-md border border-neutral-300 px-3 pr-8 text-sm outline-none text-right focus:border-neutral-500"
+          inputMode="numeric"
+          value={value as any}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="0"
+        />
+        {suffix && (
+          <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-neutral-500">
+            {suffix}
+          </span>
+        )}
+      </div>
+    </label>
+  );
+}
+
+function ProgressRow({ total }: { total: number }) {
+  const ok = total === 100;
+  const pct = Math.max(0, Math.min(100, total || 0));
+  return (
+    <div className="mt-3">
+      <div className="mb-1 flex items-center justify-between">
+        <span className="text-[11px] text-neutral-500">Total</span>
+        <span
+          className={cn(
+            "text-[11px] font-medium",
+            ok ? "text-emerald-600" : "text-amber-600"
+          )}
+        >
+          {pct}%
+        </span>
+      </div>
+      <div className="h-1.5 w-full rounded-full bg-neutral-200">
+        <div
+          className={cn(
+            "h-1.5 rounded-full",
+            ok ? "bg-emerald-500" : "bg-amber-500"
+          )}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      {!ok && (
+        <div className="mt-1 text-[11px] text-neutral-500">
+          Aim for a total of <span className="font-medium">100%</span>.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function GuidanceBadge({
+  ok,
+  label,
+  hint,
+}: {
+  ok: boolean;
+  label: string;
+  hint: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "hidden sm:flex items-center gap-2 rounded-md px-2 py-1 text-[11px]",
+        ok ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
+      )}
+      title={hint}
+    >
+      <span
+        className={cn(
+          "inline-block h-1.5 w-1.5 rounded-full",
+          ok ? "bg-emerald-600" : "bg-amber-600"
+        )}
+      />
+      <span className="font-medium">{label}</span>
+    </div>
+  );
+}
+
+/* ensure age ranges are in our canonical order */
+function normalizeAgeRanges(
+  arr: { range: string; percentage: number | null }[]
+) {
+  const order = ["25–34", "18–24", "35–44", "45–54"];
+  const byRange = new Map(arr.map((a) => [a.range, a]));
+  return order.map((r) => byRange.get(r) ?? { range: r, percentage: null });
+}
+
+function platformLabel(p: Platform) {
+  switch (p) {
+    case "instagram":
+      return "Instagram";
+    case "youtube":
+      return "YouTube";
+    case "tiktok":
+      return "TikTok";
+    default:
+      return p;
+  }
 }

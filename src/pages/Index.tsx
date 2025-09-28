@@ -51,11 +51,7 @@ function Index() {
 
         {/* Audience Demographics — one block per platform */}
         <section className="mt-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <AudienceDemographics platform="instagram" />
-            <AudienceDemographics platform="youtube" />
-            <AudienceDemographics platform="tiktok" />
-          </div>
+          <AudienceDemographics />
         </section>
 
         {/* Top Content (IG + YT) */}

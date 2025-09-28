@@ -16,6 +16,9 @@ export { useYouTubeStats } from "./useYouTubeStats";
 export { usePlatformAudience } from "./usePlatformAudience";
 export { useFollowerTotals } from "./useFollowerTotals";
 
+// existing exports...
+export { useAudienceGlobal } from "./useAudienceGlobal";
+
 // Utilities (aliased)
 export { useIsMobile as useMobile } from "./use-mobile";
 export { useToast } from "./use-toast";
