@@ -1,58 +1,50 @@
 import React from "react";
-import { Link } from "react-router-dom";
-import { ArrowLeft, LogOut } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@supabaseClient";
-
-type Props = {
-  title?: string;
-  children: React.ReactNode;
-  rightSlot?: React.ReactNode; // for page-level actions if you need them
-};
 
 export default function AdminLayout({
   title = "Admin Dashboard",
   children,
-  rightSlot,
-}: Props) {
-  const onSignOut = async () => {
-    await supabase.auth.signOut();
-    window.location.href = "/"; // send them back to site
+}: {
+  title?: string;
+  children: React.ReactNode;
+}) {
+  const navigate = useNavigate();
+
+  const signOut = async () => {
+    try {
+      await supabase.auth.signOut();
+    } finally {
+      navigate("/");
+    }
   };
 
   return (
-    <div className="min-h-dvh bg-gray-50">
+    <div className="min-h-dvh bg-neutral-50">
       {/* Top bar */}
-      <header className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-neutral-200">
-        <div className="mx-auto max-w-content px-4 h-14 flex items-center justify-between">
+      <header className="sticky top-0 z-20 border-b border-neutral-200 bg-white/90 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
             <Link
               to="/"
-              className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 px-3 py-1.5 text-sm text-neutral-700 hover:bg-neutral-50"
+              className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-700 hover:bg-neutral-50"
             >
-              <ArrowLeft size={16} />
-              <span>Back to site</span>
+              ← Back to site
             </Link>
-
-            <h1 className="ml-2 text-sm font-semibold text-neutral-900">
-              {title}
-            </h1>
+            <h1 className="text-sm font-semibold text-neutral-900">{title}</h1>
           </div>
-
-          <div className="flex items-center gap-3">
-            {rightSlot}
-            <button
-              onClick={onSignOut}
-              className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 px-3 py-1.5 text-sm text-neutral-700 hover:bg-neutral-50"
-            >
-              <LogOut size={16} />
-              <span>Sign Out</span>
-            </button>
-          </div>
+          <button
+            onClick={signOut}
+            className="rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-neutral-800"
+          >
+            Sign Out
+          </button>
         </div>
       </header>
 
-      {/* Page body */}
-      <main className="mx-auto max-w-content px-4 py-6">{children}</main>
+      <main className="mx-auto max-w-6xl px-4 py-6">
+        <div className="space-y-6">{children}</div>
+      </main>
     </div>
   );
 }
