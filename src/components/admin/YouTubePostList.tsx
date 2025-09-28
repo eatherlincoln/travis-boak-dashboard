@@ -34,14 +34,14 @@ export default function YouTubePostList() {
     setSaving(true);
     try {
       const payload = posts
-        .map((p, i) => ({
+        .map((p) => ({
           platform: "youtube",
-          rank: i + 1,
           url: (p.url || "").trim(),
-          image_url: (p.image_url || "").trim() || null,
-          views: toInt(p.views),
+          thumbnail_url: (p.thumbnail_url || "").trim() || null,
           likes: toInt(p.likes),
           comments: toInt(p.comments),
+          shares: toInt(p.shares),
+          views: toInt(p.views), // new
         }))
         .filter((row) => row.url.length > 0);
 
