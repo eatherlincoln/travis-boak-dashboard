@@ -51,16 +51,16 @@ export default function InstagramPostList() {
     try {
       // Only rows with a URL
       const payload = posts
-        .map((p, idx) => ({
-          platform: "instagram" as const,
-          rank: idx + 1, // 1..4
+        .map((p, i) => ({
+          platform: "instagram",
+          rank: i + 1, // <- force canonical order
           url: (p.url || "").trim(),
-          image_url: (p.image_url || "").trim() || null,
+          image_url: (p.thumbnail_url || "").trim() || null, // front-end reads image_url
           likes: toInt(p.likes),
           comments: toInt(p.comments),
           shares: toInt(p.shares),
         }))
-        .filter((p) => p.url.length > 0);
+        .filter((row) => row.url.length > 0);
 
       if (payload.length === 0) {
         setMsg("Nothing to save — add at least one post URL.");
