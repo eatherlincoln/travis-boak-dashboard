@@ -56,28 +56,33 @@ export default function Index() {
         {/* Audience Demographics — one block per platform */}
         <section className="mt-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <ErrorBoundary fallback={
-              <div className="rounded-xl border border-neutral-200 bg-white p-5 text-sm text-neutral-500 shadow-sm">
-                Couldn’t load Instagram audience.
-              </div>
-            }>
+            <ErrorBoundary
+              fallback={
+                <div className="rounded-xl border border-neutral-200 bg-white p-5 text-sm text-neutral-500 shadow-sm">
+                  Couldn’t load Instagram audience.
+                </div>
+              }
+            >
               <AudienceDemographics platform="instagram" />
             </ErrorBoundary>
 
-            <ErrorBoundary fallback={
-              <div className="rounded-xl border border-neutral-200 bg-white p-5 text-sm text-neutral-500 shadow-sm">
-                Couldn’t load YouTube audience.
-              </div>
-            }>
+            <ErrorBoundary
+              fallback={
+                <div className="rounded-xl border border-neutral-200 bg-white p-5 text-sm text-neutral-500 shadow-sm">
+                  Couldn’t load YouTube audience.
+                </div>
+              }
+            >
               <AudienceDemographics platform="youtube" />
             </ErrorBoundary>
 
-            <ErrorBoundary fallback{
-              =
-              <div className="rounded-xl border border-neutral-200 bg-white p-5 text-sm text-neutral-500 shadow-sm">
-                Couldn’t load TikTok audience.
-              </div>
-            }>
+            <ErrorBoundary
+              fallback={
+                <div className="rounded-xl border border-neutral-200 bg-white p-5 text-sm text-neutral-500 shadow-sm">
+                  Couldn’t load TikTok audience.
+                </div>
+              }
+            >
               <AudienceDemographics platform="tiktok" />
             </ErrorBoundary>
           </div>
