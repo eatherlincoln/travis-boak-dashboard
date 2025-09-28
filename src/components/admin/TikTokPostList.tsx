@@ -2,13 +2,12 @@ import React, { useState } from "react";
 import { supabase } from "@supabaseClient";
 import SaveButton from "@/components/admin/SaveButton";
 import ThumbnailPicker from "@/components/admin/ThumbnailPicker";
-
-const POSTS_TABLE = "top_posts";
-const CONFLICT_KEY = "platform,url";
+import { useRefreshSignal } from "@/hooks";
+import { Card } from "@/components/ui/card";
 
 type PostInput = {
   url: string;
-  thumbnail_url?: string;
+  image_url?: string; // <-- stored to DB as image_url
   likes?: number | string;
   comments?: number | string;
   shares?: number | string;
@@ -21,43 +20,52 @@ const toInt = (v: string | number | undefined | null): number | null => {
   return Number.isFinite(n) ? n : null;
 };
 
+const PLATFORM = "tiktok";
+const TABLE = "top_posts";
+
 export default function TikTokPostList() {
-  const [posts, setPosts] = useState<PostInput[]>([
-    { url: "", thumbnail_url: "", likes: "", comments: "", shares: "" },
-    { url: "", thumbnail_url: "", likes: "", comments: "", shares: "" },
-    { url: "", thumbnail_url: "", likes: "", comments: "", shares: "" },
-  ]);
+  const [posts, setPosts] = useState<PostInput[]>(
+    Array.from({ length: 4 }, () => ({
+      url: "",
+      image_url: "",
+      likes: "",
+      comments: "",
+      shares: "",
+    }))
+  );
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const { bump } = useRefreshSignal();
+
+  const setField = (i: number, key: keyof PostInput) => (val: string) => {
+    const next = [...posts];
+    (next[i] as any)[key] = val;
+    setPosts(next);
+  };
 
   const handleSave = async () => {
     setMsg(null);
     setSaving(true);
     try {
-      const payload = posts
-        .filter((p) => (p.url || "").trim().length > 0)
-        .map((p) => ({
-          platform: "tiktok",
-          url: (p.url || "").trim(),
-          thumbnail_url: (p.thumbnail_url || "").trim() || null,
-          likes: toInt(p.likes),
-          comments: toInt(p.comments),
-          shares: toInt(p.shares),
-        }));
-
-      if (payload.length === 0) {
-        setMsg("Nothing to save — add at least one video URL.");
-        setSaving(false);
-        return;
-      }
+      // Build 4 ranked rows (1..4). If URL is empty, we still upsert a cleared slot.
+      const payload = posts.map((p, idx) => ({
+        platform: PLATFORM,
+        rank: idx + 1,
+        url: (p.url || "").trim() || null, // allow clearing
+        image_url: (p.image_url || "").trim() || null,
+        likes: toInt(p.likes),
+        comments: toInt(p.comments),
+        shares: toInt(p.shares),
+      }));
 
       const { error } = await supabase
-        .from(POSTS_TABLE)
-        .upsert(payload, { onConflict: CONFLICT_KEY });
+        .from(TABLE)
+        .upsert(payload, { onConflict: "platform,rank" });
 
       if (error) throw error;
 
       setMsg("TikTok posts saved ✅");
+      bump(); // notify frontend hooks to refetch
     } catch (e: any) {
       setMsg(e?.message || "Failed to save TikTok posts.");
     } finally {
@@ -66,75 +74,115 @@ export default function TikTokPostList() {
   };
 
   return (
-    <div className="rounded-2xl border bg-white p-5 sm:p-6 shadow-sm">
-      <h3 className="mb-4 text-sm font-semibold text-black">TikTok Posts</h3>
+    <Card className="p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <div>
+          <h2 className="text-base font-semibold">TikTok — Top Posts</h2>
+          <p className="text-sm text-neutral-500">
+            Paste the post URL, upload a thumbnail, and add metrics. Up to 4
+            posts.
+          </p>
+        </div>
+        <SaveButton onClick={handleSave} saving={saving} label="Save Posts" />
+      </div>
 
-      <div className="space-y-4">
+      {/* 2 x 2 editor grid */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {posts.map((p, i) => (
-          <div key={i} className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+          <div
+            key={i}
+            className="rounded-lg border bg-white p-3 shadow-sm space-y-3"
+          >
+            <div className="text-sm font-medium">Post {i + 1}</div>
+
+            {/* URL */}
+            <label className="text-xs font-medium text-neutral-700">
+              Post URL
+            </label>
             <input
-              type="text"
-              placeholder="Video URL"
+              type="url"
+              inputMode="url"
+              placeholder="https://www.tiktok.com/@user/video/…"
               value={p.url}
-              onChange={(e) => {
-                const next = [...posts];
-                next[i].url = e.target.value;
-                setPosts(next);
-              }}
-              className="col-span-2 rounded border px-2 py-1 text-sm"
+              onChange={(e) => setField(i, "url")(e.target.value)}
+              className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-500"
             />
 
-            <ThumbnailPicker
-              platform="tiktok"
-              value={p.thumbnail_url || ""}
-              onChange={(url) => {
-                const next = [...posts];
-                next[i].thumbnail_url = url;
-                setPosts(next);
-              }}
-            />
+            {/* Thumbnail URL + uploader */}
+            <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-[1fr_auto]">
+              <div>
+                <label className="text-xs font-medium text-neutral-700">
+                  Thumbnail URL (optional)
+                </label>
+                <input
+                  type="url"
+                  inputMode="url"
+                  placeholder="https://…/image.jpg"
+                  value={p.image_url || ""}
+                  onChange={(e) => setField(i, "image_url")(e.target.value)}
+                  className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
 
-            <input
-              type="number"
-              placeholder="Likes"
-              value={p.likes ?? ""}
-              onChange={(e) => {
-                const next = [...posts];
-                next[i].likes = e.target.value;
-                setPosts(next);
-              }}
-              className="rounded border px-2 py-1 text-sm"
-            />
-            <input
-              type="number"
-              placeholder="Comments"
-              value={p.comments ?? ""}
-              onChange={(e) => {
-                const next = [...posts];
-                next[i].comments = e.target.value;
-                setPosts(next);
-              }}
-              className="rounded border px-2 py-1 text-sm"
-            />
-            <input
-              type="number"
-              placeholder="Shares"
-              value={p.shares ?? ""}
-              onChange={(e) => {
-                const next = [...posts];
-                next[i].shares = e.target.value;
-                setPosts(next);
-              }}
-              className="rounded border px-2 py-1 text-sm"
-            />
+              <div className="justify-self-start sm:justify-self-end">
+                <label className="block text-xs font-medium text-neutral-700">
+                  Upload Thumbnail
+                </label>
+                <ThumbnailPicker
+                  platform={PLATFORM}
+                  value={p.image_url || ""}
+                  onChange={(publicUrl) => setField(i, "image_url")(publicUrl)}
+                  // You can pass a desired path prefix if you want:
+                  // pathPrefix={`tiktok/rank-${i + 1}`}
+                />
+              </div>
+            </div>
+
+            {/* Metrics */}
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="text-xs font-medium text-neutral-700">
+                  Likes
+                </label>
+                <input
+                  inputMode="numeric"
+                  value={String(p.likes ?? "")}
+                  onChange={(e) => setField(i, "likes")(e.target.value)}
+                  className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-neutral-700">
+                  Comments
+                </label>
+                <input
+                  inputMode="numeric"
+                  value={String(p.comments ?? "")}
+                  onChange={(e) => setField(i, "comments")(e.target.value)}
+                  className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-neutral-700">
+                  Shares
+                </label>
+                <input
+                  inputMode="numeric"
+                  value={String(p.shares ?? "")}
+                  onChange={(e) => setField(i, "shares")(e.target.value)}
+                  className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
+            </div>
           </div>
         ))}
       </div>
 
+      {/* Save CTA + message */}
       <div className="mt-4 flex justify-end">
         <SaveButton onClick={handleSave} saving={saving} label="Save Posts" />
       </div>
       {msg && <p className="mt-2 text-sm text-neutral-600">{msg}</p>}
-    </div>
+    </Card>
   );
 }

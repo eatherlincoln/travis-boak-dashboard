@@ -1,35 +1,66 @@
 import React from "react";
 import { useTikTokTopPosts } from "@/hooks/useTikTokTopPosts";
-
-const buildThumb = (url?: string | null, updated?: string | null) => {
-  const base = url || "/sheldon-profile.png";
-  return updated
-    ? `${base}${base.includes("?") ? "&" : "?"}v=${new Date(updated).getTime()}`
-    : base;
-};
+import { Card } from "@/components/ui/card";
+import { Music, Heart, MessageCircle, Share2 } from "lucide-react";
 
 export default function TikTokTopPosts() {
-  const { posts, loading, error } = useTikTokTopPosts();
-
-  if (loading) return <p className="text-sm text-neutral-500">Loading…</p>;
-  if (error) return <p className="text-sm text-red-500">{error}</p>;
-  if (!posts?.length)
-    return <p className="text-sm text-neutral-500">No TikToks yet.</p>;
+  const { posts } = useTikTokTopPosts(); // expects id, image_url, likes, comments, shares, updated_at
+  if (!posts?.length) return null;
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-      {posts.map((p, i) => (
-        <div
-          key={i}
-          className="aspect-square overflow-hidden rounded-lg bg-neutral-100"
-        >
-          <img
-            src={buildThumb(p.thumbnail_url, p.updated_at)}
-            alt={p.caption || "TikTok post"}
-            className="h-full w-full object-cover"
-          />
+    <Card className="p-4">
+      {/* Section title with music icon */}
+      <div className="mb-4 flex items-center gap-2">
+        <div className="rounded-md bg-black/10 p-1">
+          <Music className="h-4 w-4 text-black" />
         </div>
-      ))}
-    </div>
+        <h2 className="text-lg font-semibold">Top Performing TikTok Posts</h2>
+      </div>
+
+      {/* Grid of 4 posts like Instagram */}
+      <div className="grid grid-cols-2 gap-4">
+        {posts.map((p) => {
+          const base = p.image_url || "/sheldon-profile.png";
+          const src =
+            p.image_url && p.updated_at
+              ? `${base}${base.includes("?") ? "&" : "?"}v=${new Date(
+                  p.updated_at
+                ).getTime()}`
+              : base;
+
+          return (
+            <div
+              key={p.id}
+              className="flex flex-col overflow-hidden rounded-lg border bg-white shadow-sm"
+            >
+              {/* Thumbnail */}
+              <div className="aspect-square w-full overflow-hidden">
+                <img
+                  src={src}
+                  alt={p.caption || "TikTok post"}
+                  className="h-full w-full object-cover"
+                />
+              </div>
+
+              {/* Icon metrics */}
+              <div className="flex items-center justify-between p-2 text-sm text-gray-700">
+                <div className="flex items-center gap-1">
+                  <Heart className="h-4 w-4 text-red-500" />
+                  <span>{p.likes?.toLocaleString() ?? 0}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <MessageCircle className="h-4 w-4 text-blue-500" />
+                  <span>{p.comments?.toLocaleString() ?? 0}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Share2 className="h-4 w-4 text-green-600" />
+                  <span>{p.shares?.toLocaleString() ?? 0}</span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
   );
 }

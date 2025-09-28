@@ -1,73 +1,107 @@
-# Welcome to your Lovable project
+# Sheldon Social Media Dashboard
 
-## Project info
+## Project Info
+**Production URL**: https://sheldon-social-media.vercel.app  
+**Lovable Project**: https://lovable.dev/projects/bdf643ad-290d-438c-ba2c-38a826a4baec  
+**Repo**: https://github.com/eatherlincoln/sheldon-social-media  
 
-**URL**: https://lovable.dev/projects/bdf643ad-290d-438c-ba2c-38a826a4baec
+---
 
-## How can I edit this code?
-
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/bdf643ad-290d-438c-ba2c-38a826a4baec) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+## How to Run Locally
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# Step 1: Clone the repository
+git clone https://github.com/eatherlincoln/sheldon-social-media.git
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Step 2: Navigate to the project directory
+cd sheldon-social-media
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Step 3: Install dependencies
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Step 4: Start the dev server
 npm run dev
-```
+➡️ After pasting that whole thing, hit **Enter**, then type `MARK` on a new line and hit Enter again.  
+This saves the new README.md.
 
-**Edit a file directly in GitHub**
+---
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### 3. Create/overwrite the **SCHEMA.md**
+Now copy this block:
 
-**Use GitHub Codespaces**
+```bash
+cat > SCHEMA.md <<'MARK'
+# Database Schema (Locked)
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Tables
 
-## What technologies are used for this project?
+### `top_posts`
+| Column       | Type      | Constraints                          |
+|--------------|----------|--------------------------------------|
+| id           | uuid     | pk, default uuid_generate_v4()       |
+| platform     | text     | not null                             |
+| rank         | int      | not null                             |
+| url          | text     | not null                             |
+| caption      | text     | default ''                           |
+| image_url    | text     | not null                             |
+| likes        | int      | default 0                            |
+| comments     | int      | default 0                            |
+| shares       | int      | default 0                            |
+| views        | int      | default 0                            |
+| meta         | jsonb    | default '{}'::jsonb                  |
+| updated_at   | timestamptz | default now()                     |
 
-This project is built with:
+#### Indexes & Constraints
+- `unique(platform, rank)` → ensures slot consistency  
+- `unique(platform, url)` → prevents duplicates  
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+---
 
-## How can I deploy this project?
+### `platform_stats`
+| Column             | Type        |
+|--------------------|-------------|
+| id                 | uuid        |
+| platform           | text        |
+| follower_count     | int         |
+| updated_at         | timestamptz |
 
-Simply open [Lovable](https://lovable.dev/projects/bdf643ad-290d-438c-ba2c-38a826a4baec) and click on Share -> Publish.
+---
 
-## Can I connect a custom domain to my Lovable project?
+### `audience`
+| Column             | Type        |
+|--------------------|-------------|
+| id                 | uuid        |
+| platform           | text        |
+| label              | text        |
+| percentage         | numeric     |
+| updated_at         | timestamptz |
 
-Yes, you can!
+---
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## Storage
+- **Bucket:** `thumbnails`
+- Policy: authenticated users can upload  
+- Public read allowed  
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+---
+
+## RLS Policies
+### `top_posts`
+- `select`: `true` (all can read)  
+- `insert/update/delete`: only authenticated  
+
+### `platform_stats`
+- `select`: `true`  
+- `insert/update`: only authenticated  
+
+### `audience`
+- `select`: `true`  
+- `insert/update/delete`: only authenticated  
+
+---
+
+## Dedupe Playbook
+- Posts must always be saved with `(platform, rank)`  
+- IG/TikTok = 4 slots, YT = 2 slots  
+- URLs must be unique per platform  
+- Re-upload replaces old post in same slot  

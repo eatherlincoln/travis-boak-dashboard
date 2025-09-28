@@ -1,71 +1,73 @@
 import React from "react";
 import { useYouTubeTopVideos } from "@/hooks/useYouTubeTopVideos";
-
-const fmt = (n?: number | null) => {
-  if (!n && n !== 0) return "0";
-  if (n < 1000) return `${n}`;
-  if (n < 1_000_000) return `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}K`;
-  return `${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M`;
-};
+import { Card } from "@/components/ui/card";
+import { Youtube, Eye, Heart, MessageCircle } from "lucide-react";
 
 export default function TopYouTubeContent() {
-  const { data, loading } = useYouTubeTopVideos(2);
+  const { videos } = useYouTubeTopVideos(); // expects id, image_url, title/caption, views, likes, comments, updated_at
+  if (!videos?.length) return null;
 
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-sm">
+    <Card className="p-4">
       <div className="mb-4 flex items-center gap-2">
-        <div className="h-4 w-4 rounded-full bg-red-500/80" />
-        <h3 className="text-sm font-semibold text-neutral-800">
+        <div className="rounded-md bg-red-100 p-1">
+          <Youtube className="h-4 w-4 text-red-600" />
+        </div>
+        <h2 className="text-lg font-semibold">
           Top Performing YouTube Content
-        </h3>
+        </h2>
       </div>
 
-      {loading && <p className="text-sm text-neutral-500">Loading…</p>}
+      <div className="flex flex-col gap-4">
+        {videos.map((v) => {
+          const base = v.image_url || "/sheldon-profile.png";
+          const src =
+            v.image_url && v.updated_at
+              ? `${base}${base.includes("?") ? "&" : "?"}v=${new Date(
+                  v.updated_at
+                ).getTime()}`
+              : base;
 
-      {!loading && (
-        <div className="space-y-5">
-          {data.map((v) => {
-            const base = v.image_url || "/sheldon-profile.png";
-            const src =
-              v.image_url && v.updated_at
-                ? `${base}${base.includes("?") ? "&" : "?"}v=${new Date(
-                    v.updated_at
-                  ).getTime()}`
-                : base;
+          return (
+            <div
+              key={v.id}
+              className="overflow-hidden rounded-lg border bg-white shadow-sm"
+            >
+              <div className="aspect-video w-full overflow-hidden">
+                <img
+                  src={src}
+                  alt={v.title || "YouTube video"}
+                  className="h-full w-full object-cover"
+                />
+              </div>
 
-            return (
-              <div key={v.id} className="overflow-hidden rounded-xl border">
-                <a
-                  href={v.url ?? undefined}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="block"
-                >
-                  <img
-                    src={src}
-                    alt={v.caption || "YouTube video"}
-                    className="h-56 w-full object-cover"
-                  />
-                </a>
-                <div className="px-4 py-3">
-                  {v.caption && (
-                    <div className="mb-1 line-clamp-1 text-sm font-medium text-neutral-900">
-                      {v.caption}
-                    </div>
-                  )}
-                  <div className="flex gap-3 text-sm text-neutral-700">
-                    <span>{fmt(v.views)} views</span>
-                    <span>•</span>
-                    <span>{fmt(v.likes)} likes</span>
-                    <span>•</span>
-                    <span>{fmt(v.comments)} comments</span>
+              <div className="p-3">
+                {v.title && (
+                  <div className="mb-1 line-clamp-2 text-sm font-medium text-neutral-900">
+                    {v.title}
+                  </div>
+                )}
+
+                {/* Icon metrics: views • likes • comments */}
+                <div className="mt-2 flex items-center gap-4 text-sm text-gray-700">
+                  <div className="flex items-center gap-1">
+                    <Eye className="h-4 w-4 text-neutral-600" />
+                    <span>{v.views?.toLocaleString() ?? 0}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Heart className="h-4 w-4 text-red-500" />
+                    <span>{v.likes?.toLocaleString() ?? 0}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <MessageCircle className="h-4 w-4 text-blue-500" />
+                    <span>{v.comments?.toLocaleString() ?? 0}</span>
                   </div>
                 </div>
               </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
   );
 }
