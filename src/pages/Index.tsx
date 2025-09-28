@@ -1,4 +1,3 @@
-// src/pages/Index.tsx
 import React from "react";
 
 /** HERO */
@@ -61,25 +60,31 @@ function Index() {
 
         {/* Top Content (IG + YT) */}
         <section className="mt-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-sm">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+            {/* Instagram panel */}
+            <div className="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-sm flex flex-col h-full">
               <div className="mb-4 flex items-center gap-2">
                 <div className="h-4 w-4 rounded-full bg-pink-500/80" />
                 <h3 className="text-sm font-semibold text-neutral-800">
                   Top Performing Instagram Posts
                 </h3>
               </div>
-              <InstagramTopPosts />
+              <div className="flex-1">
+                <InstagramTopPosts />
+              </div>
             </div>
 
-            <div className="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-sm">
+            {/* YouTube panel */}
+            <div className="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-sm flex flex-col h-full">
               <div className="mb-4 flex items-center gap-2">
                 <div className="h-4 w-4 rounded-full bg-red-500/80" />
                 <h3 className="text-sm font-semibold text-neutral-800">
                   Top Performing YouTube Content
                 </h3>
               </div>
-              <TopYouTubeContent />
+              <div className="flex-1">
+                <TopYouTubeContent />
+              </div>
             </div>
           </div>
         </section>

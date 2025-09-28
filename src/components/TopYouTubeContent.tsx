@@ -9,31 +9,32 @@ export default function TopYouTubeContent() {
   return (
     <div className="flex flex-col gap-4 h-full">
       {videos.map((v, i) => {
+        const base = v.image_url || v.thumbnail_url || "/sheldon-profile.png";
         const src =
-          v.thumbnail_url && v.updated_at
-            ? `${v.thumbnail_url}?v=${new Date(v.updated_at).getTime()}`
-            : "/sheldon-profile.png";
+          base && v.updated_at
+            ? `${base}${base.includes("?") ? "&" : "?"}v=${new Date(
+                v.updated_at
+              ).getTime()}`
+            : base;
 
         return (
           <article
             key={i}
             className="rounded-xl overflow-hidden border shadow-sm"
           >
-            {/* 16:9 media */}
             <div className="relative w-full aspect-[16/9]">
               <img
                 src={src}
                 alt={v.caption || "YouTube video"}
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 grid place-items-center">
+              <div className="absolute inset-0 grid place-items-center pointer-events-none">
                 <div className="rounded-full bg-black/50 p-3">
                   <Play size={18} className="text-white" />
                 </div>
               </div>
             </div>
 
-            {/* caption + metrics */}
             <div className="p-3">
               {v.caption && (
                 <h4 className="text-sm font-medium text-neutral-900 line-clamp-2">
@@ -55,7 +56,6 @@ export default function TopYouTubeContent() {
           </article>
         );
       })}
-      {/* Spacer to help equalize minor height differences if needed */}
       <div className="flex-1 min-h-[0.5rem]" />
     </div>
   );

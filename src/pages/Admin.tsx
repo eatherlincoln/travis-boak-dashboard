@@ -1,13 +1,12 @@
-// src/pages/Admin.tsx
 import React from "react";
 import AdminGate from "@/components/admin/AdminGate";
 import AdminLayout from "@/components/admin/AdminLayout";
 import InstagramPostList from "@/components/admin/InstagramPostList";
-import YouTubePostList from "@/components/admin/YouTubePostList"; // ← ensure this is here
+import YouTubePostList from "@/components/admin/YouTubePostList";
 import TikTokPostList from "@/components/admin/TikTokPostList";
-import StatsForm from "@/components/admin/StatsForm";
+// (Keep StatsForm if you use it)
 
-export default function Admin() {
+function Admin() {
   return (
     <AdminGate>
       <AdminLayout title="Admin Dashboard">
@@ -17,16 +16,14 @@ export default function Admin() {
           </section>
           <section>
             <YouTubePostList />
-          </section>{" "}
-          {/* ← include it */}
-          <section>
-            <TikTokPostList />
           </section>
           <section>
-            <StatsForm />
+            <TikTokPostList />
           </section>
         </div>
       </AdminLayout>
     </AdminGate>
   );
 }
+
+export default Admin;

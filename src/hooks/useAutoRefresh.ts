@@ -1,40 +1,20 @@
-// src/hooks/useAutoRefresh.ts
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
-type Listener = () => void;
+const REFRESH_EVENT = "app:data-updated";
 
-// Module-scoped listener set
-const listeners = new Set<Listener>();
-
-/** Call this if you ever need to trigger a refresh outside React. */
-export function bumpGlobalRefresh() {
-  listeners.forEach((fn) => fn());
+export function notifyDataUpdated() {
+  window.dispatchEvent(new Event(REFRESH_EVENT));
 }
 
-/**
- * Lightweight pub/sub refresh signal.
- * - `tick` increments whenever someone calls `bump()`
- * - Any hook that depends on `tick` will re-run its effect
- */
 export function useRefreshSignal() {
   const [tick, setTick] = useState(0);
-
   useEffect(() => {
-    const cb = () => setTick((t) => t + 1);
-    listeners.add(cb);
-    return () => {
-      listeners.delete(cb);
-    };
+    const h = () => setTick((t) => t + 1);
+    window.addEventListener(REFRESH_EVENT, h);
+    return () => window.removeEventListener(REFRESH_EVENT, h);
   }, []);
-
-  const bump = useCallback(() => {
-    listeners.forEach((fn) => fn());
-  }, []);
-
-  return { tick, bump };
+  return { tick };
 }
 
-/** Back-compat alias (in case anything still imports useAutoRefresh) */
-export function useAutoRefresh() {
-  return useRefreshSignal();
-}
+// Alias kept for backwards compatibility
+export const useAutoRefresh = useRefreshSignal;

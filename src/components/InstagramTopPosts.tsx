@@ -13,18 +13,14 @@ export default function InstagramTopPosts() {
           p.image_url && p.updated_at
             ? `${p.image_url}?v=${new Date(p.updated_at).getTime()}`
             : "/sheldon-profile.png";
-
         return (
           <div
             key={i}
             className="rounded-xl overflow-hidden border shadow-sm flex flex-col"
           >
-            {/* square media area */}
             <div className="w-full aspect-square overflow-hidden">
               <img src={src} alt="" className="w-full h-full object-cover" />
             </div>
-
-            {/* compact metrics row */}
             <div className="flex justify-around text-xs p-2 text-neutral-600">
               <span className="flex items-center gap-1">
                 <Heart size={14} /> {p.likes ?? 0}

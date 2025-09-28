@@ -1,13 +1,21 @@
-// src/hooks/index.ts
-// === Platform content (top posts) ===
+// Refresh signal (admin → frontend)
+export {
+  useRefreshSignal,
+  useAutoRefresh,
+  notifyDataUpdated,
+} from "./useAutoRefresh";
+
+// Instagram
 export { useInstagramTopPosts } from "./useInstagramTopPosts";
+
+// YouTube
 export { useYouTubeTopVideos } from "./useYouTubeTopVideos";
-export { useTikTokTopPosts } from "./useTikTokTopPosts";
-
-// === Stats & audience ===
 export { useYouTubeStats } from "./useYouTubeStats";
-export { useFollowerTotals } from "./useFollowerTotals";
-export { usePlatformAudience } from "./usePlatformAudience";
 
-// === Refresh signal (for admin -> frontend updates) ===
-export { useAutoRefresh, useRefreshSignal } from "./useAutoRefresh";
+// Audience / Stats
+export { usePlatformAudience } from "./usePlatformAudience";
+export { useFollowerTotals } from "./useFollowerTotals";
+
+// Utilities (aliased)
+export { useIsMobile as useMobile } from "./use-mobile";
+export { useToast } from "./use-toast";

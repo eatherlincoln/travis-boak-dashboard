@@ -1,24 +1,19 @@
 import React from "react";
 
-type Props = {
-  onClick?: () => void;
-  saving?: boolean;
-  label?: string;
-  className?: string;
-};
-
 export default function SaveButton({
   onClick,
   saving,
   label = "Save",
-  className = "",
-}: Props) {
+}: {
+  onClick: () => void | Promise<void>;
+  saving?: boolean;
+  label?: string;
+}) {
   return (
     <button
-      type="button"
       onClick={onClick}
-      disabled={saving}
-      className={`rounded-full bg-black px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60 ${className}`}
+      disabled={!!saving}
+      className="inline-flex items-center justify-center rounded-lg bg-neutral-900 px-4 py-2 text-white text-sm hover:bg-neutral-800 disabled:opacity-50"
     >
       {saving ? "Saving…" : label}
     </button>

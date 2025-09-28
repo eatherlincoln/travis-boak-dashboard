@@ -1,71 +1,65 @@
 import React, { useRef, useState } from "react";
 import { supabase } from "@supabaseClient";
-import { v4 as uuidv4 } from "uuid";
 
-interface ThumbnailPickerProps {
-  platform: string;
-  value: string;
-  onChange: (url: string) => void;
-}
+type Props = {
+  platform: "instagram" | "youtube" | "tiktok";
+  value?: string;
+  onChange?: (publicUrl: string) => void;
+};
 
-export default function ThumbnailPicker({
-  platform,
-  value,
-  onChange,
-}: ThumbnailPickerProps) {
-  const fileRef = useRef<HTMLInputElement>(null);
+export default function ThumbnailPicker({ platform, value, onChange }: Props) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const handleFile = async (file: File) => {
     try {
       setUploading(true);
-      const ext = file.name.split(".").pop();
-      const filePath = `${platform}/${uuidv4()}.${ext}`;
-
-      const { error: uploadError } = await supabase.storage
+      const ext = file.name.split(".").pop() || "jpg";
+      const name = `${platform}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage
         .from("thumbnails")
-        .upload(filePath, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      const { data } = supabase.storage
-        .from("thumbnails")
-        .getPublicUrl(filePath);
-      if (data?.publicUrl) onChange(data.publicUrl);
-    } catch (err) {
-      console.error("Upload failed:", err);
+        .upload(name, file, {
+          upsert: false,
+        });
+      if (error) throw error;
+      const { data } = supabase.storage.from("thumbnails").getPublicUrl(name);
+      if (data?.publicUrl) {
+        onChange?.(data.publicUrl);
+      }
     } finally {
       setUploading(false);
     }
   };
 
   return (
-    <div className="flex items-center gap-2">
-      {value && (
+    <div className="flex items-center gap-3">
+      <div className="h-12 w-20 overflow-hidden rounded border bg-neutral-50">
         <img
-          src={value}
-          alt="thumb"
-          className="h-12 w-12 rounded object-cover border"
+          src={value || "/sheldon-profile.png"}
+          className="h-full w-full object-cover"
+          alt=""
         />
-      )}
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*"
-        onChange={handleFile}
-        className="hidden"
-      />
-      <button
-        type="button"
-        onClick={() => fileRef.current?.click()}
-        className="px-3 py-1 text-sm rounded border bg-gray-50 hover:bg-gray-100"
-        disabled={uploading}
-      >
-        {uploading ? "Uploading…" : "Upload Thumbnail"}
-      </button>
+      </div>
+      <div>
+        <button
+          type="button"
+          className="rounded border px-3 py-1.5 text-sm hover:bg-neutral-50"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+        >
+          {uploading ? "Uploading…" : "Upload thumbnail"}
+        </button>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) handleFile(f);
+          }}
+        />
+      </div>
     </div>
   );
 }
