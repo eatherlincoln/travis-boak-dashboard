@@ -1,54 +1,69 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@supabaseClient";
-import { useRefreshSignal } from "@/hooks";
 
-type Post = {
-  media_id: string;
-  media_url: string | null;
-  permalink: string | null;
-  like_count: number | null;
-  comment_count: number | null; // note singular column name
+export type TopPost = {
+  platform: "instagram" | "youtube" | "tiktok";
+  rank: number;
+  url: string | null;
+  thumbnail_url: string | null;
+  likes: number | null;
+  comments: number | null;
+  shares: number | null;
   updated_at: string | null;
 };
 
-export function useInstagramTopPosts(limit: number = 6) {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+type State = {
+  posts: TopPost[];
+  loading: boolean;
+  error: string | null;
+};
 
-  const { tick } = useRefreshSignal();
+export default function useInstagramTopPosts() {
+  const [state, setState] = useState<State>({
+    posts: [],
+    loading: true,
+    error: null,
+  });
+
+  async function load() {
+    setState((s) => ({ ...s, loading: true, error: null }));
+    const { data, error } = await supabase
+      .from("top_posts")
+      .select(
+        "platform, rank, url, thumbnail_url, likes, comments, shares, updated_at"
+      )
+      .eq("platform", "instagram")
+      .order("rank", { ascending: true })
+      .limit(4);
+
+    if (error) {
+      setState({ posts: [], loading: false, error: error.message });
+      return;
+    }
+    setState({ posts: (data as TopPost[]) ?? [], loading: false, error: null });
+  }
 
   useEffect(() => {
-    let mounted = true;
-    (async () => {
-      setLoading(true);
-
-      const { data, error } = await supabase
-        .from("instagram_posts_public")
-        .select(
-          "media_id, media_url, permalink, like_count, comment_count, updated_at"
-        )
-        .order("like_count", { ascending: false })
-        .limit(limit);
-
-      if (!mounted) return;
-
-      if (error) {
-        setError(error.message);
-        setPosts([]);
-        setLoading(false);
-        return;
-      }
-
-      setPosts((data as Post[]) ?? []);
-      setError(null);
-      setLoading(false);
-    })();
+    load();
+    // Optional: live update when top_posts change
+    const channel = supabase
+      .channel("top_posts_instagram")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "top_posts",
+          filter: "platform=eq.instagram",
+        },
+        () => load()
+      )
+      .subscribe();
 
     return () => {
-      mounted = false;
+      supabase.removeChannel(channel);
     };
-  }, [tick, limit]);
+  }, []);
 
-  return { posts, loading, error };
+  return { ...state, refresh: load };
 }
