@@ -1,48 +1,46 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@supabaseClient";
 
-export type TopVideo = {
-  platform: "youtube";
-  rank: number;
-  url: string | null;
-  image_url: string | null;
+type Video = {
+  url: string;
+  thumbnail_url: string | null;
   caption: string | null;
   likes: number | null;
   comments: number | null;
   shares: number | null;
+  updated_at: string | null;
 };
 
-export default function useYouTubeTopVideos() {
-  const [posts, setPosts] = useState<TopVideo[] | null>(null);
+export function useYouTubeTopVideos() {
+  const [posts, setPosts] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let alive = true;
+    let mounted = true;
     (async () => {
       setLoading(true);
       const { data, error } = await supabase
         .from("top_posts")
         .select(
-          "platform, rank, url, image_url, caption, likes, comments, shares"
+          "url, thumbnail_url, caption, likes, comments, shares, updated_at"
         )
         .eq("platform", "youtube")
-        .order("rank", { ascending: true })
-        .limit(4);
+        .order("rank", { ascending: true });
 
-      if (!alive) return;
+      if (!mounted) return;
 
       if (error) {
         setError(error.message);
-        setPosts(null);
+        setPosts([]);
       } else {
+        setPosts(data || []);
         setError(null);
-        setPosts((data || []) as TopVideo[]);
       }
       setLoading(false);
     })();
     return () => {
-      alive = false;
+      mounted = false;
     };
   }, []);
 

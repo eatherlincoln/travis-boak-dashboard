@@ -1,5 +1,5 @@
 import React from "react";
-import { useYouTubeTopVideos } from "@/hooks/useYouTubeTopVideos";
+import { useTikTokTopPosts } from "@/hooks/useTikTokTopPosts";
 
 const buildThumb = (url?: string | null, updated?: string | null) => {
   const base = url || "/sheldon-profile.png";
@@ -8,24 +8,24 @@ const buildThumb = (url?: string | null, updated?: string | null) => {
     : base;
 };
 
-export default function TopYouTubeContent() {
-  const { posts, loading, error } = useYouTubeTopVideos();
+export default function TikTokTopPosts() {
+  const { posts, loading, error } = useTikTokTopPosts();
 
   if (loading) return <p className="text-sm text-neutral-500">Loading…</p>;
   if (error) return <p className="text-sm text-red-500">{error}</p>;
   if (!posts?.length)
-    return <p className="text-sm text-neutral-500">No videos yet.</p>;
+    return <p className="text-sm text-neutral-500">No TikToks yet.</p>;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      {posts.map((v, i) => (
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+      {posts.map((p, i) => (
         <div
           key={i}
-          className="aspect-video overflow-hidden rounded-lg bg-neutral-100"
+          className="aspect-square overflow-hidden rounded-lg bg-neutral-100"
         >
           <img
-            src={buildThumb(v.thumbnail_url, v.updated_at)}
-            alt={v.caption || "YouTube video"}
+            src={buildThumb(p.thumbnail_url, p.updated_at)}
+            alt={p.caption || "TikTok post"}
             className="h-full w-full object-cover"
           />
         </div>

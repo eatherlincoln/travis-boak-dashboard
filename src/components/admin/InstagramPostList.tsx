@@ -1,7 +1,10 @@
 import React, { useState } from "react";
 import { supabase } from "@supabaseClient";
-import ThumbnailPicker from "@/components/admin/ThumbnailPicker";
 import SaveButton from "@/components/admin/SaveButton";
+import ThumbnailPicker from "@/components/admin/ThumbnailPicker";
+
+const POSTS_TABLE = "top_posts";
+const CONFLICT_KEY = "platform,url";
 
 type PostInput = {
   url: string;
@@ -9,7 +12,6 @@ type PostInput = {
   likes?: number | string;
   comments?: number | string;
   shares?: number | string;
-  caption?: string;
 };
 
 const toInt = (v: string | number | undefined | null): number | null => {
@@ -20,49 +22,44 @@ const toInt = (v: string | number | undefined | null): number | null => {
 };
 
 export default function InstagramPostList() {
-  const [posts, setPosts] = useState<PostInput[]>(
-    Array.from({ length: 4 }, () => ({
-      url: "",
-      thumbnail_url: "",
-      likes: "",
-      comments: "",
-      shares: "",
-      caption: "",
-    }))
-  );
+  const [posts, setPosts] = useState<PostInput[]>([
+    { url: "", thumbnail_url: "", likes: "", comments: "", shares: "" },
+    { url: "", thumbnail_url: "", likes: "", comments: "", shares: "" },
+    { url: "", thumbnail_url: "", likes: "", comments: "", shares: "" },
+    { url: "", thumbnail_url: "", likes: "", comments: "", shares: "" },
+  ]);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
-  const setField = (i: number, key: keyof PostInput, val: any) =>
-    setPosts((prev) => {
-      const next = [...prev];
-      next[i] = { ...next[i], [key]: val };
-      return next;
-    });
-
   const handleSave = async () => {
-    setSaving(true);
     setMsg(null);
+    setSaving(true);
     try {
-      const payload = posts.map((p, idx) => ({
-        platform: "instagram" as const,
-        rank: idx + 1,
-        url: (p.url || "").trim() || null,
-        image_url: (p.thumbnail_url || "").trim() || null,
-        caption: (p.caption || "").trim() || null,
-        likes: toInt(p.likes),
-        comments: toInt(p.comments),
-        shares: toInt(p.shares),
-        meta: {}, // keep future-proof
-      }));
+      const payload = posts
+        .filter((p) => (p.url || "").trim().length > 0)
+        .map((p, i) => ({
+          platform: "instagram",
+          rank: i + 1, // enforce rank
+          url: (p.url || "").trim(),
+          thumbnail_url: (p.thumbnail_url || "").trim() || null,
+          likes: toInt(p.likes),
+          comments: toInt(p.comments),
+          shares: toInt(p.shares),
+          updated_at: new Date().toISOString(), // force cache busting
+        }));
 
-      // upsert by platform+rank
+      if (payload.length === 0) {
+        setMsg("Nothing to save — add at least one post URL.");
+        setSaving(false);
+        return;
+      }
+
       const { error } = await supabase
-        .from("top_posts")
-        .upsert(payload, { onConflict: "platform,rank" });
+        .from(POSTS_TABLE)
+        .upsert(payload, { onConflict: CONFLICT_KEY });
 
       if (error) throw error;
-      setMsg("Instagram posts saved ✓");
+      setMsg("Instagram posts saved ✅");
     } catch (e: any) {
       setMsg(e?.message || "Failed to save Instagram posts.");
     } finally {
@@ -71,86 +68,37 @@ export default function InstagramPostList() {
   };
 
   return (
-    <div className="rounded-2xl border bg-white p-5 sm:p-6 shadow-sm">
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Instagram — Top Posts</h3>
+    <div className="rounded-2xl border bg-white p-5 sm:p-6 shadow-sm space-y-4">
+      {posts.map((post, i) => (
+        <div key={i} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <input
+            type="text"
+            value={post.url}
+            onChange={(e) => {
+              const next = [...posts];
+              next[i].url = e.target.value;
+              setPosts(next);
+            }}
+            placeholder="Post URL"
+            className="rounded border px-2 py-1 text-sm w-full"
+          />
+          <ThumbnailPicker
+            platform="instagram"
+            value={post.thumbnail_url || ""}
+            onChange={(publicUrl) => {
+              const next = [...posts];
+              next[i].thumbnail_url = publicUrl;
+              setPosts(next);
+            }}
+          />
+        </div>
+      ))}
+
+      <div className="flex justify-end">
         <SaveButton onClick={handleSave} saving={saving} label="Save Posts" />
       </div>
 
-      <p className="mb-4 text-xs text-neutral-500">
-        Paste the post URL and/or add a thumbnail. Add likes / comments /
-        shares. Up to 4 posts.
-      </p>
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {posts.map((post, i) => (
-          <div key={i} className="rounded-xl border p-4">
-            <div className="mb-2 text-xs font-medium text-neutral-700">
-              Post {i + 1}
-            </div>
-
-            <label className="block text-xs text-neutral-500">Post URL</label>
-            <input
-              className="mb-3 mt-1 w-full rounded-md border px-3 py-2 text-sm"
-              placeholder="https://www.instagram.com/p/…"
-              value={post.url}
-              onChange={(e) => setField(i, "url", e.target.value)}
-            />
-
-            <label className="block text-xs text-neutral-500 mb-1">
-              Thumbnail (upload or paste URL)
-            </label>
-            <ThumbnailPicker
-              platform="instagram"
-              value={post.thumbnail_url || ""}
-              onChange={(url) => setField(i, "thumbnail_url", url)}
-            />
-
-            <div className="mt-3 grid grid-cols-3 gap-2">
-              <div>
-                <label className="block text-xs text-neutral-500">Likes</label>
-                <input
-                  inputMode="numeric"
-                  className="mt-1 w-full rounded-md border px-2 py-1.5 text-sm"
-                  value={post.likes as any}
-                  onChange={(e) => setField(i, "likes", e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-neutral-500">
-                  Comments
-                </label>
-                <input
-                  inputMode="numeric"
-                  className="mt-1 w-full rounded-md border px-2 py-1.5 text-sm"
-                  value={post.comments as any}
-                  onChange={(e) => setField(i, "comments", e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-neutral-500">Shares</label>
-                <input
-                  inputMode="numeric"
-                  className="mt-1 w-full rounded-md border px-2 py-1.5 text-sm"
-                  value={post.shares as any}
-                  onChange={(e) => setField(i, "shares", e.target.value)}
-                />
-              </div>
-            </div>
-
-            <label className="mt-3 block text-xs text-neutral-500">
-              Caption (optional)
-            </label>
-            <input
-              className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
-              value={post.caption || ""}
-              onChange={(e) => setField(i, "caption", e.target.value)}
-            />
-          </div>
-        ))}
-      </div>
-
-      {msg && <p className="mt-3 text-sm text-neutral-600">{msg}</p>}
+      {msg && <p className="mt-2 text-sm text-neutral-600">{msg}</p>}
     </div>
   );
 }
