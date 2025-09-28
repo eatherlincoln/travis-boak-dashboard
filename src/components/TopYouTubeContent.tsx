@@ -1,76 +1,71 @@
 import React from "react";
 import { useYouTubeTopVideos } from "@/hooks/useYouTubeTopVideos";
 
-function fmtK(n: number | null | undefined) {
-  if (!n || n <= 0) return "0";
-  if (n >= 1000000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
-  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, "") + "K";
-  return String(n);
-}
+const fmt = (n?: number | null) => {
+  if (!n && n !== 0) return "0";
+  if (n < 1000) return `${n}`;
+  if (n < 1_000_000) return `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}K`;
+  return `${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M`;
+};
 
 export default function TopYouTubeContent() {
-  const { posts, loading, error } = useYouTubeTopVideos();
-
-  if (loading) {
-    return <p className="text-sm text-neutral-500">Loading YouTube content…</p>;
-  }
-  if (error) {
-    return (
-      <p className="text-sm text-red-600">Failed to load YouTube: {error}</p>
-    );
-  }
-  if (!posts.length) {
-    return (
-      <p className="text-sm text-neutral-500">
-        No YouTube videos saved yet. Add them in Admin.
-      </p>
-    );
-  }
+  const { data, loading } = useYouTubeTopVideos(2);
 
   return (
-    <div className="space-y-6">
-      {posts.slice(0, 2).map((v, idx) => {
-        const base = v.image_url || "/sheldon-profile.png";
-        const src =
-          v.image_url && v.updated_at
-            ? `${base}${base.includes("?") ? "&" : "?"}v=${Date.parse(
-                v.updated_at
-              )}`
-            : base;
+    <div className="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-sm">
+      <div className="mb-4 flex items-center gap-2">
+        <div className="h-4 w-4 rounded-full bg-red-500/80" />
+        <h3 className="text-sm font-semibold text-neutral-800">
+          Top Performing YouTube Content
+        </h3>
+      </div>
 
-        return (
-          <a
-            key={`${v.rank}-${idx}`}
-            href={v.url || "#"}
-            target="_blank"
-            rel="noreferrer"
-            className="block rounded-xl overflow-hidden border border-neutral-200 bg-white shadow-sm hover:shadow transition"
-          >
-            <div className="aspect-video w-full relative">
-              <img
-                src={src}
-                alt="YouTube video"
-                className="h-full w-full object-cover"
-              />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="h-12 w-12 bg-black/60 rounded-full flex items-center justify-center text-white">
-                  ▶
+      {loading && <p className="text-sm text-neutral-500">Loading…</p>}
+
+      {!loading && (
+        <div className="space-y-5">
+          {data.map((v) => {
+            const base = v.image_url || "/sheldon-profile.png";
+            const src =
+              v.image_url && v.updated_at
+                ? `${base}${base.includes("?") ? "&" : "?"}v=${new Date(
+                    v.updated_at
+                  ).getTime()}`
+                : base;
+
+            return (
+              <div key={v.id} className="overflow-hidden rounded-xl border">
+                <a
+                  href={v.url ?? undefined}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block"
+                >
+                  <img
+                    src={src}
+                    alt={v.caption || "YouTube video"}
+                    className="h-56 w-full object-cover"
+                  />
+                </a>
+                <div className="px-4 py-3">
+                  {v.caption && (
+                    <div className="mb-1 line-clamp-1 text-sm font-medium text-neutral-900">
+                      {v.caption}
+                    </div>
+                  )}
+                  <div className="flex gap-3 text-sm text-neutral-700">
+                    <span>{fmt(v.views)} views</span>
+                    <span>•</span>
+                    <span>{fmt(v.likes)} likes</span>
+                    <span>•</span>
+                    <span>{fmt(v.comments)} comments</span>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="px-4 py-3">
-              <p className="text-sm font-medium text-neutral-900 truncate">
-                {v.url ? new URL(v.url).searchParams.get("v") : "YouTube Video"}
-              </p>
-              <div className="mt-1 flex gap-4 text-xs text-neutral-600">
-                <span>👁 {fmtK(v.views)} views</span>
-                <span>👍 {fmtK(v.likes)} likes</span>
-                <span>💬 {fmtK(v.comments)} comments</span>
-              </div>
-            </div>
-          </a>
-        );
-      })}
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

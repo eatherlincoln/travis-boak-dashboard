@@ -1,83 +1,62 @@
 import React from "react";
 import { useInstagramTopPosts } from "@/hooks/useInstagramTopPosts";
 
-function fmtK(n: number | null | undefined) {
-  if (!n || n <= 0) return "0";
-  if (n >= 1000000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
-  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, "") + "K";
-  return String(n);
-}
+const fmt = (n?: number | null) => {
+  if (!n && n !== 0) return "0";
+  if (n < 1000) return `${n}`;
+  if (n < 1_000_000) return `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}K`;
+  return `${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M`;
+};
 
 export default function InstagramTopPosts() {
-  const { posts, loading, error } = useInstagramTopPosts();
-
-  if (loading) {
-    return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {[0, 1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="h-56 rounded-xl bg-neutral-100 animate-pulse"
-          />
-        ))}
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <p className="text-sm text-red-600">
-        Failed to load Instagram posts: {error}
-      </p>
-    );
-  }
-
-  if (!posts.length) {
-    return (
-      <p className="text-sm text-neutral-500">
-        No Instagram posts saved yet. Add them in Admin → Instagram.
-      </p>
-    );
-  }
+  const { data, loading } = useInstagramTopPosts(4);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-      {posts.slice(0, 4).map((p, idx) => {
-        const base = p.image_url || "/sheldon-profile.png";
-        const src =
-          p.image_url && p.updated_at
-            ? `${base}${base.includes("?") ? "&" : "?"}v=${Date.parse(
-                p.updated_at
-              )}`
-            : base;
+    <div className="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-sm">
+      <div className="mb-4 flex items-center gap-2">
+        <div className="h-4 w-4 rounded-full bg-pink-500/80" />
+        <h3 className="text-sm font-semibold text-neutral-800">
+          Top Performing Posts
+        </h3>
+      </div>
 
-        return (
-          <a
-            key={`${p.rank}-${idx}`}
-            href={p.url || "#"}
-            target="_blank"
-            rel="noreferrer"
-            className="group block rounded-2xl border border-neutral-200 overflow-hidden bg-white shadow-sm hover:shadow"
-          >
-            <div className="aspect-[4/3] w-full overflow-hidden">
-              <img
-                src={src}
-                alt="Instagram post"
-                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-                loading="lazy"
-              />
-            </div>
+      {loading && <p className="text-sm text-neutral-500">Loading…</p>}
 
-            <div className="px-4 py-3 border-t border-neutral-200 text-xs text-neutral-700 flex items-center gap-3">
-              <span>{fmtK(p.likes)} likes</span>
-              <span>•</span>
-              <span>{fmtK(p.comments)} comments</span>
-              <span>•</span>
-              <span>{fmtK(p.shares)} shares</span>
-            </div>
-          </a>
-        );
-      })}
+      {!loading && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {data.map((v) => {
+            const base = v.image_url || "/sheldon-profile.png";
+            const src =
+              v.image_url && v.updated_at
+                ? `${base}${base.includes("?") ? "&" : "?"}v=${new Date(
+                    v.updated_at
+                  ).getTime()}`
+                : base;
+
+            return (
+              <div
+                key={v.id}
+                className="overflow-hidden rounded-xl border bg-white"
+              >
+                <a href={v.url ?? undefined} target="_blank" rel="noreferrer">
+                  <img
+                    src={src}
+                    alt="Post"
+                    className="h-56 w-full object-cover"
+                  />
+                </a>
+                <div className="flex items-center justify-between px-4 py-3 text-sm text-neutral-700">
+                  <div>{fmt(v.likes)} likes</div>
+                  <div>•</div>
+                  <div>{fmt(v.comments)} comments</div>
+                  <div>•</div>
+                  <div>{fmt(v.shares)} shares</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
