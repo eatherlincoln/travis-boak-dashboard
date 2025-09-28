@@ -1,81 +1,62 @@
 import React from "react";
-import useInstagramTopPosts from "@/hooks/useInstagramTopPosts";
-
-const Fallback = "/placeholder.png"; // keep or swap to your asset
+import { useInstagramTopPosts } from "@/hooks";
+import Fallback from "@/assets/fallback.jpg"; // replace with your fallback image path
 
 export default function InstagramTopPosts() {
-  const { posts, loading, error, refresh } = useInstagramTopPosts();
+  const { posts, loading, error } = useInstagramTopPosts();
 
   if (loading) {
     return (
-      <div className="grid grid-cols-3 gap-4">
-        {[0, 1, 2].map((i) => (
-          <div
-            key={i}
-            className="h-32 rounded-lg bg-neutral-100 animate-pulse"
-          />
-        ))}
-      </div>
+      <p className="text-sm text-neutral-500">Loading top Instagram posts…</p>
     );
   }
-
   if (error) {
-    return (
-      <div className="text-sm text-red-600">
-        Failed to load Instagram posts — {error}{" "}
-        <button onClick={refresh} className="ml-2 underline">
-          Retry
-        </button>
-      </div>
-    );
+    return <p className="text-sm text-red-500">Error: {error.message}</p>;
   }
-
-  if (!posts.length) {
+  if (!posts || posts.length === 0) {
     return (
-      <div className="text-sm text-neutral-500">
-        No Instagram posts saved yet.
-      </div>
+      <p className="text-sm text-neutral-500">No Instagram posts available.</p>
     );
   }
 
   return (
-    <div>
-      <h4 className="text-base font-semibold text-neutral-900 mb-3">
+    <div className="space-y-4">
+      <h4 className="text-sm font-semibold text-neutral-800">
         Top Instagram Posts
       </h4>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {posts.map((p, i) => {
+          const base = p.thumbnail_url || Fallback;
+          const src =
+            p.thumbnail_url && p.updated_at
+              ? `${base}${base.includes("?") ? "&" : "?"}v=${new Date(
+                  p.updated_at
+                ).getTime()}`
+              : base;
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {posts.slice(0, 3).map((p) => {
-          const img = p.thumbnail_url || Fallback;
           return (
-            <a
-              key={`${p.platform}-${p.rank}-${p.url ?? "no-url"}`}
-              href={p.url ?? undefined}
-              target={p.url ? "_blank" : undefined}
-              rel="noopener noreferrer"
-              className="group block"
+            <div
+              key={i}
+              className="group relative rounded-lg overflow-hidden bg-neutral-100"
             >
               <img
-                src={img}
-                alt="Instagram post thumbnail"
+                src={src}
+                alt={p.caption || "Instagram post"}
                 className="w-full h-40 object-cover rounded-lg ring-1 ring-neutral-200/70 group-hover:ring-neutral-300 transition"
               />
-              <div className="mt-2 flex items-center gap-4 text-xs text-neutral-500">
-                {p.likes != null && <span>❤️ {p.likes}</span>}
-                {p.comments != null && <span>💬 {p.comments}</span>}
-                {p.shares != null && <span>🔁 {p.shares}</span>}
+              <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1 truncate">
+                {p.likes ? `${p.likes} likes` : ""}
               </div>
-            </a>
+            </div>
           );
         })}
       </div>
-
-      {/* updated stamp if available */}
-      {posts[0]?.updated_at && (
-        <p className="mt-3 text-xs text-neutral-500">
-          Last updated {new Date(posts[0].updated_at).toLocaleDateString()}
-        </p>
-      )}
+      <p className="text-xs text-neutral-500">
+        Last updated{" "}
+        {posts[0]?.updated_at
+          ? new Date(posts[0].updated_at).toLocaleDateString()
+          : "—"}
+      </p>
     </div>
   );
 }

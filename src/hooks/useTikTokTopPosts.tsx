@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@supabaseClient";
 
-export type TopVideo = {
-  platform: "youtube";
+export type TopPost = {
+  platform: "tiktok";
   rank: number;
   url: string | null;
   image_url: string | null;
@@ -12,8 +12,8 @@ export type TopVideo = {
   shares: number | null;
 };
 
-export default function useYouTubeTopVideos() {
-  const [posts, setPosts] = useState<TopVideo[] | null>(null);
+export default function useTikTokTopPosts() {
+  const [posts, setPosts] = useState<TopPost[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,7 +26,7 @@ export default function useYouTubeTopVideos() {
         .select(
           "platform, rank, url, image_url, caption, likes, comments, shares"
         )
-        .eq("platform", "youtube")
+        .eq("platform", "tiktok")
         .order("rank", { ascending: true })
         .limit(4);
 
@@ -37,7 +37,7 @@ export default function useYouTubeTopVideos() {
         setPosts(null);
       } else {
         setError(null);
-        setPosts((data || []) as TopVideo[]);
+        setPosts((data || []) as any);
       }
       setLoading(false);
     })();
