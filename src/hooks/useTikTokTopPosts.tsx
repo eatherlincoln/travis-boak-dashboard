@@ -1,48 +1,32 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@supabaseClient";
 
-type TikTok = {
-  url: string;
-  thumbnail_url: string | null;
-  caption: string | null;
-  likes: number | null;
-  comments: number | null;
-  shares: number | null;
-  updated_at: string | null;
-};
-
 export function useTikTokTopPosts() {
-  const [posts, setPosts] = useState<TikTok[]>([]);
+  const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
     (async () => {
-      setLoading(true);
       const { data, error } = await supabase
         .from("top_posts")
-        .select(
-          "url, thumbnail_url, caption, likes, comments, shares, updated_at"
-        )
+        .select("*")
         .eq("platform", "tiktok")
         .order("rank", { ascending: true });
 
-      if (!mounted) return;
-
       if (error) {
-        setError(error.message);
-        setPosts([]);
-      } else {
-        setPosts(data || []);
-        setError(null);
+        console.error("Error fetching TikTok posts:", error.message);
+        return;
       }
+
+      if (mounted) setPosts(data || []);
       setLoading(false);
     })();
+
     return () => {
       mounted = false;
     };
   }, []);
 
-  return { posts, loading, error };
+  return { posts, loading };
 }
