@@ -1,85 +1,62 @@
 import React from "react";
 import { useYouTubeTopVideos } from "@/hooks/useYouTubeTopVideos";
-import { PlayCircle, Eye, Heart, MessageCircle, Youtube } from "lucide-react";
-
-function fmt(n?: number | null) {
-  if (n == null) return "0";
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return String(n);
-}
+import { Eye, Heart, MessageCircle, Play } from "lucide-react";
 
 export default function TopYouTubeContent() {
-  const { videos, loading, error } = useYouTubeTopVideos();
+  const { videos, loading } = useYouTubeTopVideos();
+  if (loading) return <p className="text-sm text-neutral-500">Loading…</p>;
 
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-sm">
-      <div className="mb-3 flex items-center gap-2">
-        <Youtube className="h-5 w-5 text-red-500" />
-        <h3 className="text-sm font-semibold text-neutral-800">
-          Top Performing YouTube Content
-        </h3>
-      </div>
+    <div className="flex flex-col gap-4 h-full">
+      {videos.map((v, i) => {
+        const src =
+          v.thumbnail_url && v.updated_at
+            ? `${v.thumbnail_url}?v=${new Date(v.updated_at).getTime()}`
+            : "/sheldon-profile.png";
 
-      {loading && <p className="text-sm text-neutral-500">Loading…</p>}
-      {error && (
-        <p className="text-sm text-red-600">Couldn’t load videos: {error}</p>
-      )}
-
-      {!loading && !error && videos.length === 0 && (
-        <p className="text-sm text-neutral-500">No videos yet.</p>
-      )}
-
-      <div className="mt-2 space-y-6">
-        {videos.map((v) => {
-          const base = v.image_url || "/sheldon-profile.png";
-          const src =
-            v.image_url && v.updated_at
-              ? `${base}${base.includes("?") ? "&" : "?"}v=${new Date(
-                  v.updated_at
-                ).getTime()}`
-              : base;
-
-          return (
-            <a
-              key={v.rank}
-              href={v.url || "#"}
-              target="_blank"
-              rel="noreferrer"
-              className="block group"
-            >
-              <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl ring-1 ring-neutral-200">
-                <img
-                  src={src}
-                  alt={v.title || "YouTube video"}
-                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-                />
-                <div className="absolute inset-0 grid place-items-center bg-black/20">
-                  <PlayCircle className="h-14 w-14 text-white/95 drop-shadow" />
+        return (
+          <article
+            key={i}
+            className="rounded-xl overflow-hidden border shadow-sm"
+          >
+            {/* 16:9 media */}
+            <div className="relative w-full aspect-[16/9]">
+              <img
+                src={src}
+                alt={v.caption || "YouTube video"}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 grid place-items-center">
+                <div className="rounded-full bg-black/50 p-3">
+                  <Play size={18} className="text-white" />
                 </div>
               </div>
+            </div>
 
-              <div className="mt-2">
-                <p className="line-clamp-1 text-sm font-medium text-neutral-900">
-                  {v.title || "Untitled video"}
-                </p>
-                <div className="mt-1 flex items-center gap-4 text-[13px] text-neutral-600">
-                  <span className="inline-flex items-center gap-1">
-                    <Eye className="h-4 w-4" /> {fmt(v.views)} views
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <Heart className="h-4 w-4" /> {fmt(v.likes)} likes
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <MessageCircle className="h-4 w-4" /> {fmt(v.comments)}{" "}
-                    comments
-                  </span>
-                </div>
+            {/* caption + metrics */}
+            <div className="p-3">
+              {v.caption && (
+                <h4 className="text-sm font-medium text-neutral-900 line-clamp-2">
+                  {v.caption}
+                </h4>
+              )}
+              <div className="mt-2 flex items-center gap-4 text-xs text-neutral-600">
+                <span className="inline-flex items-center gap-1">
+                  <Eye size={14} /> {v.views ?? 0}
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <Heart size={14} /> {v.likes ?? 0}
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <MessageCircle size={14} /> {v.comments ?? 0}
+                </span>
               </div>
-            </a>
-          );
-        })}
-      </div>
+            </div>
+          </article>
+        );
+      })}
+      {/* Spacer to help equalize minor height differences if needed */}
+      <div className="flex-1 min-h-[0.5rem]" />
     </div>
   );
 }

@@ -4,19 +4,27 @@ import { Heart, MessageCircle, Share2 } from "lucide-react";
 
 export default function InstagramTopPosts() {
   const { posts, loading } = useInstagramTopPosts();
-
-  if (loading) return <p>Loading…</p>;
+  if (loading) return <p className="text-sm text-neutral-500">Loading…</p>;
 
   return (
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid grid-cols-2 gap-4 h-full">
       {posts.map((p, i) => {
         const src =
           p.image_url && p.updated_at
             ? `${p.image_url}?v=${new Date(p.updated_at).getTime()}`
             : "/sheldon-profile.png";
+
         return (
-          <div key={i} className="rounded-xl overflow-hidden border shadow-sm">
-            <img src={src} alt="" className="w-full h-40 object-cover" />
+          <div
+            key={i}
+            className="rounded-xl overflow-hidden border shadow-sm flex flex-col"
+          >
+            {/* square media area */}
+            <div className="w-full aspect-square overflow-hidden">
+              <img src={src} alt="" className="w-full h-full object-cover" />
+            </div>
+
+            {/* compact metrics row */}
             <div className="flex justify-around text-xs p-2 text-neutral-600">
               <span className="flex items-center gap-1">
                 <Heart size={14} /> {p.likes ?? 0}
