@@ -1,9 +1,9 @@
+// src/pages/Admin.tsx
 import React from "react";
 import AdminGate from "@/components/admin/AdminGate";
 import AdminLayout from "@/components/admin/AdminLayout";
-
 import InstagramPostList from "@/components/admin/InstagramPostList";
-import YouTubePostList from "@/components/admin/YouTubePostList";
+import YouTubePostList from "@/components/admin/YouTubePostList"; // ← ensure this is here
 import TikTokPostList from "@/components/admin/TikTokPostList";
 import StatsForm from "@/components/admin/StatsForm";
 
@@ -15,15 +15,13 @@ export default function Admin() {
           <section>
             <InstagramPostList />
           </section>
-
           <section>
             <YouTubePostList />
-          </section>
-
+          </section>{" "}
+          {/* ← include it */}
           <section>
             <TikTokPostList />
           </section>
-
           <section>
             <StatsForm />
           </section>
