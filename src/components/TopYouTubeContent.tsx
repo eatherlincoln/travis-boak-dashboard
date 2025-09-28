@@ -1,86 +1,85 @@
 import React from "react";
-import { Eye, Heart, MessageSquare } from "lucide-react";
-import { useYouTubeTopVideos } from "@/hooks"; // barrel export
-import clsx from "clsx";
+import { useYouTubeTopVideos } from "@/hooks/useYouTubeTopVideos";
+import { PlayCircle, Eye, Heart, MessageCircle, Youtube } from "lucide-react";
+
+function fmt(n?: number | null) {
+  if (n == null) return "0";
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return String(n);
+}
 
 export default function TopYouTubeContent() {
   const { videos, loading, error } = useYouTubeTopVideos();
 
-  if (loading) {
-    return (
-      <div className="text-sm text-neutral-500">
-        Loading top YouTube videos…
-      </div>
-    );
-  }
-  if (error) {
-    return (
-      <div className="text-sm text-red-600">
-        Couldn’t load YouTube content: {error}
-      </div>
-    );
-  }
-  if (!videos || videos.length === 0) {
-    return <div className="text-sm text-neutral-500">No videos yet.</div>;
-  }
-
   return (
-    <div className="space-y-6">
-      {videos.slice(0, 2).map((v, idx) => {
-        const base = v.image_url || "/sheldon-profile.png";
-        const src =
-          v.image_url && v.updated_at
-            ? `${base}${base.includes("?") ? "&" : "?"}v=${new Date(
-                v.updated_at
-              ).getTime()}`
-            : base;
+    <div className="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-sm">
+      <div className="mb-3 flex items-center gap-2">
+        <Youtube className="h-5 w-5 text-red-500" />
+        <h3 className="text-sm font-semibold text-neutral-800">
+          Top Performing YouTube Content
+        </h3>
+      </div>
 
-        return (
-          <article
-            key={`${v.platform}-${idx}`}
-            className={clsx(
-              "overflow-hidden rounded-xl ring-1 ring-neutral-200 bg-white"
-            )}
-          >
-            <div className="aspect-[16/9] w-full overflow-hidden bg-neutral-100">
-              <img
-                src={src}
-                alt={v.caption || "YouTube video"}
-                className="h-full w-full object-cover"
-                loading="lazy"
-              />
-            </div>
+      {loading && <p className="text-sm text-neutral-500">Loading…</p>}
+      {error && (
+        <p className="text-sm text-red-600">Couldn’t load videos: {error}</p>
+      )}
 
-            <div className="p-4">
-              <h4 className="line-clamp-1 text-[15px] font-medium text-neutral-900">
-                {v.caption || "Untitled video"}
-              </h4>
+      {!loading && !error && videos.length === 0 && (
+        <p className="text-sm text-neutral-500">No videos yet.</p>
+      )}
 
-              <div className="mt-2 flex items-center gap-4 text-[13px] text-neutral-600">
-                <span className="inline-flex items-center gap-1">
-                  <Eye className="h-4 w-4" />
-                  {formatCount(v.views)}
-                </span>
-                <span className="inline-flex items-center gap-1">
-                  <Heart className="h-4 w-4" />
-                  {formatCount(v.likes)}
-                </span>
-                <span className="inline-flex items-center gap-1">
-                  <MessageSquare className="h-4 w-4" />
-                  {formatCount(v.comments)}
-                </span>
+      <div className="mt-2 space-y-6">
+        {videos.map((v) => {
+          const base = v.image_url || "/sheldon-profile.png";
+          const src =
+            v.image_url && v.updated_at
+              ? `${base}${base.includes("?") ? "&" : "?"}v=${new Date(
+                  v.updated_at
+                ).getTime()}`
+              : base;
+
+          return (
+            <a
+              key={v.rank}
+              href={v.url || "#"}
+              target="_blank"
+              rel="noreferrer"
+              className="block group"
+            >
+              <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl ring-1 ring-neutral-200">
+                <img
+                  src={src}
+                  alt={v.title || "YouTube video"}
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                />
+                <div className="absolute inset-0 grid place-items-center bg-black/20">
+                  <PlayCircle className="h-14 w-14 text-white/95 drop-shadow" />
+                </div>
               </div>
-            </div>
-          </article>
-        );
-      })}
+
+              <div className="mt-2">
+                <p className="line-clamp-1 text-sm font-medium text-neutral-900">
+                  {v.title || "Untitled video"}
+                </p>
+                <div className="mt-1 flex items-center gap-4 text-[13px] text-neutral-600">
+                  <span className="inline-flex items-center gap-1">
+                    <Eye className="h-4 w-4" /> {fmt(v.views)} views
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <Heart className="h-4 w-4" /> {fmt(v.likes)} likes
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <MessageCircle className="h-4 w-4" /> {fmt(v.comments)}{" "}
+                    comments
+                  </span>
+                </div>
+              </div>
+            </a>
+          );
+        })}
+      </div>
     </div>
   );
-}
-
-function formatCount(n?: number | null) {
-  if (!n) return 0;
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return n;
 }
