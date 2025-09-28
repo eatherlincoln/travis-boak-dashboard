@@ -4,22 +4,21 @@ import { useRefreshSignal } from "@/hooks/useAutoRefresh";
 import { BarChart2, Instagram, Youtube, Music2 } from "lucide-react";
 
 /**
- * Table: platform_stats
- * Columns (expected):
- * - platform: text (PK/unique)
- * - followers: bigint / numeric / int
- * - monthly_views: bigint / numeric / int
- * - engagement: numeric (e.g., 2.01 for 2.01%)
- *
- * We read the latest row per platform (or 1 row if unique),
- * show pretty inputs, and upsert all at once with onConflict: "platform".
+ * platform_stats (stable)
+ * - user_id uuid not null
+ * - platform text not null check in ('instagram','youtube','tiktok')
+ * - followers bigint/null
+ * - monthly_views bigint/null
+ * - engagement numeric/null  -- store percent, e.g. 2.01
+ * UNIQUE (user_id, platform)
+ * RLS: authenticated can upsert their own rows; public can read.
  */
 
 type StatRow = {
   platform: "instagram" | "youtube" | "tiktok";
   followers: number | null;
   monthly_views: number | null;
-  engagement: number | null; // store as percent (2.01 means 2.01%)
+  engagement: number | null; // e.g. 2.01 (%)
 };
 
 const PLATFORMS: StatRow["platform"][] = ["instagram", "youtube", "tiktok"];
@@ -46,7 +45,7 @@ const toFloat = (v: string) => {
 export default function StatsForm() {
   const { tick } = useRefreshSignal();
 
-  // state per platform
+  const [userId, setUserId] = useState<string | null>(null);
   const [rows, setRows] = useState<Record<StatRow["platform"], StatRow>>({
     instagram: emptyRow("instagram"),
     youtube: emptyRow("youtube"),
@@ -57,21 +56,45 @@ export default function StatsForm() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
-  // load once
+  // 1) Get current user id
   useEffect(() => {
     let alive = true;
     (async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (!alive) return;
+      if (error) {
+        setMsg(error.message);
+        setLoading(false);
+        return;
+      }
+      setUserId(data.user?.id ?? null);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  // 2) Load rows for this user
+  useEffect(() => {
+    if (!userId) return; // wait for auth
+    let alive = true;
+    (async () => {
       setLoading(true);
-      // pull all three in one request
       const { data, error } = await supabase
         .from("platform_stats")
         .select("*")
+        .eq("user_id", userId)
         .in("platform", PLATFORMS);
 
       if (!alive) return;
+      if (error) {
+        setMsg(error.message);
+        setLoading(false);
+        return;
+      }
 
-      if (!error && data) {
-        const next = { ...rows };
+      const next = { ...rows };
+      if (data && data.length) {
         for (const p of PLATFORMS) {
           const hit = data.find((d: any) => d.platform === p);
           if (hit) {
@@ -83,15 +106,16 @@ export default function StatsForm() {
             };
           }
         }
-        setRows(next);
       }
+      setRows(next);
       setLoading(false);
     })();
+
     return () => {
       alive = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [userId]);
 
   const setField = (
     platform: StatRow["platform"],
@@ -109,18 +133,35 @@ export default function StatsForm() {
   };
 
   const saveAll = async () => {
+    if (!userId) {
+      setMsg("You must be signed in to save metrics.");
+      return;
+    }
     setSaving(true);
     setMsg(null);
     try {
-      const payload = PLATFORMS.map((p) => rows[p]);
+      // Build payload with user_id and sanitize values (defensive)
+      const payload = PLATFORMS.map((p) => ({
+        user_id: userId,
+        platform: rows[p].platform,
+        followers:
+          typeof rows[p].followers === "number" ? rows[p].followers : null,
+        monthly_views:
+          typeof rows[p].monthly_views === "number"
+            ? rows[p].monthly_views
+            : null,
+        engagement:
+          typeof rows[p].engagement === "number" ? rows[p].engagement : null,
+      }));
+
       const { error } = await supabase
         .from("platform_stats")
-        .upsert(payload, { onConflict: "platform" });
+        .upsert(payload, { onConflict: "user_id,platform" });
 
       if (error) throw error;
 
       setMsg("Metrics saved ✅");
-      tick(); // so public KPI hooks refresh
+      tick(); // refresh public KPI hooks
     } catch (e: any) {
       setMsg(e?.message || "Failed to save metrics.");
     } finally {
