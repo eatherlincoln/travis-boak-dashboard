@@ -1,150 +1,86 @@
 import React from "react";
-import { usePlatformAudience } from "@/hooks";
+import { usePlatformAudience } from "@/hooks/usePlatformAudience";
 
-type KP = { country: string; percentage: number };
-type AG = { range: string; percentage: number };
-type Gender = { men?: number; women?: number } | null;
-
-function toArray<T>(v: T[] | T | null | undefined): T[] {
-  if (Array.isArray(v)) return v;
-  if (v == null) return [];
-  return [v];
-}
-function pct(n: number | undefined | null) {
-  if (n == null || Number.isNaN(n)) return "0%";
-  return `${n}%`;
-}
-
-function Stat({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="flex items-center justify-between text-sm">
-      <span className="text-neutral-700">{label}</span>
-      <span className="text-neutral-900">{value}</span>
-    </div>
-  );
-}
-
-function Card({
-  title,
+export default function AudienceDemographics({
   platform,
 }: {
-  title: string;
   platform: "instagram" | "youtube" | "tiktok";
 }) {
-  const { row, loading, error } = usePlatformAudience(platform);
-
-  const gender: Gender = row?.gender ?? null;
-  const men = gender?.men ?? 0;
-  const women = gender?.women ?? 0;
-  const ages = toArray<AG>(row?.age_groups).slice(0, 4);
-  const countries = toArray<KP>(row?.countries).slice(0, 3);
-  const cities = toArray<string>(row?.cities).slice(0, 4);
-
-  const dot =
-    platform === "instagram"
-      ? "bg-pink-500/80"
-      : platform === "youtube"
-      ? "bg-red-500/80"
-      : "bg-violet-500/80";
+  const { data, loading, error } = usePlatformAudience(platform);
 
   return (
     <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
-      <div className="mb-3 flex items-center gap-2">
-        <div className={`h-4 w-4 rounded-full ${dot}`} />
-        <h3 className="text-sm font-semibold text-neutral-800">{title}</h3>
+      <div className="mb-3 text-sm font-semibold text-neutral-800">
+        {platform === "instagram" && "Instagram Audience"}
+        {platform === "youtube" && "YouTube Audience"}
+        {platform === "tiktok" && "TikTok Audience"}
       </div>
 
-      {loading ? (
-        <div className="text-sm text-neutral-500">Loading…</div>
-      ) : error ? (
-        <div className="text-sm text-red-600">{error}</div>
-      ) : !row ? (
+      {loading && <div className="text-sm text-neutral-500">Loading…</div>}
+
+      {!loading && (error || !data) && (
         <div className="text-sm text-neutral-500">No data.</div>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="rounded-lg border border-neutral-200 p-3">
-            <div className="text-xs font-medium text-neutral-700 mb-2">
-              Gender
-            </div>
-            <div className="space-y-1">
-              <Stat label="Men" value={pct(men)} />
-              <Stat label="Women" value={pct(women)} />
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-neutral-200 p-3">
-            <div className="text-xs font-medium text-neutral-700 mb-2">
-              Age Groups
-            </div>
-            {ages.length ? (
-              <div className="space-y-1">
-                {ages.map((a, i) => (
-                  <Stat
-                    key={`${a.range}-${i}`}
-                    label={a.range}
-                    value={pct(a.percentage)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="text-sm text-neutral-500">No data.</div>
-            )}
-          </div>
-
-          <div className="rounded-lg border border-neutral-200 p-3">
-            <div className="text-xs font-medium text-neutral-700 mb-2">
-              Top Countries
-            </div>
-            {countries.length ? (
-              <div className="space-y-1 mb-3">
-                {countries.map((c, i) => (
-                  <Stat
-                    key={`${c.country}-${i}`}
-                    label={c.country}
-                    value={pct(c.percentage)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="text-sm text-neutral-500 mb-3">No data.</div>
-            )}
-
-            <div className="text-xs font-medium text-neutral-700 mb-2">
-              Top Cities
-            </div>
-            {cities.length ? (
-              <div className="flex flex-wrap gap-2">
-                {cities.map((city, i) => (
-                  <span
-                    key={`${city}-${i}`}
-                    className="px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-800 text-xs"
-                  >
-                    {String(city)}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <div className="text-sm text-neutral-500">No data.</div>
-            )}
-          </div>
-        </div>
       )}
 
-      {row?.updated_at && (
-        <div className="mt-3 text-xs text-neutral-500">
-          Updated {new Date(row.updated_at).toLocaleString()}
+      {!loading && data && (
+        <div className="space-y-3 text-sm">
+          {/* Gender */}
+          {data.gender && (
+            <div>
+              <div className="font-medium text-neutral-700">Gender</div>
+              <div className="mt-1 text-neutral-600">
+                Men {data.gender.men ?? 0}% • Women {data.gender.women ?? 0}%
+              </div>
+            </div>
+          )}
+
+          {/* Age groups */}
+          {data.age_groups && data.age_groups.length > 0 && (
+            <div>
+              <div className="font-medium text-neutral-700">Age Groups</div>
+              <div className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1 text-neutral-600">
+                {data.age_groups.map((a, i) => (
+                  <div key={i}>
+                    {a.range} — {a.percentage}%
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Countries */}
+          {data.countries && data.countries.length > 0 && (
+            <div>
+              <div className="font-medium text-neutral-700">Top Countries</div>
+              <div className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1 text-neutral-600">
+                {data.countries.slice(0, 3).map((c, i) => (
+                  <div key={i}>
+                    {c.country} — {c.percentage}%
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Cities */}
+          {data.cities && data.cities.length > 0 && (
+            <div>
+              <div className="font-medium text-neutral-700">Top Cities</div>
+              <div className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1 text-neutral-600">
+                {data.cities.slice(0, 4).map((city, i) => (
+                  <div key={i}>{city}</div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {data.updated_at && (
+            <div className="pt-2 text-xs text-neutral-400">
+              Updated {new Date(data.updated_at).toLocaleString()}
+            </div>
+          )}
         </div>
       )}
-    </div>
-  );
-}
-
-export default function AudienceDemographics() {
-  return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-      <Card title="Instagram Audience" platform="instagram" />
-      <Card title="YouTube Audience" platform="youtube" />
-      <Card title="TikTok Audience" platform="tiktok" />
     </div>
   );
 }

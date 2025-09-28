@@ -1,62 +1,60 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@supabaseClient";
 
-export type AudienceRow = {
+type AudienceRow = {
   platform: "instagram" | "youtube" | "tiktok";
   gender: { men?: number; women?: number } | null;
-  age_groups: { range: string; percentage: number }[] | null;
-  countries: { country: string; percentage: number }[] | null;
+  age_groups: Array<{ range: string; percentage: number }> | null;
+  countries: Array<{ country: string; percentage: number }> | null;
   cities: string[] | null;
   updated_at: string | null;
 };
 
+type AudienceState = {
+  data: AudienceRow | null;
+  loading: boolean;
+  error: string | null;
+};
+
+const AUDIENCE_TABLE = "platform_audience";
+
 export function usePlatformAudience(
-  platform: "instagram" | "youtube" | "tiktok"
-) {
-  const [row, setRow] = useState<AudienceRow | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  platform: AudienceRow["platform"]
+): AudienceState {
+  const [state, setState] = useState<AudienceState>({
+    data: null,
+    loading: true,
+    error: null,
+  });
 
   useEffect(() => {
-    let alive = true;
-    (async () => {
-      setLoading(true);
-      setError(null);
+    let cancelled = false;
 
-      // Read from the real table that exists:
+    (async () => {
+      setState((s) => ({ ...s, loading: true, error: null }));
+
       const { data, error } = await supabase
-        .from("platform_audience")
-        .select("*")
+        .from<AudienceRow>(AUDIENCE_TABLE)
+        .select("platform, gender, age_groups, countries, cities, updated_at")
         .eq("platform", platform)
         .order("updated_at", { ascending: false })
-        .limit(1);
+        .limit(1)
+        .maybeSingle(); // returns null if no row, doesn't throw
 
-      if (!alive) return;
+      if (cancelled) return;
 
       if (error) {
-        setError(error.message);
-        setRow(null);
+        // Don’t throw; surface non-fatal error for UI
+        setState({ data: null, loading: false, error: error.message });
       } else {
-        const r = data?.[0] ?? null;
-        setRow(
-          r
-            ? {
-                platform: r.platform,
-                gender: r.gender ?? null,
-                age_groups: r.age_groups ?? null,
-                countries: r.countries ?? null,
-                cities: r.cities ?? null,
-                updated_at: r.updated_at ?? null,
-              }
-            : null
-        );
+        setState({ data: data ?? null, loading: false, error: null });
       }
-      setLoading(false);
     })();
+
     return () => {
-      alive = false;
+      cancelled = true;
     };
   }, [platform]);
 
-  return { row, loading, error };
+  return state;
 }

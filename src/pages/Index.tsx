@@ -1,4 +1,3 @@
-// src/pages/Index.tsx
 import React from "react";
 
 /** HERO */
@@ -22,9 +21,6 @@ import TopYouTubeContent from "@/components/TopYouTubeContent";
 
 /** PARTNERSHIPS */
 import PartnershipOpportunities from "@/components/PartnershipOpportunities";
-
-/** SAFETY: wrap risky sections so a fetch error can’t crash the page */
-import { ErrorBoundary } from "@/components/util/ErrorBoundary";
 
 export default function Index() {
   return (
@@ -53,38 +49,12 @@ export default function Index() {
           <PlatformHighlights />
         </section>
 
-        {/* Audience Demographics — one block per platform */}
+        {/* Audience Demographics — ONE ROW, THREE CARDS */}
         <section className="mt-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <ErrorBoundary
-              fallback={
-                <div className="rounded-xl border border-neutral-200 bg-white p-5 text-sm text-neutral-500 shadow-sm">
-                  Couldn’t load Instagram audience.
-                </div>
-              }
-            >
-              <AudienceDemographics platform="instagram" />
-            </ErrorBoundary>
-
-            <ErrorBoundary
-              fallback={
-                <div className="rounded-xl border border-neutral-200 bg-white p-5 text-sm text-neutral-500 shadow-sm">
-                  Couldn’t load YouTube audience.
-                </div>
-              }
-            >
-              <AudienceDemographics platform="youtube" />
-            </ErrorBoundary>
-
-            <ErrorBoundary
-              fallback={
-                <div className="rounded-xl border border-neutral-200 bg-white p-5 text-sm text-neutral-500 shadow-sm">
-                  Couldn’t load TikTok audience.
-                </div>
-              }
-            >
-              <AudienceDemographics platform="tiktok" />
-            </ErrorBoundary>
+            <AudienceDemographics platform="instagram" />
+            <AudienceDemographics platform="youtube" />
+            <AudienceDemographics platform="tiktok" />
           </div>
         </section>
 
@@ -93,7 +63,7 @@ export default function Index() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-sm">
               <div className="mb-4 flex items-center gap-2">
-                <div className="h-4 w-4 rounded-full bg-pink-500/80" />
+                <div className="h-2.5 w-2.5 rounded-full bg-pink-500/80" />
                 <h3 className="text-sm font-semibold text-neutral-800">
                   Top Performing Posts
                 </h3>
@@ -103,7 +73,7 @@ export default function Index() {
 
             <div className="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-sm">
               <div className="mb-4 flex items-center gap-2">
-                <div className="h-4 w-4 rounded-full bg-red-500/80" />
+                <div className="h-2.5 w-2.5 rounded-full bg-red-500/80" />
                 <h3 className="text-sm font-semibold text-neutral-800">
                   Top Performing YouTube Content
                 </h3>
