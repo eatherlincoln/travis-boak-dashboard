@@ -1,6 +1,6 @@
 import React from "react";
 import { useInstagramTopPosts } from "@/hooks";
-import Fallback from "@/assets/fallback.jpg"; // replace with your fallback image path
+import Fallback from "/lovable-uploads/sheldon-profile.png";
 
 export default function InstagramTopPosts() {
   const { posts, loading, error } = useInstagramTopPosts();
