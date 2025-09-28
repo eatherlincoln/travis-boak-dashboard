@@ -1,24 +1,19 @@
 import React from "react";
+import { Instagram, Youtube } from "lucide-react";
 
 /** HERO */
 import HeroSection from "@/components/HeroSection";
-
 /** ABOUT */
 import AboutSection from "@/components/AboutSection";
-
 /** KPI row */
 import KpiRow from "@/components/KpiRow";
-
 /** PLATFORM HIGHLIGHTS */
 import PlatformHighlights from "@/components/PlatformHighlights";
-
 /** AUDIENCE (per-platform) */
 import AudienceDemographics from "@/components/AudienceDemographics";
-
 /** TOP CONTENT */
 import InstagramTopPosts from "@/components/InstagramTopPosts";
 import TopYouTubeContent from "@/components/TopYouTubeContent";
-
 /** PARTNERSHIPS */
 import PartnershipOpportunities from "@/components/PartnershipOpportunities";
 
@@ -49,7 +44,7 @@ export default function Index() {
           <PlatformHighlights />
         </section>
 
-        {/* Audience Demographics — ONE ROW, THREE CARDS */}
+        {/* Audience Demographics — one block per platform */}
         <section className="mt-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <AudienceDemographics platform="instagram" />
@@ -61,19 +56,25 @@ export default function Index() {
         {/* Top Content (IG + YT) */}
         <section className="mt-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Instagram */}
             <div className="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-sm">
               <div className="mb-4 flex items-center gap-2">
-                <div className="h-2.5 w-2.5 rounded-full bg-pink-500/80" />
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-pink-100">
+                  <Instagram className="h-4 w-4 text-pink-500" />
+                </span>
                 <h3 className="text-sm font-semibold text-neutral-800">
-                  Top Performing Posts
+                  Top Performing Instagram Posts
                 </h3>
               </div>
               <InstagramTopPosts />
             </div>
 
+            {/* YouTube */}
             <div className="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-sm">
               <div className="mb-4 flex items-center gap-2">
-                <div className="h-2.5 w-2.5 rounded-full bg-red-500/80" />
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-red-100">
+                  <Youtube className="h-4 w-4 text-red-500" />
+                </span>
                 <h3 className="text-sm font-semibold text-neutral-800">
                   Top Performing YouTube Content
                 </h3>
