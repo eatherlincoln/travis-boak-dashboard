@@ -1,3 +1,4 @@
+// src/pages/Index.tsx
 import React from "react";
 
 /** HERO */
@@ -21,6 +22,9 @@ import TopYouTubeContent from "@/components/TopYouTubeContent";
 
 /** PARTNERSHIPS */
 import PartnershipOpportunities from "@/components/PartnershipOpportunities";
+
+/** SAFETY: wrap risky sections so a fetch error can’t crash the page */
+import { ErrorBoundary } from "@/components/util/ErrorBoundary";
 
 export default function Index() {
   return (
@@ -52,9 +56,30 @@ export default function Index() {
         {/* Audience Demographics — one block per platform */}
         <section className="mt-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <AudienceDemographics platform="instagram" />
-            <AudienceDemographics platform="youtube" />
-            <AudienceDemographics platform="tiktok" />
+            <ErrorBoundary fallback={
+              <div className="rounded-xl border border-neutral-200 bg-white p-5 text-sm text-neutral-500 shadow-sm">
+                Couldn’t load Instagram audience.
+              </div>
+            }>
+              <AudienceDemographics platform="instagram" />
+            </ErrorBoundary>
+
+            <ErrorBoundary fallback={
+              <div className="rounded-xl border border-neutral-200 bg-white p-5 text-sm text-neutral-500 shadow-sm">
+                Couldn’t load YouTube audience.
+              </div>
+            }>
+              <AudienceDemographics platform="youtube" />
+            </ErrorBoundary>
+
+            <ErrorBoundary fallback{
+              =
+              <div className="rounded-xl border border-neutral-200 bg-white p-5 text-sm text-neutral-500 shadow-sm">
+                Couldn’t load TikTok audience.
+              </div>
+            }>
+              <AudienceDemographics platform="tiktok" />
+            </ErrorBoundary>
           </div>
         </section>
 

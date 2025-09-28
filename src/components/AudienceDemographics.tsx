@@ -10,32 +10,25 @@ function toArray<T>(v: T[] | T | null | undefined): T[] {
   if (v == null) return [];
   return [v];
 }
-
-function pct(n: number | undefined | null): string {
+function pct(n: number | undefined | null) {
   if (n == null || Number.isNaN(n)) return "0%";
   return `${n}%`;
 }
 
-function StatBlock({
-  title,
-  value,
-}: {
-  title: string;
-  value: React.ReactNode;
-}) {
+function Stat({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-1">
-      <div className="text-xs text-neutral-500">{title}</div>
-      <div className="text-sm text-neutral-900">{value}</div>
+    <div className="flex items-center justify-between text-sm">
+      <span className="text-neutral-700">{label}</span>
+      <span className="text-neutral-900">{value}</span>
     </div>
   );
 }
 
-function AudienceCard({
-  label,
+function Card({
+  title,
   platform,
 }: {
-  label: string;
+  title: string;
   platform: "instagram" | "youtube" | "tiktok";
 }) {
   const { row, loading, error } = usePlatformAudience(platform);
@@ -43,26 +36,22 @@ function AudienceCard({
   const gender: Gender = row?.gender ?? null;
   const men = gender?.men ?? 0;
   const women = gender?.women ?? 0;
-
   const ages = toArray<AG>(row?.age_groups).slice(0, 4);
   const countries = toArray<KP>(row?.countries).slice(0, 3);
   const cities = toArray<string>(row?.cities).slice(0, 4);
 
+  const dot =
+    platform === "instagram"
+      ? "bg-pink-500/80"
+      : platform === "youtube"
+      ? "bg-red-500/80"
+      : "bg-violet-500/80";
+
   return (
     <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
       <div className="mb-3 flex items-center gap-2">
-        <div
-          className={`h-4 w-4 rounded-full ${
-            platform === "instagram"
-              ? "bg-pink-500/80"
-              : platform === "youtube"
-              ? "bg-red-500/80"
-              : "bg-violet-500/80"
-          }`}
-        />
-        <h3 className="text-sm font-semibold text-neutral-800">
-          {label} Audience
-        </h3>
+        <div className={`h-4 w-4 rounded-full ${dot}`} />
+        <h3 className="text-sm font-semibold text-neutral-800">{title}</h3>
       </div>
 
       {loading ? (
@@ -73,53 +62,49 @@ function AudienceCard({
         <div className="text-sm text-neutral-500">No data.</div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          {/* Gender */}
           <div className="rounded-lg border border-neutral-200 p-3">
             <div className="text-xs font-medium text-neutral-700 mb-2">
               Gender
             </div>
-            <div className="flex gap-6">
-              <StatBlock title="Men" value={pct(men)} />
-              <StatBlock title="Women" value={pct(women)} />
+            <div className="space-y-1">
+              <Stat label="Men" value={pct(men)} />
+              <Stat label="Women" value={pct(women)} />
             </div>
           </div>
 
-          {/* Age Groups */}
           <div className="rounded-lg border border-neutral-200 p-3">
             <div className="text-xs font-medium text-neutral-700 mb-2">
               Age Groups
             </div>
             {ages.length ? (
-              <ul className="text-sm text-neutral-900 space-y-1">
+              <div className="space-y-1">
                 {ages.map((a, i) => (
-                  <li key={`${a.range}-${i}`} className="flex justify-between">
-                    <span className="text-neutral-700">{a.range}</span>
-                    <span>{pct(a.percentage)}</span>
-                  </li>
+                  <Stat
+                    key={`${a.range}-${i}`}
+                    label={a.range}
+                    value={pct(a.percentage)}
+                  />
                 ))}
-              </ul>
+              </div>
             ) : (
               <div className="text-sm text-neutral-500">No data.</div>
             )}
           </div>
 
-          {/* Top Countries & Cities */}
           <div className="rounded-lg border border-neutral-200 p-3">
             <div className="text-xs font-medium text-neutral-700 mb-2">
               Top Countries
             </div>
             {countries.length ? (
-              <ul className="text-sm text-neutral-900 space-y-1 mb-3">
+              <div className="space-y-1 mb-3">
                 {countries.map((c, i) => (
-                  <li
+                  <Stat
                     key={`${c.country}-${i}`}
-                    className="flex justify-between"
-                  >
-                    <span className="text-neutral-700">{c.country}</span>
-                    <span>{pct(c.percentage)}</span>
-                  </li>
+                    label={c.country}
+                    value={pct(c.percentage)}
+                  />
                 ))}
-              </ul>
+              </div>
             ) : (
               <div className="text-sm text-neutral-500 mb-3">No data.</div>
             )}
@@ -157,9 +142,9 @@ function AudienceCard({
 export default function AudienceDemographics() {
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-      <AudienceCard label="Instagram" platform="instagram" />
-      <AudienceCard label="YouTube" platform="youtube" />
-      <AudienceCard label="TikTok" platform="tiktok" />
+      <Card title="Instagram Audience" platform="instagram" />
+      <Card title="YouTube Audience" platform="youtube" />
+      <Card title="TikTok Audience" platform="tiktok" />
     </div>
   );
 }
