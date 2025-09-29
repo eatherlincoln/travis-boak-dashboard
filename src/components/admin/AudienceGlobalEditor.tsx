@@ -1,195 +1,198 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "@supabaseClient";
 import { useRefreshSignal } from "@/hooks/useAutoRefresh";
-import { Globe, Save, Instagram, Youtube, Music2 } from "lucide-react";
+import { Users, Percent, Globe, MapPin, Save } from "lucide-react";
 
 type Platform = "instagram" | "youtube" | "tiktok";
 
-type AudienceRow = {
-  platform: Platform;
-  gender: { men?: number; women?: number } | null;
-  age_bands: Array<{ range: string; percentage: number }> | null;
-  countries: Array<{ country: string; percentage: number }> | null;
-  cities: string[] | null;
-};
+type AgeBandKey = "25_34" | "18_24" | "35_44" | "45_54";
+
+type CountryRow = { name: string; pct: number | "" };
+type Gender = { men: number | ""; women: number | "" };
 
 const PLATFORMS: Platform[] = ["instagram", "youtube", "tiktok"];
 
-// sensible defaults so the card doesn't look empty
-const DEFAULT_ROW = (platform: Platform): AudienceRow => ({
-  platform,
-  gender: { men: 60, women: 40 },
-  age_bands: [
-    { range: "13-17", percentage: 5 },
-    { range: "18-24", percentage: 25 },
-    { range: "25-34", percentage: 35 },
-    { range: "35-44", percentage: 20 },
-    { range: "45+", percentage: 15 },
-  ],
-  countries: [
-    { country: "Australia", percentage: 50 },
-    { country: "USA", percentage: 20 },
-    { country: "Indonesia", percentage: 10 },
-    { country: "Brazil", percentage: 10 },
-    { country: "France", percentage: 10 },
-  ],
-  cities: ["Gold Coast", "Sydney", "Los Angeles", "Bali", "Rio", "Paris"],
-});
+const emptyGender: Gender = { men: "", women: "" };
+const emptyAges: Record<AgeBandKey, number | ""> = {
+  "25_34": "",
+  "18_24": "",
+  "35_44": "",
+  "45_54": "",
+};
+const emptyCountries: CountryRow[] = [
+  { name: "", pct: "" },
+  { name: "", pct: "" },
+  { name: "", pct: "" },
+  { name: "", pct: "" },
+];
+const emptyCities = ["", "", "", ""];
 
-function clamp0to100(n: any) {
-  const v = Number(n);
-  if (!Number.isFinite(v)) return 0;
-  return Math.max(0, Math.min(100, Math.round(v)));
-}
+/** Small helpers */
+const n = (v: number | string | ""): number => {
+  if (v === "" || v === null || v === undefined) return 0;
+  const num = Number(v);
+  return Number.isFinite(num) ? num : 0;
+};
+const pct = (v: number | string | ""): number =>
+  Math.max(0, Math.min(100, n(v)));
 
 export default function AudienceGlobalEditor() {
   const { tick } = useRefreshSignal();
 
-  const [rows, setRows] = useState<Record<Platform, AudienceRow>>({
-    instagram: DEFAULT_ROW("instagram"),
-    youtube: DEFAULT_ROW("youtube"),
-    tiktok: DEFAULT_ROW("tiktok"),
-  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
-  // Load current audience for all platforms
+  // Form state
+  const [gender, setGender] = useState<Gender>(emptyGender);
+  const [ages, setAges] = useState<Record<AgeBandKey, number | "">>(emptyAges);
+  const [countries, setCountries] = useState<CountryRow[]>(emptyCountries);
+  const [cities, setCities] = useState<string[]>(emptyCities);
+
+  // Load once (instagram row is our “global” source)
   useEffect(() => {
     let alive = true;
     (async () => {
       setLoading(true);
-      const { data, error } = await supabase
-        .from("platform_audience")
-        .select("*")
-        .in("platform", PLATFORMS);
+      try {
+        const { data } = await supabase
+          .from("platform_audience")
+          .select("*")
+          .eq("platform", "instagram")
+          .limit(1)
+          .maybeSingle();
 
-      if (!alive) return;
+        if (!alive) return;
 
-      if (!error && data) {
-        const next = { ...rows };
-        for (const p of PLATFORMS) {
-          const hit = (data as any[]).find((r) => r.platform === p);
-          if (hit) {
-            next[p] = {
-              platform: p,
-              gender: hit.gender ?? DEFAULT_ROW(p).gender,
-              age_bands: hit.age_bands ?? DEFAULT_ROW(p).age_bands,
-              countries: hit.countries ?? DEFAULT_ROW(p).countries,
-              cities: hit.cities ?? DEFAULT_ROW(p).cities,
+        if (data) {
+          // gender
+          const g = (data.gender || {}) as any;
+          setGender({
+            men: g.men ?? "",
+            women: g.women ?? "",
+          });
+
+          // ages: support either age_bands or legacy age_groups
+          const src = (data.age_bands as any) ||
+            (data.age_groups as any) || {
+              "25_34": "",
+              "18_24": "",
+              "35_44": "",
+              "45_54": "",
             };
-          }
+
+          setAges({
+            "25_34": src["25_34"] ?? "",
+            "18_24": src["18_24"] ?? "",
+            "35_44": src["35_44"] ?? "",
+            "45_54": src["45_54"] ?? "",
+          });
+
+          // countries
+          const cList: CountryRow[] = Array.isArray(data.countries)
+            ? data.countries.map((c: any) => ({
+                name: c.country ?? c.name ?? "",
+                pct: c.percentage ?? c.pct ?? "",
+              }))
+            : emptyCountries;
+          setCountries([
+            cList[0] ?? { name: "", pct: "" },
+            cList[1] ?? { name: "", pct: "" },
+            cList[2] ?? { name: "", pct: "" },
+            cList[3] ?? { name: "", pct: "" },
+          ]);
+
+          // cities
+          const cityList: string[] = Array.isArray(data.cities)
+            ? data.cities
+            : emptyCities;
+          setCities([
+            cityList[0] ?? "",
+            cityList[1] ?? "",
+            cityList[2] ?? "",
+            cityList[3] ?? "",
+          ]);
         }
-        setRows(next);
+      } catch (err) {
+        // swallow – blank form is fine for first run
+      } finally {
+        if (alive) setLoading(false);
       }
-      setLoading(false);
     })();
     return () => {
       alive = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const setGender = (platform: Platform, men: number) => {
-    setRows((prev) => {
-      const menClamped = clamp0to100(men);
-      const women = clamp0to100(100 - menClamped);
-      return {
-        ...prev,
-        [platform]: {
-          ...prev[platform],
-          gender: { men: menClamped, women },
-        },
-      };
-    });
-  };
+  // Totals for gentle validation
+  const genderTotal = useMemo(
+    () => pct(gender.men) + pct(gender.women),
+    [gender]
+  );
 
-  const setAge = (
-    platform: Platform,
-    idx: number,
-    field: "range" | "percentage",
-    value: string
-  ) => {
-    setRows((prev) => {
-      const list = [...(prev[platform].age_bands ?? [])];
-      if (!list[idx]) list[idx] = { range: "", percentage: 0 };
-      const next =
-        field === "range"
-          ? { ...list[idx], range: value }
-          : { ...list[idx], percentage: clamp0to100(value) };
-      list[idx] = next;
-      return { ...prev, [platform]: { ...prev[platform], age_bands: list } };
-    });
-  };
+  const ageTotal = useMemo(() => {
+    return (
+      pct(ages["25_34"]) +
+      pct(ages["18_24"]) +
+      pct(ages["35_44"]) +
+      pct(ages["45_54"])
+    );
+  }, [ages]);
 
-  const setCountry = (
-    platform: Platform,
-    idx: number,
-    field: "country" | "percentage",
-    value: string
-  ) => {
-    setRows((prev) => {
-      const list = [...(prev[platform].countries ?? [])];
-      if (!list[idx]) list[idx] = { country: "", percentage: 0 };
-      const next =
-        field === "country"
-          ? { ...list[idx], country: value }
-          : { ...list[idx], percentage: clamp0to100(value) };
-      list[idx] = next;
-      return { ...prev, [platform]: { ...prev[platform], countries: list } };
-    });
-  };
+  const countriesPretty = useMemo(
+    () =>
+      countries
+        .filter((c) => c.name)
+        .map((c) => ({ country: c.name, percentage: pct(c.pct) })),
+    [countries]
+  );
 
-  const setCities = (platform: Platform, value: string) => {
-    const arr = value
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean)
-      .slice(0, 8);
-    setRows((prev) => ({
-      ...prev,
-      [platform]: { ...prev[platform], cities: arr },
-    }));
-  };
-
-  // Build payload for upsert
-  const buildPayload = useMemo(() => {
-    return (user_id: string) =>
-      PLATFORMS.map((p) => ({
-        user_id, // ✅ required by schema
-        platform: p,
-        gender: rows[p].gender ?? null,
-        age_bands: rows[p].age_bands ?? null,
-        countries: rows[p].countries ?? null,
-        cities: rows[p].cities ?? null,
-        updated_at: new Date().toISOString(),
-      }));
-  }, [rows]);
-
-  const saveAll = async () => {
+  /** Save to all three platforms. If `age_bands` is missing in DB, retry using `age_groups`. */
+  const save = async () => {
     setSaving(true);
     setMsg(null);
     try {
-      const {
-        data: { user },
-        error: meErr,
-      } = await supabase.auth.getUser();
-      if (meErr) throw meErr;
-      if (!user?.id) throw new Error("No authenticated user.");
+      const base = {
+        gender: { men: pct(gender.men), women: pct(gender.women) },
+        age_bands: {
+          "25_34": pct(ages["25_34"]),
+          "18_24": pct(ages["18_24"]),
+          "35_44": pct(ages["35_44"]),
+          "45_54": pct(ages["45_54"]),
+        },
+        // include legacy for forward/backward compat
+        age_groups: {
+          "25_34": pct(ages["25_34"]),
+          "18_24": pct(ages["18_24"]),
+          "35_44": pct(ages["35_44"]),
+          "45_54": pct(ages["45_54"]),
+        },
+        countries: countriesPretty,
+        cities: cities.filter(Boolean),
+        updated_at: new Date().toISOString(),
+      };
 
-      const payload = buildPayload(user.id);
+      const rows = PLATFORMS.map((p) => ({ platform: p, ...base }));
 
-      const { error } = await supabase
+      let { error } = await supabase
         .from("platform_audience")
-        .upsert(payload, { onConflict: "user_id,platform" });
+        .upsert(rows, { onConflict: "platform" });
 
-      if (error) throw error;
+      // If the column `age_bands` doesn't exist yet, retry using only age_groups
+      if (error && /age_bands/i.test(error.message)) {
+        const fallback = rows.map(({ age_bands, ...rest }) => rest);
+        const retry = await supabase
+          .from("platform_audience")
+          .upsert(fallback, { onConflict: "platform" });
+        if (retry.error) throw retry.error;
+      } else if (error) {
+        throw error;
+      }
 
-      setMsg("Audience demographics saved ✅");
-      // tell public hooks to refetch
-      tick();
+      setMsg("Demographics saved ✅");
+      tick(); // notify frontend hooks to refresh
     } catch (e: any) {
-      setMsg(e?.message || "Failed to save audience demographics.");
+      setMsg(e?.message || "Failed to save demographics.");
     } finally {
       setSaving(false);
     }
@@ -200,228 +203,203 @@ export default function AudienceGlobalEditor() {
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-neutral-50">
-            <Globe size={16} className="text-neutral-700" />
+            <Users size={16} className="text-neutral-700" />
           </span>
           <h2 className="text-sm font-semibold text-neutral-900">
-            Audience Demographics (All Platforms)
+            Audience Demographics (Global)
           </h2>
         </div>
 
         <button
-          onClick={saveAll}
+          onClick={save}
           disabled={saving || loading}
           className="inline-flex items-center gap-2 rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-300"
         >
           <Save size={14} />
-          {saving ? "Saving…" : "Save Changes"}
+          {saving ? "Saving…" : "Save Demographics"}
         </button>
       </div>
 
-      {loading ? (
-        <p className="text-sm text-neutral-500">Loading…</p>
-      ) : (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <PlatformCard
-            icon={<Instagram size={16} className="text-pink-600" />}
-            title="Instagram"
-          >
-            <PlatformEditor
-              value={rows.instagram}
-              onGender={(men) => setGender("instagram", men)}
-              onAge={(i, f, v) => setAge("instagram", i, f, v)}
-              onCountry={(i, f, v) => setCountry("instagram", i, f, v)}
-              onCities={(v) => setCities("instagram", v)}
+      {/* grid: gender / age groups / locations */}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        {/* Gender */}
+        <section className="rounded-xl border border-neutral-200 p-4">
+          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-neutral-800">
+            <Percent size={14} className="text-sky-600" />
+            Gender Split (%)
+          </h3>
+          <div className="grid grid-cols-2 gap-3">
+            <Field
+              label="Men"
+              value={gender.men}
+              suffix="%"
+              onChange={(v) => setGender((g) => ({ ...g, men: v }))}
             />
-          </PlatformCard>
+            <Field
+              label="Women"
+              value={gender.women}
+              suffix="%"
+              onChange={(v) => setGender((g) => ({ ...g, women: v }))}
+            />
+          </div>
+          <TotalChip value={genderTotal} warn={genderTotal !== 100} />
+        </section>
 
-          <PlatformCard
-            icon={<Youtube size={16} className="text-red-600" />}
-            title="YouTube"
-          >
-            <PlatformEditor
-              value={rows.youtube}
-              onGender={(men) => setGender("youtube", men)}
-              onAge={(i, f, v) => setAge("youtube", i, f, v)}
-              onCountry={(i, f, v) => setCountry("youtube", i, f, v)}
-              onCities={(v) => setCities("youtube", v)}
+        {/* Ages */}
+        <section className="rounded-xl border border-neutral-200 p-4">
+          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-neutral-800">
+            <Percent size={14} className="text-teal-600" />
+            Age Groups (%)
+          </h3>
+          <div className="grid grid-cols-2 gap-3">
+            <Field
+              label="25–34"
+              value={ages["25_34"]}
+              suffix="%"
+              onChange={(v) => setAges((a) => ({ ...a, "25_34": v }))}
             />
-          </PlatformCard>
+            <Field
+              label="18–24"
+              value={ages["18_24"]}
+              suffix="%"
+              onChange={(v) => setAges((a) => ({ ...a, "18_24": v }))}
+            />
+            <Field
+              label="35–44"
+              value={ages["35_44"]}
+              suffix="%"
+              onChange={(v) => setAges((a) => ({ ...a, "35_44": v }))}
+            />
+            <Field
+              label="45–54"
+              value={ages["45_54"]}
+              suffix="%"
+              onChange={(v) => setAges((a) => ({ ...a, "45_54": v }))}
+            />
+          </div>
+          <TotalChip value={ageTotal} warn={ageTotal > 100} />
+        </section>
 
-          <PlatformCard
-            icon={<Music2 size={16} className="text-emerald-600" />}
-            title="TikTok"
-          >
-            <PlatformEditor
-              value={rows.tiktok}
-              onGender={(men) => setGender("tiktok", men)}
-              onAge={(i, f, v) => setAge("tiktok", i, f, v)}
-              onCountry={(i, f, v) => setCountry("tiktok", i, f, v)}
-              onCities={(v) => setCities("tiktok", v)}
-            />
-          </PlatformCard>
-        </div>
-      )}
+        {/* Locations */}
+        <section className="rounded-xl border border-neutral-200 p-4">
+          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-neutral-800">
+            <Globe size={14} className="text-indigo-600" />
+            Top Countries & Cities
+          </h3>
+
+          <div className="grid grid-cols-6 gap-3">
+            {/* Countries: 4 rows of [name | %] */}
+            {countries.map((c, i) => (
+              <React.Fragment key={i}>
+                <div className="col-span-4">
+                  <Field
+                    label={`Country ${i + 1}`}
+                    value={c.name}
+                    onChange={(v) =>
+                      setCountries((list) => {
+                        const next = [...list];
+                        next[i] = { ...next[i], name: v as string };
+                        return next;
+                      })
+                    }
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Field
+                    label="%"
+                    value={c.pct}
+                    suffix="%"
+                    onChange={(v) =>
+                      setCountries((list) => {
+                        const next = [...list];
+                        next[i] = { ...next[i], pct: v };
+                        return next;
+                      })
+                    }
+                  />
+                </div>
+              </React.Fragment>
+            ))}
+          </div>
+
+          <div className="mt-4 grid grid-cols-4 gap-3">
+            {cities.map((city, i) => (
+              <Field
+                key={i}
+                label={`City ${i + 1}`}
+                value={city}
+                icon={<MapPin size={12} className="text-neutral-500" />}
+                onChange={(v) =>
+                  setCities((arr) => {
+                    const next = [...arr];
+                    next[i] = v as string;
+                    return next;
+                  })
+                }
+              />
+            ))}
+          </div>
+        </section>
+      </div>
 
       {msg && <p className="mt-4 text-sm text-neutral-600">{msg}</p>}
     </div>
   );
 }
 
-function PlatformCard({
-  icon,
-  title,
-  children,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="rounded-xl border border-neutral-200 p-4">
-      <div className="mb-3 flex items-center gap-2">
-        <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-neutral-50">
-          {icon}
-        </span>
-        <h3 className="text-sm font-semibold text-neutral-800">{title}</h3>
-      </div>
-      {children}
-    </section>
-  );
-}
-
-function PlatformEditor({
-  value,
-  onGender,
-  onAge,
-  onCountry,
-  onCities,
-}: {
-  value: AudienceRow;
-  onGender: (men: number) => void;
-  onAge: (idx: number, field: "range" | "percentage", value: string) => void;
-  onCountry: (
-    idx: number,
-    field: "country" | "percentage",
-    value: string
-  ) => void;
-  onCities: (value: string) => void;
-}) {
-  const men = clamp0to100(value.gender?.men ?? 0);
-  const women = clamp0to100(value.gender?.women ?? 0);
-
-  return (
-    <div className="space-y-4">
-      {/* Gender */}
-      <div>
-        <div className="mb-1 text-xs font-medium text-neutral-600">Gender</div>
-        <div className="grid grid-cols-2 gap-3">
-          <Field
-            label="Men %"
-            value={men.toString()}
-            inputMode="numeric"
-            onChange={(v) => onGender(Number(v))}
-          />
-          <Field
-            label="Women %"
-            value={women.toString()}
-            inputMode="numeric"
-            onChange={() => {}}
-            disabled
-          />
-        </div>
-      </div>
-
-      {/* Age bands (5 rows) */}
-      <div>
-        <div className="mb-1 text-xs font-medium text-neutral-600">Age</div>
-        <div className="space-y-2">
-          {(value.age_bands ?? []).slice(0, 5).map((a, i) => (
-            <div className="grid grid-cols-5 gap-2" key={i}>
-              <input
-                className="col-span-3 h-9 rounded-md border border-neutral-300 px-3 text-sm outline-none focus:border-neutral-500"
-                value={a.range}
-                onChange={(e) => onAge(i, "range", e.target.value)}
-                placeholder="18-24"
-              />
-              <input
-                className="col-span-2 h-9 rounded-md border border-neutral-300 px-3 text-right text-sm outline-none focus:border-neutral-500"
-                value={String(a.percentage)}
-                onChange={(e) => onAge(i, "percentage", e.target.value)}
-                inputMode="numeric"
-                placeholder="0"
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Countries (5 rows) */}
-      <div>
-        <div className="mb-1 text-xs font-medium text-neutral-600">
-          Top Countries
-        </div>
-        <div className="space-y-2">
-          {(value.countries ?? []).slice(0, 5).map((c, i) => (
-            <div className="grid grid-cols-5 gap-2" key={i}>
-              <input
-                className="col-span-3 h-9 rounded-md border border-neutral-300 px-3 text-sm outline-none focus:border-neutral-500"
-                value={c.country}
-                onChange={(e) => onCountry(i, "country", e.target.value)}
-                placeholder="Australia"
-              />
-              <input
-                className="col-span-2 h-9 rounded-md border border-neutral-300 px-3 text-right text-sm outline-none focus:border-neutral-500"
-                value={String(c.percentage)}
-                onChange={(e) => onCountry(i, "percentage", e.target.value)}
-                inputMode="numeric"
-                placeholder="0"
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Cities */}
-      <div>
-        <div className="mb-1 text-xs font-medium text-neutral-600">
-          Top Cities
-        </div>
-        <input
-          className="h-9 w-full rounded-md border border-neutral-300 px-3 text-sm outline-none focus:border-neutral-500"
-          value={(value.cities ?? []).join(", ")}
-          onChange={(e) => onCities(e.target.value)}
-          placeholder="Gold Coast, Sydney, Los Angeles, Bali…"
-        />
-      </div>
-    </div>
-  );
-}
+/* ---------- Reusable UI bits (kept local to avoid cross-file coupling) ---------- */
 
 function Field({
   label,
   value,
   onChange,
-  inputMode,
-  disabled,
+  placeholder,
+  suffix,
+  icon,
 }: {
   label: string;
-  value: string;
+  value: string | number | "";
   onChange: (v: string) => void;
-  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
-  disabled?: boolean;
+  placeholder?: string;
+  suffix?: string;
+  icon?: React.ReactNode;
 }) {
   return (
     <label className="block">
       <span className="mb-1 block text-xs font-medium text-neutral-600">
         {label}
       </span>
-      <input
-        className="h-9 w-full rounded-md border border-neutral-300 px-3 text-sm outline-none focus:border-neutral-500"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        inputMode={inputMode}
-        disabled={disabled}
-      />
+      <div className="relative">
+        {icon && (
+          <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2">
+            {icon}
+          </span>
+        )}
+        <input
+          className={[
+            "h-9 w-full rounded-md border border-neutral-300 px-3 text-sm outline-none focus:border-neutral-500",
+            icon ? "pl-7" : "",
+            suffix ? "pr-7" : "",
+          ].join(" ")}
+          value={value as any}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+        />
+        {suffix && (
+          <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-neutral-500">
+            {suffix}
+          </span>
+        )}
+      </div>
     </label>
+  );
+}
+
+function TotalChip({ value, warn }: { value: number; warn?: boolean }) {
+  return (
+    <div className="mt-2 inline-flex items-center gap-2 rounded-md bg-neutral-50 px-2 py-1 text-xs text-neutral-700">
+      Total {Math.round(value)}%
+      {warn && <span className="text-amber-600">• check totals</span>}
+    </div>
   );
 }
