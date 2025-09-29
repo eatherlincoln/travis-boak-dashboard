@@ -1,60 +1,41 @@
+// src/hooks/usePlatformAudience.ts
 import { useEffect, useState } from "react";
 import { supabase } from "@supabaseClient";
+import { useRefreshSignal } from "./useAutoRefresh";
 
-type AudienceRow = {
-  platform: "instagram" | "youtube" | "tiktok";
-  gender: { men?: number; women?: number } | null;
-  age_groups: Array<{ range: string; percentage: number }> | null;
-  countries: Array<{ country: string; percentage: number }> | null;
+export type Platform = "instagram" | "youtube" | "tiktok";
+export type AudienceRow = {
+  platform: Platform;
+  gender: { men: number; women: number } | null;
+  ages: { range: string; percentage: number }[] | null;
+  countries: { country: string; percentage: number }[] | null;
   cities: string[] | null;
   updated_at: string | null;
 };
 
-type AudienceState = {
-  data: AudienceRow | null;
-  loading: boolean;
-  error: string | null;
-};
-
-const AUDIENCE_TABLE = "platform_audience";
-
-export function usePlatformAudience(
-  platform: AudienceRow["platform"]
-): AudienceState {
-  const [state, setState] = useState<AudienceState>({
-    data: null,
-    loading: true,
-    error: null,
-  });
+export function usePlatformAudience(platform: Platform) {
+  const { version } = useRefreshSignal();
+  const [row, setRow] = useState<AudienceRow | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let cancelled = false;
-
+    let alive = true;
     (async () => {
-      setState((s) => ({ ...s, loading: true, error: null }));
-
+      setLoading(true);
       const { data, error } = await supabase
-        .from<AudienceRow>(AUDIENCE_TABLE)
-        .select("platform, gender, age_groups, countries, cities, updated_at")
+        .from("platform_audience")
+        .select("*")
         .eq("platform", platform)
-        .order("updated_at", { ascending: false })
-        .limit(1)
-        .maybeSingle(); // returns null if no row, doesn't throw
+        .maybeSingle();
 
-      if (cancelled) return;
-
-      if (error) {
-        // Don’t throw; surface non-fatal error for UI
-        setState({ data: null, loading: false, error: error.message });
-      } else {
-        setState({ data: data ?? null, loading: false, error: null });
-      }
+      if (!alive) return;
+      setRow(error ? null : (data as AudienceRow | null));
+      setLoading(false);
     })();
-
     return () => {
-      cancelled = true;
+      alive = false;
     };
-  }, [platform]);
+  }, [platform, version]);
 
-  return state;
+  return { row, loading };
 }

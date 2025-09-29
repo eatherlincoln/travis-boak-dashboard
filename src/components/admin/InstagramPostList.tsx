@@ -22,7 +22,6 @@ type PostRow = {
 };
 
 const RANKS = [1, 2, 3, 4];
-
 const toInt = (v: any): number | null => {
   if (v === null || v === undefined || v === "") return null;
   const n = Number(String(v).replace(/[^\d]/g, ""));
@@ -33,7 +32,6 @@ export default function InstagramPostList() {
   const { tick } = useRefreshSignal();
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
-
   const [rows, setRows] = useState<Record<number, PostRow>>({
     1: { url: "", caption: "", image_url: "" },
     2: { url: "", caption: "", image_url: "" },
@@ -70,14 +68,11 @@ export default function InstagramPostList() {
       const { error } = await supabase
         .from("top_posts")
         .upsert(payload, { onConflict: "platform,rank" });
-
       if (error) throw error;
 
-      // Engagement refresh
-      await recalcEngagement(supabase, "instagram");
-
+      await recalcEngagement("instagram");
       setMsg("Instagram posts saved ✅");
-      tick();
+      tick(); // refresh public
     } catch (e: any) {
       setMsg(e?.message || "Failed to save Instagram posts.");
     } finally {
@@ -87,24 +82,7 @@ export default function InstagramPostList() {
 
   return (
     <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-neutral-50">
-            <Instagram size={16} className="text-pink-600" />
-          </span>
-          <h2 className="text-sm font-semibold text-neutral-900">
-            Instagram — Top Posts
-          </h2>
-        </div>
-        <button
-          onClick={save}
-          disabled={saving}
-          className="rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-300"
-        >
-          {saving ? "Saving…" : "Save Posts"}
-        </button>
-      </div>
-
+      <Header onSave={save} saving={saving} />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {RANKS.map((rank) => {
           const r = rows[rank];
@@ -130,7 +108,6 @@ export default function InstagramPostList() {
                   value={r.url}
                   onChange={(v) => setField(rank, "url", v)}
                 />
-
                 <Field
                   icon={<ImageIcon size={14} className="text-neutral-500" />}
                   label="Caption (optional)"
@@ -177,13 +154,46 @@ export default function InstagramPostList() {
           );
         })}
       </div>
-
       {msg && <p className="mt-4 text-sm text-neutral-600">{msg}</p>}
     </div>
   );
 }
 
-function Field({ icon, label, value, onChange, placeholder }: any) {
+function Header({ onSave, saving }: { onSave: () => void; saving: boolean }) {
+  return (
+    <div className="mb-4 flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-neutral-50">
+          <Instagram size={16} className="text-pink-600" />
+        </span>
+        <h2 className="text-sm font-semibold text-neutral-900">
+          Instagram — Top Posts
+        </h2>
+      </div>
+      <button
+        onClick={onSave}
+        disabled={saving}
+        className="rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-300"
+      >
+        {saving ? "Saving…" : "Save Posts"}
+      </button>
+    </div>
+  );
+}
+
+function Field({
+  icon,
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  icon?: React.ReactNode;
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) {
   return (
     <label className="block">
       <span className="mb-1 block text-xs font-medium text-neutral-600">
@@ -209,7 +219,17 @@ function Field({ icon, label, value, onChange, placeholder }: any) {
   );
 }
 
-function Metric({ icon, label, value, onChange }: any) {
+function Metric({
+  icon,
+  label,
+  value,
+  onChange,
+}: {
+  icon?: React.ReactNode;
+  label: string;
+  value: any;
+  onChange: (v: string) => void;
+}) {
   return (
     <label className="block">
       <span className="mb-1 block text-xs font-medium text-neutral-600">
@@ -223,7 +243,10 @@ function Metric({ icon, label, value, onChange }: any) {
         )}
         <input
           inputMode="numeric"
-          className="h-9 w-full rounded-md border border-neutral-300 px-3 text-right text-sm outline-none focus:border-neutral-500"
+          className={[
+            "h-9 w-full rounded-md border border-neutral-300 px-3 text-right text-sm outline-none focus:border-neutral-500",
+            icon ? "pl-8" : "",
+          ].join(" ")}
           value={value as any}
           onChange={(e) => onChange(e.target.value)}
           placeholder="0"

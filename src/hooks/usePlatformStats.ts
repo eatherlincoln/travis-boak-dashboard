@@ -1,34 +1,40 @@
+// src/hooks/usePlatformStats.ts
 import { useEffect, useState } from "react";
 import { supabase } from "@supabaseClient";
+import { useRefreshSignal } from "./useAutoRefresh";
 
-export function usePlatformStats(limit = 20) {
-  const [stats, setStats] = useState<any[]>([]);
+export type Platform = "instagram" | "youtube" | "tiktok";
+export type PlatformStats = {
+  platform: Platform;
+  followers: number | null;
+  monthly_views: number | null;
+  engagement: number | null; // percent
+  updated_at?: string | null;
+};
+
+export function usePlatformStats(platform: Platform) {
+  const { version } = useRefreshSignal();
+  const [row, setRow] = useState<PlatformStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let mounted = true;
+    let alive = true;
     (async () => {
       setLoading(true);
       const { data, error } = await supabase
         .from("platform_stats")
         .select("*")
-        .order("updated_at", { ascending: false })
-        .limit(limit);
+        .eq("platform", platform)
+        .maybeSingle();
 
-      if (!mounted) return;
-      if (error) {
-        setError(error.message);
-        setStats([]);
-      } else {
-        setStats(data || []);
-      }
+      if (!alive) return;
+      setRow(error ? null : (data as PlatformStats | null));
       setLoading(false);
     })();
     return () => {
-      mounted = false;
+      alive = false;
     };
-  }, [limit]);
+  }, [platform, version]);
 
-  return { stats, loading, error };
+  return { row, loading };
 }

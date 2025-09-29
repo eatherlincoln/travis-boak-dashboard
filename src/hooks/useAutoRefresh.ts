@@ -1,20 +1,43 @@
-import { useEffect, useState } from "react";
+// src/hooks/useAutoRefresh.ts
+import { useCallback, useRef, useSyncExternalStore } from "react";
 
-const REFRESH_EVENT = "app:data-updated";
+/** Tiny global tick store to notify listeners (hooks) to refetch */
+let _version = 0;
+const listeners = new Set<() => void>();
 
-export function notifyDataUpdated() {
-  window.dispatchEvent(new Event(REFRESH_EVENT));
+function subscribe(cb: () => void) {
+  listeners.add(cb);
+  return () => listeners.delete(cb);
+}
+function getSnapshot() {
+  return _version;
 }
 
+/** Call this in components that should refetch when admin saves */
 export function useRefreshSignal() {
-  const [tick, setTick] = useState(0);
-  useEffect(() => {
-    const h = () => setTick((t) => t + 1);
-    window.addEventListener(REFRESH_EVENT, h);
-    return () => window.removeEventListener(REFRESH_EVENT, h);
+  const v = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  const tick = useCallback(() => {
+    _version++;
+    for (const l of listeners) l();
   }, []);
-  return { tick };
+  return { tick, version: v };
 }
 
-// Alias kept for backwards compatibility
-export const useAutoRefresh = useRefreshSignal;
+/** Convenience: auto refetch on a timer (optional) */
+export function useAutoRefresh(ms = 0) {
+  const id = useRef<number | null>(null);
+  const { tick } = useRefreshSignal();
+  return {
+    start() {
+      if (ms > 0 && id.current == null) {
+        id.current = window.setInterval(tick, ms);
+      }
+    },
+    stop() {
+      if (id.current != null) {
+        clearInterval(id.current);
+        id.current = null;
+      }
+    },
+  };
+}

@@ -7,21 +7,21 @@ import {
   Youtube,
   Image as ImageIcon,
   Link2,
+  Eye,
   Heart,
   MessageCircle,
-  Eye,
 } from "lucide-react";
 
-type VideoRow = {
+type PostRow = {
   url: string;
-  caption?: string;
-  image_url?: string; // uploaded thumbnail public URL
+  title?: string;
+  image_url?: string;
   views?: number | string | null;
   likes?: number | string | null;
   comments?: number | string | null;
 };
 
-const RANKS = [1, 2];
+const RANKS = [1, 2]; // two widescreen cards
 
 const toInt = (v: any): number | null => {
   if (v === null || v === undefined || v === "") return null;
@@ -31,16 +31,15 @@ const toInt = (v: any): number | null => {
 
 export default function YouTubePostList() {
   const { tick } = useRefreshSignal();
-
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
-  const [rows, setRows] = useState<Record<number, VideoRow>>({
-    1: { url: "", caption: "", image_url: "" },
-    2: { url: "", caption: "", image_url: "" },
+  const [rows, setRows] = useState<Record<number, PostRow>>({
+    1: { url: "", title: "", image_url: "" },
+    2: { url: "", title: "", image_url: "" },
   });
 
-  const setField = (rank: number, key: keyof VideoRow, val: string) =>
+  const setField = (rank: number, key: keyof PostRow, val: string) =>
     setRows((prev) => ({ ...prev, [rank]: { ...prev[rank], [key]: val } }));
 
   const save = async () => {
@@ -53,12 +52,13 @@ export default function YouTubePostList() {
           platform: "youtube" as const,
           rank: RANKS[idx],
           url: r.url.trim(),
-          caption: r.caption?.trim() || null,
+          caption: r.title?.trim() || null, // we store title into caption column
           image_url: r.image_url?.trim() || null,
+          // metrics
           views: toInt(r.views),
           likes: toInt(r.likes),
           comments: toInt(r.comments),
-          // shares is not used for YT; leave null/undefined
+          // no shares on YT
         }));
 
       if (payload.length === 0) {
@@ -73,13 +73,13 @@ export default function YouTubePostList() {
 
       if (error) throw error;
 
-      // keep KPI/front-page in sync
-      await recalcEngagement(supabase, "youtube");
+      // keep engagement in sync (views + likes + comments participate)
+      await recalcEngagement("youtube");
 
-      setMsg("YouTube videos saved ✅");
-      tick();
+      setMsg("YouTube posts saved ✅");
+      tick(); // refresh frontend
     } catch (e: any) {
-      setMsg(e?.message || "Failed to save YouTube videos.");
+      setMsg(e?.message || "Failed to save YouTube posts.");
     } finally {
       setSaving(false);
     }
@@ -92,20 +92,20 @@ export default function YouTubePostList() {
           <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-neutral-50">
             <Youtube size={16} className="text-red-600" />
           </span>
-          <h2 className="text-sm font-semibold text-neutral-900">
-            YouTube — Top Videos
-          </h2>
         </div>
+        <h2 className="text-sm font-semibold text-neutral-900">
+          YouTube — Top Videos
+        </h2>
         <button
           onClick={save}
           disabled={saving}
           className="rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-300"
         >
-          {saving ? "Saving…" : "Save Posts"}
+          {saving ? "Saving…" : "Save Videos"}
         </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6">
         {RANKS.map((rank) => {
           const r = rows[rank];
           return (
@@ -126,17 +126,17 @@ export default function YouTubePostList() {
                 <Field
                   icon={<Link2 size={14} className="text-neutral-500" />}
                   label="Video URL"
-                  placeholder="https://youtube.com/watch?v=…"
+                  placeholder="https://www.youtube.com/watch?v=…"
                   value={r.url}
                   onChange={(v) => setField(rank, "url", v)}
                 />
 
                 <Field
                   icon={<ImageIcon size={14} className="text-neutral-500" />}
-                  label="Caption (optional)"
-                  placeholder="Optional title/notes"
-                  value={r.caption || ""}
-                  onChange={(v) => setField(rank, "caption", v)}
+                  label="Title (optional)"
+                  placeholder="Optional title"
+                  value={r.title || ""}
+                  onChange={(v) => setField(rank, "title", v)}
                 />
 
                 <div className="grid grid-cols-3 gap-3">
@@ -245,7 +245,10 @@ function Metric({
         )}
         <input
           inputMode="numeric"
-          className="h-9 w-full rounded-md border border-neutral-300 px-3 text-right text-sm outline-none focus:border-neutral-500"
+          className={[
+            "h-9 w-full rounded-md border border-neutral-300 px-3 text-right text-sm outline-none focus:border-neutral-500",
+            icon ? "pl-8" : "",
+          ].join(" ")}
           value={value as any}
           onChange={(e) => onChange(e.target.value)}
           placeholder="0"

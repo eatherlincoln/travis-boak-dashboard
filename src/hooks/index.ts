@@ -1,24 +1,24 @@
-// Refresh signal (admin → frontend)
-export {
-  useRefreshSignal,
-  useAutoRefresh,
-  notifyDataUpdated,
-} from "./useAutoRefresh";
+// src/hooks/index.ts
 
-// Instagram
-export { useInstagramTopPosts } from "./useInstagramTopPosts";
+// Refresh signal
+export { useAutoRefresh, useRefreshSignal } from "./useAutoRefresh";
 
-// YouTube
-export { useYouTubeTopVideos } from "./useYouTubeTopVideos";
-export { useYouTubeStats } from "./useYouTubeStats";
-
-// Audience / Stats
+// Platform stats / audience
+export { usePlatformStats } from "./usePlatformStats";
 export { usePlatformAudience } from "./usePlatformAudience";
-export { useFollowerTotals } from "./useFollowerTotals";
 
-// existing exports...
-export { useAudienceGlobal } from "./useAudienceGlobal";
+// Top content
+export { useInstagramTopPosts } from "./useInstagramTopPosts";
+export { useYouTubeTopVideos } from "./useYouTubeTopVideos";
 
-// Utilities (aliased)
+// (keep any other exports you rely on below)
+export { useInstagramMonthlyLikes } from "./useInstagramMonthlyLikes";
+export { useRealtimeAnalytics } from "./useRealtimeAnalytics";
+export { useAnalyticsSnapshot } from "./useAnalyticsSnapshot";
+export { useSocialMetrics } from "./useSocialMetrics";
+export { useViewStats } from "./useViewStats";
+export { useSocialAssets } from "./useSocialAssets";
+
+// Utilities
 export { useIsMobile as useMobile } from "./use-mobile";
 export { useToast } from "./use-toast";
