@@ -1,163 +1,195 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "@supabaseClient";
-import { Users } from "lucide-react";
+import { useRefreshSignal } from "@/hooks/useAutoRefresh";
+import { Globe, Save, Instagram, Youtube, Music2 } from "lucide-react";
 
-type FormState = {
-  men_pct: number | null;
-  women_pct: number | null;
-  age_18_24: number | null;
-  age_25_34: number | null;
-  age_35_44: number | null;
-  age_45_54: number | null;
-  country1_name: string;
-  country1_pct: number | null;
-  country2_name: string;
-  country2_pct: number | null;
-  country3_name: string;
-  country3_pct: number | null;
-  country4_name: string;
-  country4_pct: number | null;
-  city1: string;
-  city2: string;
-  city3: string;
-  city4: string;
+type Platform = "instagram" | "youtube" | "tiktok";
+
+type AudienceRow = {
+  platform: Platform;
+  gender: { men?: number; women?: number } | null;
+  age_bands: Array<{ range: string; percentage: number }> | null;
+  countries: Array<{ country: string; percentage: number }> | null;
+  cities: string[] | null;
 };
 
-const emptyForm: FormState = {
-  men_pct: null,
-  women_pct: null,
-  age_18_24: null,
-  age_25_34: null,
-  age_35_44: null,
-  age_45_54: null,
-  country1_name: "",
-  country1_pct: null,
-  country2_name: "",
-  country2_pct: null,
-  country3_name: "",
-  country3_pct: null,
-  country4_name: "",
-  country4_pct: null,
-  city1: "",
-  city2: "",
-  city3: "",
-  city4: "",
-};
+const PLATFORMS: Platform[] = ["instagram", "youtube", "tiktok"];
+
+// sensible defaults so the card doesn't look empty
+const DEFAULT_ROW = (platform: Platform): AudienceRow => ({
+  platform,
+  gender: { men: 60, women: 40 },
+  age_bands: [
+    { range: "13-17", percentage: 5 },
+    { range: "18-24", percentage: 25 },
+    { range: "25-34", percentage: 35 },
+    { range: "35-44", percentage: 20 },
+    { range: "45+", percentage: 15 },
+  ],
+  countries: [
+    { country: "Australia", percentage: 50 },
+    { country: "USA", percentage: 20 },
+    { country: "Indonesia", percentage: 10 },
+    { country: "Brazil", percentage: 10 },
+    { country: "France", percentage: 10 },
+  ],
+  cities: ["Gold Coast", "Sydney", "Los Angeles", "Bali", "Rio", "Paris"],
+});
+
+function clamp0to100(n: any) {
+  const v = Number(n);
+  if (!Number.isFinite(v)) return 0;
+  return Math.max(0, Math.min(100, Math.round(v)));
+}
 
 export default function AudienceGlobalEditor() {
-  const [form, setForm] = useState<FormState>(emptyForm);
+  const { tick } = useRefreshSignal();
+
+  const [rows, setRows] = useState<Record<Platform, AudienceRow>>({
+    instagram: DEFAULT_ROW("instagram"),
+    youtube: DEFAULT_ROW("youtube"),
+    tiktok: DEFAULT_ROW("tiktok"),
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
-  // Load once
+  // Load current audience for all platforms
   useEffect(() => {
     let alive = true;
     (async () => {
       setLoading(true);
       const { data, error } = await supabase
-        .from("audience")
+        .from("platform_audience")
         .select("*")
-        .eq("platform", "global")
-        .maybeSingle();
+        .in("platform", PLATFORMS);
 
       if (!alive) return;
-      if (error) console.warn("[audience load error]", error.message);
 
-      if (data) {
-        const gender = (data.gender || {}) as { men?: number; women?: number };
-        const ageArr = (data.age || []) as Array<{
-          range: string;
-          percentage: number;
-        }>;
-        const countries = (data.top_countries || []) as Array<{
-          country: string;
-          percentage: number;
-        }>;
-        const cities = (data.top_cities || []) as string[];
-
-        const byRange = Object.fromEntries(
-          ageArr.map((a) => [a.range, a.percentage])
-        );
-        const byCountry = (i: number) =>
-          countries[i] || { country: "", percentage: null };
-
-        setForm({
-          men_pct: gender.men ?? null,
-          women_pct: gender.women ?? null,
-          age_18_24: byRange["18-24"] ?? null,
-          age_25_34: byRange["25-34"] ?? null,
-          age_35_44: byRange["35-44"] ?? null,
-          age_45_54: byRange["45-54"] ?? null,
-          country1_name: byCountry(0).country,
-          country1_pct: byCountry(0).percentage,
-          country2_name: byCountry(1).country,
-          country2_pct: byCountry(1).percentage,
-          country3_name: byCountry(2).country,
-          country3_pct: byCountry(2).percentage,
-          country4_name: byCountry(3).country,
-          country4_pct: byCountry(3).percentage,
-          city1: cities?.[0] ?? "",
-          city2: cities?.[1] ?? "",
-          city3: cities?.[2] ?? "",
-          city4: cities?.[3] ?? "",
-        });
+      if (!error && data) {
+        const next = { ...rows };
+        for (const p of PLATFORMS) {
+          const hit = (data as any[]).find((r) => r.platform === p);
+          if (hit) {
+            next[p] = {
+              platform: p,
+              gender: hit.gender ?? DEFAULT_ROW(p).gender,
+              age_bands: hit.age_bands ?? DEFAULT_ROW(p).age_bands,
+              countries: hit.countries ?? DEFAULT_ROW(p).countries,
+              cities: hit.cities ?? DEFAULT_ROW(p).cities,
+            };
+          }
+        }
+        setRows(next);
       }
       setLoading(false);
     })();
     return () => {
       alive = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const setField = (key: keyof FormState, val: string) => {
-    setForm((prev) => ({
+  const setGender = (platform: Platform, men: number) => {
+    setRows((prev) => {
+      const menClamped = clamp0to100(men);
+      const women = clamp0to100(100 - menClamped);
+      return {
+        ...prev,
+        [platform]: {
+          ...prev[platform],
+          gender: { men: menClamped, women },
+        },
+      };
+    });
+  };
+
+  const setAge = (
+    platform: Platform,
+    idx: number,
+    field: "range" | "percentage",
+    value: string
+  ) => {
+    setRows((prev) => {
+      const list = [...(prev[platform].age_bands ?? [])];
+      if (!list[idx]) list[idx] = { range: "", percentage: 0 };
+      const next =
+        field === "range"
+          ? { ...list[idx], range: value }
+          : { ...list[idx], percentage: clamp0to100(value) };
+      list[idx] = next;
+      return { ...prev, [platform]: { ...prev[platform], age_bands: list } };
+    });
+  };
+
+  const setCountry = (
+    platform: Platform,
+    idx: number,
+    field: "country" | "percentage",
+    value: string
+  ) => {
+    setRows((prev) => {
+      const list = [...(prev[platform].countries ?? [])];
+      if (!list[idx]) list[idx] = { country: "", percentage: 0 };
+      const next =
+        field === "country"
+          ? { ...list[idx], country: value }
+          : { ...list[idx], percentage: clamp0to100(value) };
+      list[idx] = next;
+      return { ...prev, [platform]: { ...prev[platform], countries: list } };
+    });
+  };
+
+  const setCities = (platform: Platform, value: string) => {
+    const arr = value
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .slice(0, 8);
+    setRows((prev) => ({
       ...prev,
-      [key]: val.trim() === "" ? null : isNaN(Number(val)) ? val : Number(val),
+      [platform]: { ...prev[platform], cities: arr },
     }));
   };
 
-  const save = async () => {
+  // Build payload for upsert
+  const buildPayload = useMemo(() => {
+    return (user_id: string) =>
+      PLATFORMS.map((p) => ({
+        user_id, // ✅ required by schema
+        platform: p,
+        gender: rows[p].gender ?? null,
+        age_bands: rows[p].age_bands ?? null,
+        countries: rows[p].countries ?? null,
+        cities: rows[p].cities ?? null,
+        updated_at: new Date().toISOString(),
+      }));
+  }, [rows]);
+
+  const saveAll = async () => {
     setSaving(true);
     setMsg(null);
     try {
-      const gender = { men: form.men_pct ?? 0, women: form.women_pct ?? 0 };
-      const age = [
-        { range: "18-24", percentage: form.age_18_24 ?? 0 },
-        { range: "25-34", percentage: form.age_25_34 ?? 0 },
-        { range: "35-44", percentage: form.age_35_44 ?? 0 },
-        { range: "45-54", percentage: form.age_45_54 ?? 0 },
-      ];
-      const top_countries = [
-        { country: form.country1_name, percentage: form.country1_pct ?? 0 },
-        { country: form.country2_name, percentage: form.country2_pct ?? 0 },
-        { country: form.country3_name, percentage: form.country3_pct ?? 0 },
-        { country: form.country4_name, percentage: form.country4_pct ?? 0 },
-      ].filter((c) => c.country);
-      const top_cities = [
-        form.city1,
-        form.city2,
-        form.city3,
-        form.city4,
-      ].filter(Boolean);
+      const {
+        data: { user },
+        error: meErr,
+      } = await supabase.auth.getUser();
+      if (meErr) throw meErr;
+      if (!user?.id) throw new Error("No authenticated user.");
 
-      const payload = {
-        platform: "global",
-        gender,
-        age,
-        top_countries,
-        top_cities,
-        updated_at: new Date().toISOString(),
-      };
+      const payload = buildPayload(user.id);
 
       const { error } = await supabase
-        .from("audience")
-        .upsert(payload, { onConflict: "platform" });
+        .from("platform_audience")
+        .upsert(payload, { onConflict: "user_id,platform" });
 
       if (error) throw error;
-      setMsg("Demographics saved ✅");
+
+      setMsg("Audience demographics saved ✅");
+      // tell public hooks to refetch
+      tick();
     } catch (e: any) {
-      setMsg(e?.message || "Failed to save demographics.");
+      setMsg(e?.message || "Failed to save audience demographics.");
     } finally {
       setSaving(false);
     }
@@ -168,148 +200,199 @@ export default function AudienceGlobalEditor() {
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-neutral-50">
-            <Users size={16} className="text-sky-600" />
+            <Globe size={16} className="text-neutral-700" />
           </span>
           <h2 className="text-sm font-semibold text-neutral-900">
-            Audience Demographics
+            Audience Demographics (All Platforms)
           </h2>
         </div>
+
         <button
-          onClick={save}
+          onClick={saveAll}
           disabled={saving || loading}
-          className="rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:bg-neutral-300"
+          className="inline-flex items-center gap-2 rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-300"
         >
+          <Save size={14} />
           {saving ? "Saving…" : "Save Changes"}
         </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Gender */}
-        <section>
-          <h3 className="mb-2 text-xs font-semibold text-neutral-600">
-            Gender
-          </h3>
-          <div className="grid grid-cols-2 gap-3">
-            <Field
-              label="Men %"
-              value={form.men_pct ?? ""}
-              onChange={(v) => setField("men_pct", v)}
+      {loading ? (
+        <p className="text-sm text-neutral-500">Loading…</p>
+      ) : (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <PlatformCard
+            icon={<Instagram size={16} className="text-pink-600" />}
+            title="Instagram"
+          >
+            <PlatformEditor
+              value={rows.instagram}
+              onGender={(men) => setGender("instagram", men)}
+              onAge={(i, f, v) => setAge("instagram", i, f, v)}
+              onCountry={(i, f, v) => setCountry("instagram", i, f, v)}
+              onCities={(v) => setCities("instagram", v)}
             />
-            <Field
-              label="Women %"
-              value={form.women_pct ?? ""}
-              onChange={(v) => setField("women_pct", v)}
-            />
-          </div>
-        </section>
+          </PlatformCard>
 
-        {/* Age */}
-        <section>
-          <h3 className="mb-2 text-xs font-semibold text-neutral-600">Age</h3>
-          <div className="grid grid-cols-2 gap-3">
-            <Field
-              label="18–24"
-              value={form.age_18_24 ?? ""}
-              onChange={(v) => setField("age_18_24", v)}
+          <PlatformCard
+            icon={<Youtube size={16} className="text-red-600" />}
+            title="YouTube"
+          >
+            <PlatformEditor
+              value={rows.youtube}
+              onGender={(men) => setGender("youtube", men)}
+              onAge={(i, f, v) => setAge("youtube", i, f, v)}
+              onCountry={(i, f, v) => setCountry("youtube", i, f, v)}
+              onCities={(v) => setCities("youtube", v)}
             />
-            <Field
-              label="25–34"
-              value={form.age_25_34 ?? ""}
-              onChange={(v) => setField("age_25_34", v)}
-            />
-            <Field
-              label="35–44"
-              value={form.age_35_44 ?? ""}
-              onChange={(v) => setField("age_35_44", v)}
-            />
-            <Field
-              label="45–54"
-              value={form.age_45_54 ?? ""}
-              onChange={(v) => setField("age_45_54", v)}
-            />
-          </div>
-        </section>
+          </PlatformCard>
 
-        {/* Countries */}
-        <section className="lg:col-span-2">
-          <h3 className="mb-2 text-xs font-semibold text-neutral-600">
-            Top Countries
-          </h3>
-          <div className="grid grid-cols-2 gap-3">
-            <Field
-              label="Country 1"
-              value={form.country1_name}
-              onChange={(v) => setField("country1_name", v)}
+          <PlatformCard
+            icon={<Music2 size={16} className="text-emerald-600" />}
+            title="TikTok"
+          >
+            <PlatformEditor
+              value={rows.tiktok}
+              onGender={(men) => setGender("tiktok", men)}
+              onAge={(i, f, v) => setAge("tiktok", i, f, v)}
+              onCountry={(i, f, v) => setCountry("tiktok", i, f, v)}
+              onCities={(v) => setCities("tiktok", v)}
             />
-            <Field
-              label="% 1"
-              value={form.country1_pct ?? ""}
-              onChange={(v) => setField("country1_pct", v)}
-            />
-            <Field
-              label="Country 2"
-              value={form.country2_name}
-              onChange={(v) => setField("country2_name", v)}
-            />
-            <Field
-              label="% 2"
-              value={form.country2_pct ?? ""}
-              onChange={(v) => setField("country2_pct", v)}
-            />
-            <Field
-              label="Country 3"
-              value={form.country3_name}
-              onChange={(v) => setField("country3_name", v)}
-            />
-            <Field
-              label="% 3"
-              value={form.country3_pct ?? ""}
-              onChange={(v) => setField("country3_pct", v)}
-            />
-            <Field
-              label="Country 4"
-              value={form.country4_name}
-              onChange={(v) => setField("country4_name", v)}
-            />
-            <Field
-              label="% 4"
-              value={form.country4_pct ?? ""}
-              onChange={(v) => setField("country4_pct", v)}
-            />
-          </div>
-        </section>
-
-        {/* Cities */}
-        <section className="lg:col-span-2">
-          <h3 className="mb-2 text-xs font-semibold text-neutral-600">
-            Top Cities
-          </h3>
-          <div className="grid grid-cols-2 gap-3">
-            <Field
-              label="City 1"
-              value={form.city1}
-              onChange={(v) => setField("city1", v)}
-            />
-            <Field
-              label="City 2"
-              value={form.city2}
-              onChange={(v) => setField("city2", v)}
-            />
-            <Field
-              label="City 3"
-              value={form.city3}
-              onChange={(v) => setField("city3", v)}
-            />
-            <Field
-              label="City 4"
-              value={form.city4}
-              onChange={(v) => setField("city4", v)}
-            />
-          </div>
-        </section>
-      </div>
+          </PlatformCard>
+        </div>
+      )}
 
       {msg && <p className="mt-4 text-sm text-neutral-600">{msg}</p>}
+    </div>
+  );
+}
+
+function PlatformCard({
+  icon,
+  title,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-xl border border-neutral-200 p-4">
+      <div className="mb-3 flex items-center gap-2">
+        <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-neutral-50">
+          {icon}
+        </span>
+        <h3 className="text-sm font-semibold text-neutral-800">{title}</h3>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function PlatformEditor({
+  value,
+  onGender,
+  onAge,
+  onCountry,
+  onCities,
+}: {
+  value: AudienceRow;
+  onGender: (men: number) => void;
+  onAge: (idx: number, field: "range" | "percentage", value: string) => void;
+  onCountry: (
+    idx: number,
+    field: "country" | "percentage",
+    value: string
+  ) => void;
+  onCities: (value: string) => void;
+}) {
+  const men = clamp0to100(value.gender?.men ?? 0);
+  const women = clamp0to100(value.gender?.women ?? 0);
+
+  return (
+    <div className="space-y-4">
+      {/* Gender */}
+      <div>
+        <div className="mb-1 text-xs font-medium text-neutral-600">Gender</div>
+        <div className="grid grid-cols-2 gap-3">
+          <Field
+            label="Men %"
+            value={men.toString()}
+            inputMode="numeric"
+            onChange={(v) => onGender(Number(v))}
+          />
+          <Field
+            label="Women %"
+            value={women.toString()}
+            inputMode="numeric"
+            onChange={() => {}}
+            disabled
+          />
+        </div>
+      </div>
+
+      {/* Age bands (5 rows) */}
+      <div>
+        <div className="mb-1 text-xs font-medium text-neutral-600">Age</div>
+        <div className="space-y-2">
+          {(value.age_bands ?? []).slice(0, 5).map((a, i) => (
+            <div className="grid grid-cols-5 gap-2" key={i}>
+              <input
+                className="col-span-3 h-9 rounded-md border border-neutral-300 px-3 text-sm outline-none focus:border-neutral-500"
+                value={a.range}
+                onChange={(e) => onAge(i, "range", e.target.value)}
+                placeholder="18-24"
+              />
+              <input
+                className="col-span-2 h-9 rounded-md border border-neutral-300 px-3 text-right text-sm outline-none focus:border-neutral-500"
+                value={String(a.percentage)}
+                onChange={(e) => onAge(i, "percentage", e.target.value)}
+                inputMode="numeric"
+                placeholder="0"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Countries (5 rows) */}
+      <div>
+        <div className="mb-1 text-xs font-medium text-neutral-600">
+          Top Countries
+        </div>
+        <div className="space-y-2">
+          {(value.countries ?? []).slice(0, 5).map((c, i) => (
+            <div className="grid grid-cols-5 gap-2" key={i}>
+              <input
+                className="col-span-3 h-9 rounded-md border border-neutral-300 px-3 text-sm outline-none focus:border-neutral-500"
+                value={c.country}
+                onChange={(e) => onCountry(i, "country", e.target.value)}
+                placeholder="Australia"
+              />
+              <input
+                className="col-span-2 h-9 rounded-md border border-neutral-300 px-3 text-right text-sm outline-none focus:border-neutral-500"
+                value={String(c.percentage)}
+                onChange={(e) => onCountry(i, "percentage", e.target.value)}
+                inputMode="numeric"
+                placeholder="0"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Cities */}
+      <div>
+        <div className="mb-1 text-xs font-medium text-neutral-600">
+          Top Cities
+        </div>
+        <input
+          className="h-9 w-full rounded-md border border-neutral-300 px-3 text-sm outline-none focus:border-neutral-500"
+          value={(value.cities ?? []).join(", ")}
+          onChange={(e) => onCities(e.target.value)}
+          placeholder="Gold Coast, Sydney, Los Angeles, Bali…"
+        />
+      </div>
     </div>
   );
 }
@@ -318,10 +401,14 @@ function Field({
   label,
   value,
   onChange,
+  inputMode,
+  disabled,
 }: {
   label: string;
-  value: string | number;
+  value: string;
   onChange: (v: string) => void;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
+  disabled?: boolean;
 }) {
   return (
     <label className="block">
@@ -330,8 +417,10 @@ function Field({
       </span>
       <input
         className="h-9 w-full rounded-md border border-neutral-300 px-3 text-sm outline-none focus:border-neutral-500"
-        value={value as any}
+        value={value}
         onChange={(e) => onChange(e.target.value)}
+        inputMode={inputMode}
+        disabled={disabled}
       />
     </label>
   );

@@ -1,22 +1,21 @@
-// src/hooks/usePlatformAudience.ts
 import { useEffect, useState } from "react";
 import { supabase } from "@supabaseClient";
-import { useRefreshSignal } from "./useAutoRefresh";
 
-export type Platform = "instagram" | "youtube" | "tiktok";
-export type AudienceRow = {
+type Platform = "instagram" | "youtube" | "tiktok";
+
+type Audience = {
   platform: Platform;
-  gender: { men: number; women: number } | null;
-  ages: { range: string; percentage: number }[] | null;
-  countries: { country: string; percentage: number }[] | null;
+  gender: { men?: number; women?: number } | null;
+  age_bands: Array<{ range: string; percentage: number }> | null;
+  countries: Array<{ country: string; percentage: number }> | null;
   cities: string[] | null;
   updated_at: string | null;
 };
 
 export function usePlatformAudience(platform: Platform) {
-  const { version } = useRefreshSignal();
-  const [row, setRow] = useState<AudienceRow | null>(null);
+  const [data, setData] = useState<Audience | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -26,16 +25,25 @@ export function usePlatformAudience(platform: Platform) {
         .from("platform_audience")
         .select("*")
         .eq("platform", platform)
+        .order("updated_at", { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (!alive) return;
-      setRow(error ? null : (data as AudienceRow | null));
+
+      if (error) {
+        setError(error.message);
+        setData(null);
+      } else {
+        setError(null);
+        setData(data as any);
+      }
       setLoading(false);
     })();
     return () => {
       alive = false;
     };
-  }, [platform, version]);
+  }, [platform]);
 
-  return { row, loading };
+  return { data, loading, error };
 }
