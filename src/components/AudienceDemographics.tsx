@@ -1,82 +1,120 @@
+// src/components/AudienceDemographics.tsx
 import React from "react";
-import { usePlatformAudience } from "@/hooks";
+import { Users, CalendarDays, MapPin } from "lucide-react";
+import { usePlatformAudience } from "@/hooks/usePlatformAudience";
+
+function Bar({ pct }: { pct: number }) {
+  const width = Math.max(0, Math.min(100, pct || 0));
+  return (
+    <div className="h-2 w-full rounded bg-neutral-200">
+      <div className="h-2 rounded bg-sky-500" style={{ width: `${width}%` }} />
+    </div>
+  );
+}
 
 export default function AudienceDemographics({
   platform,
 }: {
-  platform: "instagram" | "youtube" | "tiktok";
+  platform: "instagram" | "youtube" | "tiktok" | "global";
 }) {
-  const { data, loading, error } = usePlatformAudience(platform);
+  const { audience, loading } = usePlatformAudience(platform);
 
-  const title =
-    platform.charAt(0).toUpperCase() + platform.slice(1) + " Demographics";
+  const men = audience.men ?? 0;
+  const women = audience.women ?? 0;
+  const ages = audience.ages ?? [];
+  const countries = audience.countries ?? [];
+  const cities = audience.cities ?? [];
 
   return (
     <div className="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-sm">
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-neutral-800">{title}</h3>
-        {!loading && data?.updated_at && (
-          <span className="text-xs text-neutral-500">
-            Updated {new Date(data.updated_at).toLocaleDateString()}
-          </span>
-        )}
+      <div className="mb-4 flex items-center gap-2">
+        <Users size={16} className="text-sky-600" />
+        <h3 className="text-sm font-semibold text-neutral-900">
+          {platform === "global"
+            ? "Audience Demographics"
+            : `${platform[0].toUpperCase()}${platform.slice(1)} Audience`}
+        </h3>
       </div>
 
       {loading ? (
-        <p className="text-sm text-neutral-500">Loading…</p>
-      ) : error ? (
-        <p className="text-sm text-neutral-500">Couldn’t load audience.</p>
-      ) : !data ? (
-        <p className="text-sm text-neutral-500">No data.</p>
+        <p className="text-sm text-neutral-600">Loading…</p>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {/* Gender */}
-          <div>
-            <div className="mb-1 text-xs font-medium text-neutral-600">
-              Gender
+          <section>
+            <p className="mb-2 text-xs font-medium text-neutral-600">
+              Gender Split
+            </p>
+            <div className="flex items-center gap-3">
+              <div className="min-w-16 text-xs text-neutral-700">
+                {Math.round(men)}% Men
+              </div>
+              <Bar pct={men} />
+              <div className="min-w-16 text-right text-xs text-neutral-700">
+                {Math.round(women)}% Women
+              </div>
             </div>
-            <div className="text-sm text-neutral-800">
-              Men: {data.gender?.men ?? 0}% • Women: {data.gender?.women ?? 0}%
-            </div>
-          </div>
+          </section>
 
-          {/* Age bands */}
-          <div>
-            <div className="mb-1 text-xs font-medium text-neutral-600">Age</div>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-              {(data.age_bands ?? []).map((a, i) => (
-                <div key={i} className="flex justify-between">
-                  <span>{a.range}</span>
-                  <span className="text-neutral-700">{a.percentage}%</span>
+          {/* Ages */}
+          <section>
+            <div className="mb-2 flex items-center gap-2">
+              <CalendarDays size={14} className="text-neutral-500" />
+              <p className="text-xs font-medium text-neutral-600">Age Groups</p>
+            </div>
+            <div className="space-y-3">
+              {ages.map((a) => (
+                <div
+                  key={a.label}
+                  className="grid grid-cols-5 items-center gap-2"
+                >
+                  <div className="col-span-1 text-xs text-neutral-700">
+                    {a.label}
+                  </div>
+                  <div className="col-span-3">
+                    <Bar pct={a.pct || 0} />
+                  </div>
+                  <div className="col-span-1 text-right text-xs text-neutral-700">
+                    {Math.round(a.pct || 0)}%
+                  </div>
                 </div>
               ))}
             </div>
-          </div>
+          </section>
 
-          {/* Countries */}
-          <div>
-            <div className="mb-1 text-xs font-medium text-neutral-600">
-              Top Countries
+          {/* Locations */}
+          <section>
+            <div className="mb-2 flex items-center gap-2">
+              <MapPin size={14} className="text-neutral-500" />
+              <p className="text-xs font-medium text-neutral-600">
+                Top Locations
+              </p>
             </div>
-            <div className="space-y-1 text-sm">
-              {(data.countries ?? []).slice(0, 5).map((c, i) => (
-                <div key={i} className="flex justify-between">
-                  <span>{c.country}</span>
-                  <span className="text-neutral-700">{c.percentage}%</span>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {(countries.length ? countries : []).slice(0, 4).map((c, i) => (
+                <div
+                  key={c.name + i}
+                  className="flex items-center justify-between rounded-md border border-neutral-200 px-3 py-2"
+                >
+                  <span className="text-sm">{c.name || "-"}</span>
+                  <span className="text-xs text-neutral-600">
+                    {Math.round(c.pct || 0)}%
+                  </span>
                 </div>
               ))}
             </div>
-          </div>
+            {cities.length > 0 && (
+              <p className="mt-2 text-xs text-neutral-600">
+                Top Cities: {cities.filter(Boolean).join(", ")}
+              </p>
+            )}
+          </section>
 
-          {/* Cities */}
-          <div>
-            <div className="mb-1 text-xs font-medium text-neutral-600">
-              Top Cities
-            </div>
-            <div className="text-sm text-neutral-800">
-              {(data.cities ?? []).slice(0, 6).join(" • ")}
-            </div>
-          </div>
+          {audience.updatedAt && (
+            <p className="text-xs text-neutral-500">
+              Updated {new Date(audience.updatedAt).toLocaleString()}
+            </p>
+          )}
         </div>
       )}
     </div>
