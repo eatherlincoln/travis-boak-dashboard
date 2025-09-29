@@ -22,6 +22,7 @@ type PostRow = {
 };
 
 const RANKS = [1, 2, 3, 4];
+
 const toInt = (v: any): number | null => {
   if (v === null || v === undefined || v === "") return null;
   const n = Number(String(v).replace(/[^\d]/g, ""));
@@ -32,6 +33,7 @@ export default function InstagramPostList() {
   const { tick } = useRefreshSignal();
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+
   const [rows, setRows] = useState<Record<number, PostRow>>({
     1: { url: "", caption: "", image_url: "" },
     2: { url: "", caption: "", image_url: "" },
@@ -68,11 +70,14 @@ export default function InstagramPostList() {
       const { error } = await supabase
         .from("top_posts")
         .upsert(payload, { onConflict: "platform,rank" });
+
       if (error) throw error;
 
-      await recalcEngagement("instagram");
+      // 👉 keep stats in sync
+      await recalcEngagement(supabase, "instagram");
+
       setMsg("Instagram posts saved ✅");
-      tick(); // refresh public
+      tick(); // refresh public grid
     } catch (e: any) {
       setMsg(e?.message || "Failed to save Instagram posts.");
     } finally {
@@ -82,7 +87,24 @@ export default function InstagramPostList() {
 
   return (
     <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
-      <Header onSave={save} saving={saving} />
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-neutral-50">
+            <Instagram size={16} className="text-pink-600" />
+          </span>
+          <h2 className="text-sm font-semibold text-neutral-900">
+            Instagram — Top Posts
+          </h2>
+        </div>
+        <button
+          onClick={save}
+          disabled={saving}
+          className="rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-300"
+        >
+          {saving ? "Saving…" : "Save Posts"}
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {RANKS.map((rank) => {
           const r = rows[rank];
@@ -108,6 +130,7 @@ export default function InstagramPostList() {
                   value={r.url}
                   onChange={(v) => setField(rank, "url", v)}
                 />
+
                 <Field
                   icon={<ImageIcon size={14} className="text-neutral-500" />}
                   label="Caption (optional)"
@@ -154,29 +177,8 @@ export default function InstagramPostList() {
           );
         })}
       </div>
-      {msg && <p className="mt-4 text-sm text-neutral-600">{msg}</p>}
-    </div>
-  );
-}
 
-function Header({ onSave, saving }: { onSave: () => void; saving: boolean }) {
-  return (
-    <div className="mb-4 flex items-center justify-between">
-      <div className="flex items-center gap-2">
-        <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-neutral-50">
-          <Instagram size={16} className="text-pink-600" />
-        </span>
-        <h2 className="text-sm font-semibold text-neutral-900">
-          Instagram — Top Posts
-        </h2>
-      </div>
-      <button
-        onClick={onSave}
-        disabled={saving}
-        className="rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-300"
-      >
-        {saving ? "Saving…" : "Save Posts"}
-      </button>
+      {msg && <p className="mt-4 text-sm text-neutral-600">{msg}</p>}
     </div>
   );
 }

@@ -5,23 +5,23 @@ import { recalcEngagement } from "@/lib/engagement";
 import ThumbnailPicker from "@/components/admin/ThumbnailPicker";
 import {
   Youtube,
-  Image as ImageIcon,
   Link2,
+  Image as ImageIcon,
   Eye,
   Heart,
   MessageCircle,
 } from "lucide-react";
 
-type PostRow = {
+type VideoRow = {
   url: string;
-  title?: string;
+  caption?: string;
   image_url?: string;
   views?: number | string | null;
   likes?: number | string | null;
   comments?: number | string | null;
 };
 
-const RANKS = [1, 2]; // two widescreen cards
+const RANKS = [1, 2];
 
 const toInt = (v: any): number | null => {
   if (v === null || v === undefined || v === "") return null;
@@ -34,12 +34,12 @@ export default function YouTubePostList() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
-  const [rows, setRows] = useState<Record<number, PostRow>>({
-    1: { url: "", title: "", image_url: "" },
-    2: { url: "", title: "", image_url: "" },
+  const [rows, setRows] = useState<Record<number, VideoRow>>({
+    1: { url: "", caption: "", image_url: "" },
+    2: { url: "", caption: "", image_url: "" },
   });
 
-  const setField = (rank: number, key: keyof PostRow, val: string) =>
+  const setField = (rank: number, key: keyof VideoRow, val: string) =>
     setRows((prev) => ({ ...prev, [rank]: { ...prev[rank], [key]: val } }));
 
   const save = async () => {
@@ -52,13 +52,13 @@ export default function YouTubePostList() {
           platform: "youtube" as const,
           rank: RANKS[idx],
           url: r.url.trim(),
-          caption: r.title?.trim() || null, // we store title into caption column
+          caption: r.caption?.trim() || null,
           image_url: r.image_url?.trim() || null,
-          // metrics
           views: toInt(r.views),
           likes: toInt(r.likes),
           comments: toInt(r.comments),
-          // no shares on YT
+          // shares not typical for YT; omit or store null
+          shares: null as number | null,
         }));
 
       if (payload.length === 0) {
@@ -73,13 +73,13 @@ export default function YouTubePostList() {
 
       if (error) throw error;
 
-      // keep engagement in sync (views + likes + comments participate)
-      await recalcEngagement("youtube");
+      // 👉 update engagement for youtube
+      await recalcEngagement(supabase, "youtube");
 
-      setMsg("YouTube posts saved ✅");
-      tick(); // refresh frontend
+      setMsg("YouTube videos saved ✅");
+      tick();
     } catch (e: any) {
-      setMsg(e?.message || "Failed to save YouTube posts.");
+      setMsg(e?.message || "Failed to save YouTube videos.");
     } finally {
       setSaving(false);
     }
@@ -92,20 +92,20 @@ export default function YouTubePostList() {
           <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-neutral-50">
             <Youtube size={16} className="text-red-600" />
           </span>
+          <h2 className="text-sm font-semibold text-neutral-900">
+            YouTube — Top Videos
+          </h2>
         </div>
-        <h2 className="text-sm font-semibold text-neutral-900">
-          YouTube — Top Videos
-        </h2>
         <button
           onClick={save}
           disabled={saving}
           className="rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-300"
         >
-          {saving ? "Saving…" : "Save Videos"}
+          {saving ? "Saving…" : "Save Posts"}
         </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {RANKS.map((rank) => {
           const r = rows[rank];
           return (
@@ -126,17 +126,17 @@ export default function YouTubePostList() {
                 <Field
                   icon={<Link2 size={14} className="text-neutral-500" />}
                   label="Video URL"
-                  placeholder="https://www.youtube.com/watch?v=…"
+                  placeholder="https://youtube.com/watch?v=…"
                   value={r.url}
                   onChange={(v) => setField(rank, "url", v)}
                 />
 
                 <Field
                   icon={<ImageIcon size={14} className="text-neutral-500" />}
-                  label="Title (optional)"
-                  placeholder="Optional title"
-                  value={r.title || ""}
-                  onChange={(v) => setField(rank, "title", v)}
+                  label="Caption (optional)"
+                  placeholder="Optional caption"
+                  value={r.caption || ""}
+                  onChange={(v) => setField(rank, "caption", v)}
                 />
 
                 <div className="grid grid-cols-3 gap-3">
@@ -147,7 +147,7 @@ export default function YouTubePostList() {
                     onChange={(v) => setField(rank, "views", v)}
                   />
                   <Metric
-                    icon={<Heart size={14} className="text-red-600" />}
+                    icon={<Heart size={14} className="text-pink-600" />}
                     label="Likes"
                     value={r.likes ?? ""}
                     onChange={(v) => setField(rank, "likes", v)}

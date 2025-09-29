@@ -5,8 +5,8 @@ import { recalcEngagement } from "@/lib/engagement";
 import ThumbnailPicker from "@/components/admin/ThumbnailPicker";
 import {
   Music2,
-  Image as ImageIcon,
   Link2,
+  Image as ImageIcon,
   Heart,
   MessageCircle,
   Share2,
@@ -31,7 +31,6 @@ const toInt = (v: any): number | null => {
 
 export default function TikTokPostList() {
   const { tick } = useRefreshSignal();
-
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -74,7 +73,7 @@ export default function TikTokPostList() {
 
       if (error) throw error;
 
-      // keep KPI/front-page in sync
+      // 👉 update engagement for tiktok
       await recalcEngagement(supabase, "tiktok");
 
       setMsg("TikTok posts saved ✅");
@@ -184,7 +183,19 @@ export default function TikTokPostList() {
   );
 }
 
-function Field({ icon, label, value, onChange, placeholder }: any) {
+function Field({
+  icon,
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  icon?: React.ReactNode;
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) {
   return (
     <label className="block">
       <span className="mb-1 block text-xs font-medium text-neutral-600">
@@ -210,7 +221,17 @@ function Field({ icon, label, value, onChange, placeholder }: any) {
   );
 }
 
-function Metric({ icon, label, value, onChange }: any) {
+function Metric({
+  icon,
+  label,
+  value,
+  onChange,
+}: {
+  icon?: React.ReactNode;
+  label: string;
+  value: any;
+  onChange: (v: string) => void;
+}) {
   return (
     <label className="block">
       <span className="mb-1 block text-xs font-medium text-neutral-600">
@@ -224,7 +245,10 @@ function Metric({ icon, label, value, onChange }: any) {
         )}
         <input
           inputMode="numeric"
-          className="h-9 w-full rounded-md border border-neutral-300 px-3 text-right text-sm outline-none focus:border-neutral-500"
+          className={[
+            "h-9 w-full rounded-md border border-neutral-300 px-3 text-right text-sm outline-none focus:border-neutral-500",
+            icon ? "pl-8" : "",
+          ].join(" ")}
           value={value as any}
           onChange={(e) => onChange(e.target.value)}
           placeholder="0"
