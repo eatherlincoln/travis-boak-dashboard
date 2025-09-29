@@ -1,61 +1,62 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@supabaseClient";
+import { useRefreshSignal } from "./useAutoRefresh";
 
-export type AudienceRow = {
-  id: string;
-  platform: string; // "instagram" | "youtube" | "tiktok"
-  gender: Record<string, number> | null; // { men: 88, women: 12 }
-  age_groups: Array<{ range: string; percentage: number }> | null; // [{ range: "25-34", percentage: 31 }, ...]
-  countries: Array<{ country: string; percentage: number }> | null; // [{ country: "Australia", percentage: 51 }, ...]
-  cities: Array<{ city: string; percentage: number }> | null; // [{ city: "Sydney", percentage: 10 }, ...]
+type Gender = { men: number; women: number };
+type AgeBand = { range: string; percentage: number };
+type Country = { country: string; percentage: number };
+
+export type Audience = {
+  gender: Gender;
+  age_bands: AgeBand[];
+  countries: Country[];
+  cities: string[];
   updated_at: string | null;
 };
 
-/**
- * Fetch audience demographics from `platform_audience`
- * Returns:
- *  - audience: full array
- *  - byPlatform: quick lookup (instagram/youtube/tiktok)
- */
 export function useAudience() {
-  const [audience, setAudience] = useState<AudienceRow[]>([]);
+  const { version } = useRefreshSignal();
+  const [data, setData] = useState<Audience | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let mounted = true;
+    let alive = true;
     (async () => {
       setLoading(true);
       const { data, error } = await supabase
-        .from("platform_audience")
-        .select("id,platform,gender,age_groups,countries,cities,updated_at")
-        .order("updated_at", { ascending: false });
+        .from("audience")
+        .select("gender,age_bands,countries,cities,updated_at")
+        .order("updated_at", { ascending: false })
+        .limit(1);
 
-      if (!mounted) return;
-      if (error) {
-        setError(error.message);
-        setAudience([]);
+      if (!alive) return;
+
+      if (!error && data && data.length > 0) {
+        const a = data[0] as any;
+        setData({
+          gender: a.gender ?? { men: 0, women: 0 },
+          age_bands: a.age_bands ?? [
+            { range: "13-17", percentage: 0 },
+            { range: "18-24", percentage: 0 },
+            { range: "25-34", percentage: 0 },
+            { range: "35-44", percentage: 0 },
+            { range: "45-54", percentage: 0 },
+            { range: "55-64", percentage: 0 },
+            { range: "65+", percentage: 0 },
+          ],
+          countries: a.countries ?? [],
+          cities: a.cities ?? [],
+          updated_at: a.updated_at ?? null,
+        });
       } else {
-        // keep only the latest row per platform
-        const latest = new Map<string, AudienceRow>();
-        for (const r of (data || []) as AudienceRow[]) {
-          const key = (r.platform || "").toLowerCase();
-          if (!latest.has(key)) latest.set(key, r);
-        }
-        setAudience(Array.from(latest.values()));
+        setData(null);
       }
       setLoading(false);
     })();
     return () => {
-      mounted = false;
+      alive = false;
     };
-  }, []);
+  }, [version]);
 
-  const byPlatform = useMemo(() => {
-    const m: Record<string, AudienceRow> = {};
-    for (const r of audience) m[(r.platform || "").toLowerCase()] = r;
-    return m;
-  }, [audience]);
-
-  return { audience, byPlatform, loading, error };
+  return { audience: data, loading };
 }

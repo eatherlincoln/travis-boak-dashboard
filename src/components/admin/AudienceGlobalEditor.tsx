@@ -1,198 +1,225 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "@supabaseClient";
 import { useRefreshSignal } from "@/hooks/useAutoRefresh";
-import { Users, Percent, Globe, MapPin, Save } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Users } from "lucide-react";
 
-type Platform = "instagram" | "youtube" | "tiktok";
+type Gender = { men?: number | null; women?: number | null };
+type AgeBand = { range: string; percentage: number | null };
+type CountryPct = { country: string; percentage: number | null };
 
-type AgeBandKey = "25_34" | "18_24" | "35_44" | "45_54";
-
-type CountryRow = { name: string; pct: number | "" };
-type Gender = { men: number | ""; women: number | "" };
-
-const PLATFORMS: Platform[] = ["instagram", "youtube", "tiktok"];
-
-const emptyGender: Gender = { men: "", women: "" };
-const emptyAges: Record<AgeBandKey, number | ""> = {
-  "25_34": "",
-  "18_24": "",
-  "35_44": "",
-  "45_54": "",
+type AudienceRow = {
+  id?: string;
+  user_id?: string | null;
+  gender: Gender;
+  age_bands: AgeBand[];
+  countries: CountryPct[];
+  cities: string[];
+  updated_at?: string | null;
 };
-const emptyCountries: CountryRow[] = [
-  { name: "", pct: "" },
-  { name: "", pct: "" },
-  { name: "", pct: "" },
-  { name: "", pct: "" },
-];
-const emptyCities = ["", "", "", ""];
 
-/** Small helpers */
-const n = (v: number | string | ""): number => {
-  if (v === "" || v === null || v === undefined) return 0;
-  const num = Number(v);
-  return Number.isFinite(num) ? num : 0;
+const EMPTY_ROW: AudienceRow = {
+  gender: { men: null, women: null },
+  age_bands: [
+    { range: "13-17", percentage: null },
+    { range: "18-24", percentage: null },
+    { range: "25-34", percentage: null },
+    { range: "35-44", percentage: null },
+    { range: "45-54", percentage: null },
+    { range: "55-64", percentage: null },
+    { range: "65+", percentage: null },
+  ],
+  countries: [{ country: "Australia", percentage: null }],
+  cities: ["Sydney", "Gold Coast", "Melbourne"],
 };
-const pct = (v: number | string | ""): number =>
-  Math.max(0, Math.min(100, n(v)));
+
+const toInt = (v: string) => {
+  if (!v?.trim()) return null;
+  const n = Number(v.replace(/[^\d]/g, ""));
+  return Number.isFinite(n) ? n : null;
+};
+
+const toFloat = (v: string) => {
+  if (!v?.trim()) return null;
+  const n = Number(v.replace(/[^\d.]/g, ""));
+  return Number.isFinite(n) ? n : null;
+};
 
 export default function AudienceGlobalEditor() {
+  const { user, loading: authLoading } = useAuth();
   const { tick } = useRefreshSignal();
 
+  const [row, setRow] = useState<AudienceRow>(EMPTY_ROW);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
-  // Form state
-  const [gender, setGender] = useState<Gender>(emptyGender);
-  const [ages, setAges] = useState<Record<AgeBandKey, number | "">>(emptyAges);
-  const [countries, setCountries] = useState<CountryRow[]>(emptyCountries);
-  const [cities, setCities] = useState<string[]>(emptyCities);
-
-  // Load once (instagram row is our “global” source)
+  // Load the single (latest) audience row.
   useEffect(() => {
     let alive = true;
     (async () => {
       setLoading(true);
-      try {
-        const { data } = await supabase
-          .from("platform_audience")
-          .select("*")
-          .eq("platform", "instagram")
-          .limit(1)
-          .maybeSingle();
+      const { data, error } = await supabase
+        .from("audience")
+        .select("*")
+        .order("updated_at", { ascending: false })
+        .limit(1);
 
-        if (!alive) return;
+      if (!alive) return;
 
-        if (data) {
-          // gender
-          const g = (data.gender || {}) as any;
-          setGender({
-            men: g.men ?? "",
-            women: g.women ?? "",
-          });
-
-          // ages: support either age_bands or legacy age_groups
-          const src = (data.age_bands as any) ||
-            (data.age_groups as any) || {
-              "25_34": "",
-              "18_24": "",
-              "35_44": "",
-              "45_54": "",
-            };
-
-          setAges({
-            "25_34": src["25_34"] ?? "",
-            "18_24": src["18_24"] ?? "",
-            "35_44": src["35_44"] ?? "",
-            "45_54": src["45_54"] ?? "",
-          });
-
-          // countries
-          const cList: CountryRow[] = Array.isArray(data.countries)
-            ? data.countries.map((c: any) => ({
-                name: c.country ?? c.name ?? "",
-                pct: c.percentage ?? c.pct ?? "",
-              }))
-            : emptyCountries;
-          setCountries([
-            cList[0] ?? { name: "", pct: "" },
-            cList[1] ?? { name: "", pct: "" },
-            cList[2] ?? { name: "", pct: "" },
-            cList[3] ?? { name: "", pct: "" },
-          ]);
-
-          // cities
-          const cityList: string[] = Array.isArray(data.cities)
-            ? data.cities
-            : emptyCities;
-          setCities([
-            cityList[0] ?? "",
-            cityList[1] ?? "",
-            cityList[2] ?? "",
-            cityList[3] ?? "",
-          ]);
-        }
-      } catch (err) {
-        // swallow – blank form is fine for first run
-      } finally {
-        if (alive) setLoading(false);
+      if (error) {
+        setMsg(error.message);
+        setRow(EMPTY_ROW);
+      } else if (data && data.length > 0) {
+        // Normalize to our shape with safe fallbacks
+        const d = data[0] as any;
+        setRow({
+          id: d.id,
+          user_id: d.user_id ?? null,
+          gender: d.gender ?? { men: null, women: null },
+          age_bands: Array.isArray(d.age_bands)
+            ? d.age_bands
+            : EMPTY_ROW.age_bands,
+          countries: Array.isArray(d.countries)
+            ? d.countries
+            : EMPTY_ROW.countries,
+          cities: Array.isArray(d.cities) ? d.cities : EMPTY_ROW.cities,
+          updated_at: d.updated_at ?? null,
+        });
+      } else {
+        setRow(EMPTY_ROW);
       }
+      setLoading(false);
     })();
     return () => {
       alive = false;
     };
   }, []);
 
-  // Totals for gentle validation
-  const genderTotal = useMemo(
-    () => pct(gender.men) + pct(gender.women),
-    [gender]
-  );
+  const genderTotal = useMemo(() => {
+    const m = row.gender.men ?? 0;
+    const w = row.gender.women ?? 0;
+    const total = (Number(m) || 0) + (Number(w) || 0);
+    return Number.isFinite(total) ? total : 0;
+  }, [row.gender.men, row.gender.women]);
 
-  const ageTotal = useMemo(() => {
-    return (
-      pct(ages["25_34"]) +
-      pct(ages["18_24"]) +
-      pct(ages["35_44"]) +
-      pct(ages["45_54"])
-    );
-  }, [ages]);
+  const setGender = (key: keyof Gender, val: string) =>
+    setRow((prev) => ({
+      ...prev,
+      gender: { ...prev.gender, [key]: toFloat(val) },
+    }));
 
-  const countriesPretty = useMemo(
-    () =>
-      countries
-        .filter((c) => c.name)
-        .map((c) => ({ country: c.name, percentage: pct(c.pct) })),
-    [countries]
-  );
+  const setAgeBand = (idx: number, key: keyof AgeBand, val: string) =>
+    setRow((prev) => {
+      const next = [...prev.age_bands];
+      next[idx] = {
+        ...next[idx],
+        [key]: key === "percentage" ? toFloat(val) : val,
+      };
+      return { ...prev, age_bands: next };
+    });
 
-  /** Save to all three platforms. If `age_bands` is missing in DB, retry using `age_groups`. */
+  const addAgeBand = () =>
+    setRow((prev) => ({
+      ...prev,
+      age_bands: [...prev.age_bands, { range: "New", percentage: null }],
+    }));
+
+  const removeAgeBand = (idx: number) =>
+    setRow((prev) => ({
+      ...prev,
+      age_bands: prev.age_bands.filter((_, i) => i !== idx),
+    }));
+
+  const setCountry = (idx: number, key: keyof CountryPct, val: string) =>
+    setRow((prev) => {
+      const next = [...prev.countries];
+      next[idx] = {
+        ...next[idx],
+        [key]: key === "percentage" ? toFloat(val) : val,
+      } as CountryPct;
+      return { ...prev, countries: next };
+    });
+
+  const addCountry = () =>
+    setRow((prev) => ({
+      ...prev,
+      countries: [...prev.countries, { country: "", percentage: null }],
+    }));
+
+  const removeCountry = (idx: number) =>
+    setRow((prev) => ({
+      ...prev,
+      countries: prev.countries.filter((_, i) => i !== idx),
+    }));
+
+  const setCity = (idx: number, val: string) =>
+    setRow((prev) => {
+      const next = [...prev.cities];
+      next[idx] = val;
+      return { ...prev, cities: next };
+    });
+
+  const addCity = () =>
+    setRow((prev) => ({ ...prev, cities: [...prev.cities, ""] }));
+
+  const removeCity = (idx: number) =>
+    setRow((prev) => ({
+      ...prev,
+      cities: prev.cities.filter((_, i) => i !== idx),
+    }));
+
   const save = async () => {
     setSaving(true);
     setMsg(null);
     try {
-      const base = {
-        gender: { men: pct(gender.men), women: pct(gender.women) },
-        age_bands: {
-          "25_34": pct(ages["25_34"]),
-          "18_24": pct(ages["18_24"]),
-          "35_44": pct(ages["35_44"]),
-          "45_54": pct(ages["45_54"]),
-        },
-        // include legacy for forward/backward compat
-        age_groups: {
-          "25_34": pct(ages["25_34"]),
-          "18_24": pct(ages["18_24"]),
-          "35_44": pct(ages["35_44"]),
-          "45_54": pct(ages["45_54"]),
-        },
-        countries: countriesPretty,
-        cities: cities.filter(Boolean),
-        updated_at: new Date().toISOString(),
-      };
-
-      const rows = PLATFORMS.map((p) => ({ platform: p, ...base }));
-
-      let { error } = await supabase
-        .from("platform_audience")
-        .upsert(rows, { onConflict: "platform" });
-
-      // If the column `age_bands` doesn't exist yet, retry using only age_groups
-      if (error && /age_bands/i.test(error.message)) {
-        const fallback = rows.map(({ age_bands, ...rest }) => rest);
-        const retry = await supabase
-          .from("platform_audience")
-          .upsert(fallback, { onConflict: "platform" });
-        if (retry.error) throw retry.error;
-      } else if (error) {
-        throw error;
+      if (!user) {
+        setMsg("You must be signed in to save.");
+        setSaving(false);
+        return;
       }
 
-      setMsg("Demographics saved ✅");
-      tick(); // notify frontend hooks to refresh
+      const payload: Omit<AudienceRow, "id"> = {
+        user_id: user.id,
+        gender: {
+          men: row.gender.men ?? null,
+          women: row.gender.women ?? null,
+        },
+        age_bands: (row.age_bands || []).map((a) => ({
+          range: a.range || "",
+          percentage: a.percentage ?? null,
+        })),
+        countries: (row.countries || []).map((c) => ({
+          country: c.country || "",
+          percentage: c.percentage ?? null,
+        })),
+        cities: (row.cities || []).map((c) => c || "").filter(Boolean),
+      };
+
+      // If we have an existing row id, update by id; else insert a new one
+      if (row.id) {
+        const { error } = await supabase
+          .from("audience")
+          .update(payload as any)
+          .eq("id", row.id);
+        if (error) throw error;
+      } else {
+        const { data, error } = await supabase
+          .from("audience")
+          .insert(payload as any)
+          .select("id")
+          .limit(1)
+          .maybeSingle();
+        if (error) throw error;
+        if (data?.id) {
+          setRow((prev) => ({ ...prev, id: data.id }));
+        }
+      }
+
+      setMsg("Audience saved ✅");
+      tick();
     } catch (e: any) {
-      setMsg(e?.message || "Failed to save demographics.");
+      setMsg(e?.message || "Failed to save audience.");
     } finally {
       setSaving(false);
     }
@@ -206,200 +233,221 @@ export default function AudienceGlobalEditor() {
             <Users size={16} className="text-neutral-700" />
           </span>
           <h2 className="text-sm font-semibold text-neutral-900">
-            Audience Demographics (Global)
+            Audience (Global)
           </h2>
         </div>
-
         <button
           onClick={save}
-          disabled={saving || loading}
-          className="inline-flex items-center gap-2 rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-300"
+          disabled={saving || loading || authLoading}
+          className="rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-300"
         >
-          <Save size={14} />
-          {saving ? "Saving…" : "Save Demographics"}
+          {saving ? "Saving…" : "Save"}
         </button>
       </div>
 
-      {/* grid: gender / age groups / locations */}
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        {/* Gender */}
-        <section className="rounded-xl border border-neutral-200 p-4">
-          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-neutral-800">
-            <Percent size={14} className="text-sky-600" />
-            Gender Split (%)
+      {/* Gender */}
+      <section className="mb-6 rounded-xl border border-neutral-200 p-4">
+        <h3 className="mb-3 text-sm font-semibold text-neutral-800">Gender</h3>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Field
+            label="Men (%)"
+            inputMode="numeric"
+            value={row.gender.men ?? ""}
+            onChange={(v) => setGender("men", v)}
+            alignRight
+          />
+          <Field
+            label="Women (%)"
+            inputMode="numeric"
+            value={row.gender.women ?? ""}
+            onChange={(v) => setGender("women", v)}
+            alignRight
+          />
+        </div>
+        <p className="mt-2 text-xs text-neutral-500">
+          Total:{" "}
+          <span
+            className={
+              genderTotal === 100 ? "text-emerald-600" : "text-amber-600"
+            }
+          >
+            {genderTotal}
+          </span>
+          %{genderTotal !== 100 ? " (ideally 100%)" : ""}
+        </p>
+      </section>
+
+      {/* Age bands */}
+      <section className="mb-6 rounded-xl border border-neutral-200 p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-neutral-800">Age bands</h3>
+          <button
+            type="button"
+            onClick={addAgeBand}
+            className="rounded-md border border-neutral-300 px-2 py-1 text-xs hover:bg-neutral-50"
+          >
+            + Add band
+          </button>
+        </div>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          {row.age_bands.map((ab, i) => (
+            <div key={i} className="grid grid-cols-12 gap-2 items-end">
+              <div className="col-span-7">
+                <Field
+                  label="Range"
+                  value={ab.range}
+                  onChange={(v) => setAgeBand(i, "range", v)}
+                  placeholder="e.g. 25-34"
+                />
+              </div>
+              <div className="col-span-4">
+                <Field
+                  label="%"
+                  inputMode="numeric"
+                  value={ab.percentage ?? ""}
+                  onChange={(v) => setAgeBand(i, "percentage", v)}
+                  alignRight
+                />
+              </div>
+              <div className="col-span-1">
+                <IconButton onClick={() => removeAgeBand(i)} title="Remove" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Countries */}
+      <section className="mb-6 rounded-xl border border-neutral-200 p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-neutral-800">
+            Top countries
           </h3>
-          <div className="grid grid-cols-2 gap-3">
-            <Field
-              label="Men"
-              value={gender.men}
-              suffix="%"
-              onChange={(v) => setGender((g) => ({ ...g, men: v }))}
-            />
-            <Field
-              label="Women"
-              value={gender.women}
-              suffix="%"
-              onChange={(v) => setGender((g) => ({ ...g, women: v }))}
-            />
-          </div>
-          <TotalChip value={genderTotal} warn={genderTotal !== 100} />
-        </section>
+          <button
+            type="button"
+            onClick={addCountry}
+            className="rounded-md border border-neutral-300 px-2 py-1 text-xs hover:bg-neutral-50"
+          >
+            + Add country
+          </button>
+        </div>
+        <div className="space-y-3">
+          {row.countries.map((c, i) => (
+            <div key={i} className="grid grid-cols-12 gap-2 items-end">
+              <div className="col-span-7">
+                <Field
+                  label="Country"
+                  value={c.country}
+                  onChange={(v) => setCountry(i, "country", v)}
+                  placeholder="e.g. Australia"
+                />
+              </div>
+              <div className="col-span-4">
+                <Field
+                  label="%"
+                  inputMode="numeric"
+                  value={c.percentage ?? ""}
+                  onChange={(v) => setCountry(i, "percentage", v)}
+                  alignRight
+                />
+              </div>
+              <div className="col-span-1">
+                <IconButton onClick={() => removeCountry(i)} title="Remove" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
 
-        {/* Ages */}
-        <section className="rounded-xl border border-neutral-200 p-4">
-          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-neutral-800">
-            <Percent size={14} className="text-teal-600" />
-            Age Groups (%)
-          </h3>
-          <div className="grid grid-cols-2 gap-3">
-            <Field
-              label="25–34"
-              value={ages["25_34"]}
-              suffix="%"
-              onChange={(v) => setAges((a) => ({ ...a, "25_34": v }))}
-            />
-            <Field
-              label="18–24"
-              value={ages["18_24"]}
-              suffix="%"
-              onChange={(v) => setAges((a) => ({ ...a, "18_24": v }))}
-            />
-            <Field
-              label="35–44"
-              value={ages["35_44"]}
-              suffix="%"
-              onChange={(v) => setAges((a) => ({ ...a, "35_44": v }))}
-            />
-            <Field
-              label="45–54"
-              value={ages["45_54"]}
-              suffix="%"
-              onChange={(v) => setAges((a) => ({ ...a, "45_54": v }))}
-            />
-          </div>
-          <TotalChip value={ageTotal} warn={ageTotal > 100} />
-        </section>
+      {/* Cities */}
+      <section className="rounded-xl border border-neutral-200 p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-neutral-800">Top cities</h3>
+          <button
+            type="button"
+            onClick={addCity}
+            className="rounded-md border border-neutral-300 px-2 py-1 text-xs hover:bg-neutral-50"
+          >
+            + Add city
+          </button>
+        </div>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          {row.cities.map((city, i) => (
+            <div key={i} className="grid grid-cols-12 gap-2 items-end">
+              <div className="col-span-11">
+                <Field
+                  label="City"
+                  value={city}
+                  onChange={(v) => setCity(i, v)}
+                />
+              </div>
+              <div className="col-span-1">
+                <IconButton onClick={() => removeCity(i)} title="Remove" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
 
-        {/* Locations */}
-        <section className="rounded-xl border border-neutral-200 p-4">
-          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-neutral-800">
-            <Globe size={14} className="text-indigo-600" />
-            Top Countries & Cities
-          </h3>
-
-          <div className="grid grid-cols-6 gap-3">
-            {/* Countries: 4 rows of [name | %] */}
-            {countries.map((c, i) => (
-              <React.Fragment key={i}>
-                <div className="col-span-4">
-                  <Field
-                    label={`Country ${i + 1}`}
-                    value={c.name}
-                    onChange={(v) =>
-                      setCountries((list) => {
-                        const next = [...list];
-                        next[i] = { ...next[i], name: v as string };
-                        return next;
-                      })
-                    }
-                  />
-                </div>
-                <div className="col-span-2">
-                  <Field
-                    label="%"
-                    value={c.pct}
-                    suffix="%"
-                    onChange={(v) =>
-                      setCountries((list) => {
-                        const next = [...list];
-                        next[i] = { ...next[i], pct: v };
-                        return next;
-                      })
-                    }
-                  />
-                </div>
-              </React.Fragment>
-            ))}
-          </div>
-
-          <div className="mt-4 grid grid-cols-4 gap-3">
-            {cities.map((city, i) => (
-              <Field
-                key={i}
-                label={`City ${i + 1}`}
-                value={city}
-                icon={<MapPin size={12} className="text-neutral-500" />}
-                onChange={(v) =>
-                  setCities((arr) => {
-                    const next = [...arr];
-                    next[i] = v as string;
-                    return next;
-                  })
-                }
-              />
-            ))}
-          </div>
-        </section>
-      </div>
-
-      {msg && <p className="mt-4 text-sm text-neutral-600">{msg}</p>}
+      {row.updated_at && (
+        <p className="mt-4 text-xs text-neutral-500">
+          Last updated: {new Date(row.updated_at).toLocaleString()}
+        </p>
+      )}
+      {msg && <p className="mt-3 text-sm text-neutral-600">{msg}</p>}
     </div>
   );
 }
-
-/* ---------- Reusable UI bits (kept local to avoid cross-file coupling) ---------- */
 
 function Field({
   label,
   value,
   onChange,
   placeholder,
-  suffix,
-  icon,
+  inputMode,
+  alignRight,
 }: {
   label: string;
-  value: string | number | "";
+  value: string | number;
   onChange: (v: string) => void;
   placeholder?: string;
-  suffix?: string;
-  icon?: React.ReactNode;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
+  alignRight?: boolean;
 }) {
   return (
     <label className="block">
       <span className="mb-1 block text-xs font-medium text-neutral-600">
         {label}
       </span>
-      <div className="relative">
-        {icon && (
-          <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2">
-            {icon}
-          </span>
-        )}
-        <input
-          className={[
-            "h-9 w-full rounded-md border border-neutral-300 px-3 text-sm outline-none focus:border-neutral-500",
-            icon ? "pl-7" : "",
-            suffix ? "pr-7" : "",
-          ].join(" ")}
-          value={value as any}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-        />
-        {suffix && (
-          <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-neutral-500">
-            {suffix}
-          </span>
-        )}
-      </div>
+      <input
+        className={[
+          "h-9 w-full rounded-md border border-neutral-300 px-3 text-sm outline-none focus:border-neutral-500",
+          alignRight ? "text-right" : "",
+        ].join(" ")}
+        value={value as any}
+        inputMode={inputMode}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+      />
     </label>
   );
 }
 
-function TotalChip({ value, warn }: { value: number; warn?: boolean }) {
+function IconButton({
+  onClick,
+  title,
+}: {
+  onClick: () => void;
+  title: string;
+}) {
   return (
-    <div className="mt-2 inline-flex items-center gap-2 rounded-md bg-neutral-50 px-2 py-1 text-xs text-neutral-700">
-      Total {Math.round(value)}%
-      {warn && <span className="text-amber-600">• check totals</span>}
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className="h-9 w-full rounded-md border border-neutral-300 text-xs hover:bg-neutral-50"
+    >
+      ✕
+    </button>
   );
 }
