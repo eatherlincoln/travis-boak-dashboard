@@ -11,33 +11,29 @@ import TikTokPostList from "@/components/admin/TikTokPostList";
 export default function Admin() {
   return (
     <AdminGate>
-      <AdminLayout title="Admin Dashboard">
-        <div className="space-y-6">
-          {/* 1) Demographics (single record) */}
-          <section>
-            <AudienceGlobalEditor />
-          </section>
+      <AdminLayout
+        title="Admin Dashboard"
+        subtitle="Demographics → Metrics → Top content"
+      >
+        <section>
+          <AudienceGlobalEditor />
+        </section>
 
-          {/* 2) Platform metrics (followers, monthly views, engagement) */}
-          <section>
-            <StatsForm />
-          </section>
+        <section>
+          <StatsForm />
+        </section>
 
-          {/* 3) IG top posts */}
-          <section>
-            <InstagramPostList />
-          </section>
+        <section>
+          <InstagramPostList />
+        </section>
 
-          {/* 4) YouTube top posts */}
-          <section>
-            <YouTubePostList />
-          </section>
+        <section>
+          <YouTubePostList />
+        </section>
 
-          {/* 5) TikTok top posts */}
-          <section>
-            <TikTokPostList />
-          </section>
-        </div>
+        <section>
+          <TikTokPostList />
+        </section>
       </AdminLayout>
     </AdminGate>
   );

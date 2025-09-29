@@ -1,100 +1,56 @@
+// src/components/admin/StatsForm.tsx
 import React, { useEffect, useState } from "react";
 import { supabase } from "@supabaseClient";
 import { useRefreshSignal } from "@/hooks/useAutoRefresh";
 import { BarChart2, Instagram, Youtube, Music2 } from "lucide-react";
+import { recalcAllEngagements } from "@/lib/engagement";
 
-/**
- * platform_stats (stable)
- * - user_id uuid not null
- * - platform text not null check in ('instagram','youtube','tiktok')
- * - followers bigint/null
- * - monthly_views bigint/null
- * - engagement numeric/null  -- store percent, e.g. 2.01
- * UNIQUE (user_id, platform)
- * RLS: authenticated can upsert their own rows; public can read.
- */
-
-type StatRow = {
+type Row = {
   platform: "instagram" | "youtube" | "tiktok";
   followers: number | null;
   monthly_views: number | null;
-  engagement: number | null; // e.g. 2.01 (%)
+  engagement: number | null; // read-only (auto)
 };
 
-const PLATFORMS: StatRow["platform"][] = ["instagram", "youtube", "tiktok"];
+const PLATFORMS: Row["platform"][] = ["instagram", "youtube", "tiktok"];
 
-const emptyRow = (platform: StatRow["platform"]): StatRow => ({
+const empty = (platform: Row["platform"]): Row => ({
   platform,
   followers: null,
   monthly_views: null,
   engagement: null,
 });
 
-// numeric helpers
 const toInt = (v: string) => {
   if (!v?.trim()) return null;
   const n = Number(v.replace(/[^\d]/g, ""));
   return Number.isFinite(n) ? n : null;
 };
-const toFloat = (v: string) => {
-  if (!v?.trim()) return null;
-  const n = Number(v.replace(/[^\d.]/g, ""));
-  return Number.isFinite(n) ? n : null;
-};
 
 export default function StatsForm() {
   const { tick } = useRefreshSignal();
-
-  const [userId, setUserId] = useState<string | null>(null);
-  const [rows, setRows] = useState<Record<StatRow["platform"], StatRow>>({
-    instagram: emptyRow("instagram"),
-    youtube: emptyRow("youtube"),
-    tiktok: emptyRow("tiktok"),
+  const [rows, setRows] = useState<Record<Row["platform"], Row>>({
+    instagram: empty("instagram"),
+    youtube: empty("youtube"),
+    tiktok: empty("tiktok"),
   });
-
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
-  // 1) Get current user id
+  // Load existing
   useEffect(() => {
-    let alive = true;
-    (async () => {
-      const { data, error } = await supabase.auth.getUser();
-      if (!alive) return;
-      if (error) {
-        setMsg(error.message);
-        setLoading(false);
-        return;
-      }
-      setUserId(data.user?.id ?? null);
-    })();
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  // 2) Load rows for this user
-  useEffect(() => {
-    if (!userId) return; // wait for auth
     let alive = true;
     (async () => {
       setLoading(true);
       const { data, error } = await supabase
         .from("platform_stats")
         .select("*")
-        .eq("user_id", userId)
         .in("platform", PLATFORMS);
 
       if (!alive) return;
-      if (error) {
-        setMsg(error.message);
-        setLoading(false);
-        return;
-      }
-
-      const next = { ...rows };
-      if (data && data.length) {
+      if (!error && data) {
+        const next = { ...rows };
         for (const p of PLATFORMS) {
           const hit = data.find((d: any) => d.platform === p);
           if (hit) {
@@ -106,62 +62,68 @@ export default function StatsForm() {
             };
           }
         }
+        setRows(next);
       }
-      setRows(next);
       setLoading(false);
     })();
-
     return () => {
       alive = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
+  }, []);
 
   const setField = (
-    platform: StatRow["platform"],
-    key: keyof Omit<StatRow, "platform">,
+    platform: Row["platform"],
+    key: "followers" | "monthly_views",
     val: string
   ) => {
-    setRows((prev) => {
-      const current = prev[platform];
-      const next: StatRow = {
-        ...current,
-        [key]: key === "engagement" ? toFloat(val) : toInt(val),
-      };
-      return { ...prev, [platform]: next };
-    });
+    setRows((prev) => ({
+      ...prev,
+      [platform]: { ...prev[platform], [key]: toInt(val) },
+    }));
   };
 
   const saveAll = async () => {
-    if (!userId) {
-      setMsg("You must be signed in to save metrics.");
-      return;
-    }
     setSaving(true);
     setMsg(null);
     try {
-      // Build payload with user_id and sanitize values (defensive)
+      // Upsert followers & monthly_views for all platforms
       const payload = PLATFORMS.map((p) => ({
-        user_id: userId,
-        platform: rows[p].platform,
-        followers:
-          typeof rows[p].followers === "number" ? rows[p].followers : null,
-        monthly_views:
-          typeof rows[p].monthly_views === "number"
-            ? rows[p].monthly_views
-            : null,
-        engagement:
-          typeof rows[p].engagement === "number" ? rows[p].engagement : null,
+        platform: p,
+        followers: rows[p].followers ?? 0,
+        monthly_views: rows[p].monthly_views ?? 0,
       }));
 
       const { error } = await supabase
         .from("platform_stats")
-        .upsert(payload, { onConflict: "user_id,platform" });
+        .upsert(payload, { onConflict: "platform" });
 
       if (error) throw error;
 
-      setMsg("Metrics saved ✅");
-      tick(); // refresh public KPI hooks
+      // Recompute engagement for all platforms based on top_posts + followers
+      await recalcAllEngagements(supabase);
+
+      // Reload engagement snapshot to show latest
+      const { data } = await supabase
+        .from("platform_stats")
+        .select("platform, engagement")
+        .in("platform", PLATFORMS);
+
+      if (data) {
+        setRows((prev) => {
+          const next = { ...prev };
+          for (const d of data) {
+            if (next[d.platform as Row["platform"]]) {
+              next[d.platform as Row["platform"]].engagement =
+                d.engagement ?? null;
+            }
+          }
+          return next;
+        });
+      }
+
+      setMsg("Metrics saved & engagement recalculated ✅");
+      tick();
     } catch (e: any) {
       setMsg(e?.message || "Failed to save metrics.");
     } finally {
@@ -189,7 +151,6 @@ export default function StatsForm() {
         </button>
       </div>
 
-      {/* 3 columns, one per platform */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <PlatformCard
           icon={<Instagram size={16} className="text-pink-600" />}
@@ -228,11 +189,11 @@ function PlatformCard({
 }: {
   icon: React.ReactNode;
   title: string;
-  row: StatRow;
+  row: Row;
   onChange: (
-    platform: StatRow["platform"],
-    key: keyof Omit<StatRow, "platform">,
-    val: string
+    p: Row["platform"],
+    k: "followers" | "monthly_views",
+    v: string
   ) => void;
   disabled?: boolean;
 }) {
@@ -263,13 +224,12 @@ function PlatformCard({
           alignRight
         />
         <Field
-          label="Engagement"
-          placeholder="e.g. 2.01"
-          suffix="%"
+          label="Engagement (auto)"
           value={row.engagement ?? ""}
-          onChange={(v) => onChange(row.platform, "engagement", v)}
-          disabled={disabled}
+          onChange={() => {}}
+          disabled
           alignRight
+          suffix="%"
         />
       </div>
     </section>
@@ -303,6 +263,7 @@ function Field({
           className={[
             "h-9 w-full rounded-md border border-neutral-300 px-3 text-sm outline-none focus:border-neutral-500",
             alignRight ? "pr-8 text-right" : "",
+            disabled ? "bg-neutral-100 text-neutral-500" : "",
           ].join(" ")}
           placeholder={placeholder}
           inputMode="numeric"

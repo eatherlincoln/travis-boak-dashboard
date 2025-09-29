@@ -1,49 +1,43 @@
+// src/components/admin/AdminLayout.tsx
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { supabase } from "@supabaseClient";
+import { Link } from "react-router-dom";
 
 export default function AdminLayout({
-  title = "Admin Dashboard",
+  title = "Admin",
+  subtitle,
   children,
 }: {
   title?: string;
+  subtitle?: string;
   children: React.ReactNode;
 }) {
-  const navigate = useNavigate();
-
-  const signOut = async () => {
-    try {
-      await supabase.auth.signOut();
-    } finally {
-      navigate("/");
-    }
-  };
-
   return (
-    <div className="min-h-dvh bg-neutral-50">
-      {/* Top bar */}
-      <header className="sticky top-0 z-20 border-b border-neutral-200 bg-white/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-3">
+    <div className="min-h-dvh bg-gray-50">
+      {/* Header */}
+      <header className="border-b bg-white">
+        <div className="mx-auto max-w-content px-4">
+          <div className="flex items-center justify-between py-4">
+            <div>
+              <h1 className="text-lg font-semibold text-neutral-900">
+                {title}
+              </h1>
+              {subtitle && (
+                <p className="mt-0.5 text-sm text-neutral-600">{subtitle}</p>
+              )}
+            </div>
             <Link
               to="/"
-              className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-700 hover:bg-neutral-50"
+              className="rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
             >
               ← Back to site
             </Link>
-            <h1 className="text-sm font-semibold text-neutral-900">{title}</h1>
           </div>
-          <button
-            onClick={signOut}
-            className="rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-neutral-800"
-          >
-            Sign Out
-          </button>
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-6">
-        <div className="space-y-6">{children}</div>
+      {/* Content */}
+      <main className="mx-auto max-w-content px-4 py-6">
+        <div className="space-y-8">{children}</div>
       </main>
     </div>
   );

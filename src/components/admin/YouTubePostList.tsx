@@ -1,20 +1,21 @@
 import React, { useState } from "react";
 import { supabase } from "@supabaseClient";
 import { useRefreshSignal } from "@/hooks/useAutoRefresh";
+import { recalcEngagement } from "@/lib/engagement";
 import ThumbnailPicker from "@/components/admin/ThumbnailPicker";
 import {
   Youtube,
   Image as ImageIcon,
   Link2,
-  Eye,
   Heart,
   MessageCircle,
+  Eye,
 } from "lucide-react";
 
-type PostRow = {
+type VideoRow = {
   url: string;
   caption?: string;
-  image_url?: string;
+  image_url?: string; // uploaded thumbnail public URL
   views?: number | string | null;
   likes?: number | string | null;
   comments?: number | string | null;
@@ -30,15 +31,16 @@ const toInt = (v: any): number | null => {
 
 export default function YouTubePostList() {
   const { tick } = useRefreshSignal();
+
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
-  const [rows, setRows] = useState<Record<number, PostRow>>({
+  const [rows, setRows] = useState<Record<number, VideoRow>>({
     1: { url: "", caption: "", image_url: "" },
     2: { url: "", caption: "", image_url: "" },
   });
 
-  const setField = (rank: number, key: keyof PostRow, val: string) =>
+  const setField = (rank: number, key: keyof VideoRow, val: string) =>
     setRows((prev) => ({ ...prev, [rank]: { ...prev[rank], [key]: val } }));
 
   const save = async () => {
@@ -56,6 +58,7 @@ export default function YouTubePostList() {
           views: toInt(r.views),
           likes: toInt(r.likes),
           comments: toInt(r.comments),
+          // shares is not used for YT; leave null/undefined
         }));
 
       if (payload.length === 0) {
@@ -70,10 +73,13 @@ export default function YouTubePostList() {
 
       if (error) throw error;
 
-      setMsg("YouTube posts saved ✅");
+      // keep KPI/front-page in sync
+      await recalcEngagement(supabase, "youtube");
+
+      setMsg("YouTube videos saved ✅");
       tick();
     } catch (e: any) {
-      setMsg(e?.message || "Failed to save YouTube posts.");
+      setMsg(e?.message || "Failed to save YouTube videos.");
     } finally {
       setSaving(false);
     }
@@ -128,7 +134,7 @@ export default function YouTubePostList() {
                 <Field
                   icon={<ImageIcon size={14} className="text-neutral-500" />}
                   label="Caption (optional)"
-                  placeholder="Optional caption"
+                  placeholder="Optional title/notes"
                   value={r.caption || ""}
                   onChange={(v) => setField(rank, "caption", v)}
                 />
@@ -239,10 +245,7 @@ function Metric({
         )}
         <input
           inputMode="numeric"
-          className={[
-            "h-9 w-full rounded-md border border-neutral-300 px-3 text-right text-sm outline-none focus:border-neutral-500",
-            icon ? "pl-8" : "",
-          ].join(" ")}
+          className="h-9 w-full rounded-md border border-neutral-300 px-3 text-right text-sm outline-none focus:border-neutral-500"
           value={value as any}
           onChange={(e) => onChange(e.target.value)}
           placeholder="0"

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { supabase } from "@supabaseClient";
 import { useRefreshSignal } from "@/hooks/useAutoRefresh";
+import { recalcEngagement } from "@/lib/engagement";
 import ThumbnailPicker from "@/components/admin/ThumbnailPicker";
 import {
   Instagram,
@@ -72,8 +73,11 @@ export default function InstagramPostList() {
 
       if (error) throw error;
 
+      // Engagement refresh
+      await recalcEngagement(supabase, "instagram");
+
       setMsg("Instagram posts saved ✅");
-      tick(); // refresh public grid
+      tick();
     } catch (e: any) {
       setMsg(e?.message || "Failed to save Instagram posts.");
     } finally {
@@ -179,19 +183,7 @@ export default function InstagramPostList() {
   );
 }
 
-function Field({
-  icon,
-  label,
-  value,
-  onChange,
-  placeholder,
-}: {
-  icon?: React.ReactNode;
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-}) {
+function Field({ icon, label, value, onChange, placeholder }: any) {
   return (
     <label className="block">
       <span className="mb-1 block text-xs font-medium text-neutral-600">
@@ -217,17 +209,7 @@ function Field({
   );
 }
 
-function Metric({
-  icon,
-  label,
-  value,
-  onChange,
-}: {
-  icon?: React.ReactNode;
-  label: string;
-  value: any;
-  onChange: (v: string) => void;
-}) {
+function Metric({ icon, label, value, onChange }: any) {
   return (
     <label className="block">
       <span className="mb-1 block text-xs font-medium text-neutral-600">
@@ -241,10 +223,7 @@ function Metric({
         )}
         <input
           inputMode="numeric"
-          className={[
-            "h-9 w-full rounded-md border border-neutral-300 px-3 text-right text-sm outline-none focus:border-neutral-500",
-            icon ? "pl-8" : "",
-          ].join(" ")}
+          className="h-9 w-full rounded-md border border-neutral-300 px-3 text-right text-sm outline-none focus:border-neutral-500"
           value={value as any}
           onChange={(e) => onChange(e.target.value)}
           placeholder="0"

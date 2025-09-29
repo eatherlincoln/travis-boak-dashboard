@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { supabase } from "@supabaseClient";
 import { useRefreshSignal } from "@/hooks/useAutoRefresh";
+import { recalcEngagement } from "@/lib/engagement";
 import ThumbnailPicker from "@/components/admin/ThumbnailPicker";
 import {
   Music2,
@@ -30,6 +31,7 @@ const toInt = (v: any): number | null => {
 
 export default function TikTokPostList() {
   const { tick } = useRefreshSignal();
+
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -71,6 +73,9 @@ export default function TikTokPostList() {
         .upsert(payload, { onConflict: "platform,rank" });
 
       if (error) throw error;
+
+      // keep KPI/front-page in sync
+      await recalcEngagement(supabase, "tiktok");
 
       setMsg("TikTok posts saved ✅");
       tick();
@@ -179,19 +184,7 @@ export default function TikTokPostList() {
   );
 }
 
-function Field({
-  icon,
-  label,
-  value,
-  onChange,
-  placeholder,
-}: {
-  icon?: React.ReactNode;
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-}) {
+function Field({ icon, label, value, onChange, placeholder }: any) {
   return (
     <label className="block">
       <span className="mb-1 block text-xs font-medium text-neutral-600">
@@ -217,17 +210,7 @@ function Field({
   );
 }
 
-function Metric({
-  icon,
-  label,
-  value,
-  onChange,
-}: {
-  icon?: React.ReactNode;
-  label: string;
-  value: any;
-  onChange: (v: string) => void;
-}) {
+function Metric({ icon, label, value, onChange }: any) {
   return (
     <label className="block">
       <span className="mb-1 block text-xs font-medium text-neutral-600">
@@ -241,10 +224,7 @@ function Metric({
         )}
         <input
           inputMode="numeric"
-          className={[
-            "h-9 w-full rounded-md border border-neutral-300 px-3 text-right text-sm outline-none focus:border-neutral-500",
-            icon ? "pl-8" : "",
-          ].join(" ")}
+          className="h-9 w-full rounded-md border border-neutral-300 px-3 text-right text-sm outline-none focus:border-neutral-500"
           value={value as any}
           onChange={(e) => onChange(e.target.value)}
           placeholder="0"

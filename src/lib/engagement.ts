@@ -1,59 +1,66 @@
 // src/lib/engagement.ts
-export type EngagementInputs = {
-  likes?: number | null;
-  comments?: number | null;
-  shares?: number | null;
-  views?: number | null;
-};
-
-export type EngagementContext = {
-  followers?: number | null; // subscribers for YT counts as followers
-  reach?: number | null; // if you capture reach, use it first
-};
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 /**
- * Platform-agnostic engagement rate.
+ * Engagement Rate (platform-level) =
+ *   (sum of likes+comments+shares across top_posts for that platform) / followers * 100
  *
- * - If you have REACH for the content set, use that as denominator.
- * - Else use FOLLOWERS/SUBSCRIBERS (industry standard).
- * - If neither is present but VIEWS exist (e.g., YouTube video), fall back to views.
- *
- * Formula: (likes + comments + shares) / denominator * 100
+ * Returns the computed percentage rounded to 2dp (e.g., 2.13).
  */
-export function computeEngagement(
-  post: EngagementInputs,
-  ctx: EngagementContext
-): number {
-  const likes = post.likes ?? 0;
-  const comments = post.comments ?? 0;
-  const shares = post.shares ?? 0;
+export async function recalcEngagement(
+  supabase: SupabaseClient,
+  platform: "instagram" | "youtube" | "tiktok"
+): Promise<number> {
+  // Sum interactions from top_posts
+  const { data: posts, error: postsErr } = await supabase
+    .from("top_posts")
+    .select("likes,comments,shares")
+    .eq("platform", platform);
 
-  const numerator = likes + comments + shares;
+  if (postsErr) throw postsErr;
 
-  const denom =
-    (ctx.reach ?? 0) > 0
-      ? (ctx.reach as number)
-      : (ctx.followers ?? 0) > 0
-      ? (ctx.followers as number)
-      : post.views ?? 0;
+  const totalInteractions = (posts ?? []).reduce((sum, p) => {
+    const l = Number(p.likes ?? 0);
+    const c = Number(p.comments ?? 0);
+    const s = Number(p.shares ?? 0);
+    return sum + l + c + s;
+  }, 0);
 
-  if (!denom || denom <= 0) return 0;
+  // Read followers from platform_stats
+  const { data: stat, error: statErr } = await supabase
+    .from("platform_stats")
+    .select("followers")
+    .eq("platform", platform)
+    .maybeSingle();
 
-  return (numerator / denom) * 100;
+  if (statErr) throw statErr;
+
+  const followers = Number(stat?.followers ?? 0);
+  const engagement =
+    followers > 0 ? +((totalInteractions / followers) * 100).toFixed(2) : 0;
+
+  // Write it back
+  const { error: upErr } = await supabase
+    .from("platform_stats")
+    .upsert({ platform, engagement }, { onConflict: "platform" });
+
+  if (upErr) throw upErr;
+
+  return engagement;
 }
 
-/**
- * Average engagement across an array of posts.
- * We compute per-post then average (avoids huge outliers dominating).
- */
-export function averageEngagement(
-  posts: EngagementInputs[],
-  ctx: EngagementContext
-): number {
-  if (!posts.length) return 0;
-  const vals = posts
-    .map((p) => computeEngagement(p, ctx))
-    .filter((v) => isFinite(v));
-  if (!vals.length) return 0;
-  return vals.reduce((a, b) => a + b, 0) / vals.length;
+/** Helper to recalc for all three platforms */
+export async function recalcAllEngagements(supabase: SupabaseClient) {
+  const platforms: Array<"instagram" | "youtube" | "tiktok"> = [
+    "instagram",
+    "youtube",
+    "tiktok",
+  ];
+  for (const p of platforms) {
+    try {
+      await recalcEngagement(supabase, p);
+    } catch {
+      // don't explode the whole save; skip platform errors quietly
+    }
+  }
 }
