@@ -1,64 +1,42 @@
+// src/pages/Index.tsx
 import React from "react";
 
-/** HERO */
 import HeroSection from "@/components/HeroSection";
-
-/** ABOUT */
 import AboutSection from "@/components/AboutSection";
-
-/** KPI row */
-import KpiRow from "@/components/KpiRow";
-
-/** PLATFORM HIGHLIGHTS */
-import PlatformHighlights from "@/components/PlatformHighlights";
-
-/** AUDIENCE (per-platform) */
+import KpiRow from "@/components/KpiRow"; // <-- the only KPI component
 import AudienceDemographics from "@/components/AudienceDemographics";
-
-/** TOP CONTENT */
 import InstagramTopPosts from "@/components/InstagramTopPosts";
 import TopYouTubeContent from "@/components/TopYouTubeContent";
-
-/** PARTNERSHIPS */
 import PartnershipOpportunities from "@/components/PartnershipOpportunities";
 
-function Index() {
+export default function Index() {
   return (
     <div className="min-h-dvh bg-gray-50">
-      {/* 1) Hero stays full-bleed */}
       <section className="relative">
         <HeroSection />
       </section>
 
-      {/* 2) All page content shares the SAME centered width */}
       <main className="mx-auto max-w-content px-4">
-        {/* About */}
         <section className="mt-section">
           <div className="rounded-2xl border border-neutral-200 bg-white p-6 sm:p-8 shadow-sm">
             <AboutSection />
           </div>
         </section>
 
-        {/* KPI Row */}
+        {/* The ONLY KPI row */}
         <section className="mt-6">
           <KpiRow />
         </section>
 
-        {/* Platform Highlights */}
-        <section className="mt-6">
-          <PlatformHighlights />
-        </section>
-
-        {/* Audience Demographics — one block per platform */}
+        {/* Audience (global/per platform card you already have) */}
         <section className="mt-8">
           <AudienceDemographics />
         </section>
 
-        {/* Top Content (IG + YT) */}
+        {/* Top content */}
         <section className="mt-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-            {/* Instagram panel */}
-            <div className="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-sm flex flex-col h-full">
+          <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-2">
+            <div className="flex h-full flex-col rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
               <div className="mb-4 flex items-center gap-2">
                 <div className="h-4 w-4 rounded-full bg-pink-500/80" />
                 <h3 className="text-sm font-semibold text-neutral-800">
@@ -70,8 +48,7 @@ function Index() {
               </div>
             </div>
 
-            {/* YouTube panel */}
-            <div className="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-sm flex flex-col h-full">
+            <div className="flex h-full flex-col rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
               <div className="mb-4 flex items-center gap-2">
                 <div className="h-4 w-4 rounded-full bg-red-500/80" />
                 <h3 className="text-sm font-semibold text-neutral-800">
@@ -85,10 +62,9 @@ function Index() {
           </div>
         </section>
 
-        {/* Partnerships */}
         <section className="mt-8 mb-12">
-          <div className="rounded-2xl bg-gradient-to-b from-sky-50 to-white border border-neutral-200 p-0 shadow-sm overflow-hidden">
-            <div className="px-6 py-5 border-b border-neutral-200">
+          <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-gradient-to-b from-sky-50 to-white p-0 shadow-sm">
+            <div className="border-b border-neutral-200 px-6 py-5">
               <h2 className="text-lg font-semibold text-neutral-900">
                 Partnership Opportunities
               </h2>
@@ -106,5 +82,3 @@ function Index() {
     </div>
   );
 }
-
-export default Index;

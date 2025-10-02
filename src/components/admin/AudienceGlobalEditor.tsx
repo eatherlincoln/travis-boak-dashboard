@@ -1,60 +1,49 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { supabase } from "@supabaseClient";
 import { useRefreshSignal } from "@/hooks/useAutoRefresh";
-import { useAuth } from "@/contexts/AuthContext";
-import { Users } from "lucide-react";
+import { normalizeAudiencePayload } from "@/lib/audience-normalize";
 
-type Gender = { men?: number | null; women?: number | null };
-type AgeBand = { range: string; percentage: number | null };
-type CountryPct = { country: string; percentage: number | null };
-
-type AudienceRow = {
-  id?: string;
-  user_id?: string | null;
-  gender: Gender;
-  age_bands: AgeBand[];
-  countries: CountryPct[];
-  cities: string[];
-  updated_at?: string | null;
+/**
+ * Shape we keep in React state while typing (strings for easy input)
+ */
+type FormState = {
+  gender: { men: string; women: string };
+  ages: { "18-24": string; "25-34": string; "35-44": string; "45-54": string };
+  countries: { label: string; pct: string }[];
+  cities: { label: string; pct: string }[];
 };
 
-const EMPTY_ROW: AudienceRow = {
-  gender: { men: null, women: null },
-  age_bands: [
-    { range: "13-17", percentage: null },
-    { range: "18-24", percentage: null },
-    { range: "25-34", percentage: null },
-    { range: "35-44", percentage: null },
-    { range: "45-54", percentage: null },
-    { range: "55-64", percentage: null },
-    { range: "65+", percentage: null },
+const emptyForm: FormState = {
+  gender: { men: "", women: "" },
+  ages: { "18-24": "", "25-34": "", "35-44": "", "45-54": "" },
+  countries: [
+    { label: "", pct: "" },
+    { label: "", pct: "" },
+    { label: "", pct: "" },
+    { label: "", pct: "" },
   ],
-  countries: [{ country: "Australia", percentage: null }],
-  cities: ["Sydney", "Gold Coast", "Melbourne"],
+  cities: [
+    { label: "", pct: "" },
+    { label: "", pct: "" },
+    { label: "", pct: "" },
+    { label: "", pct: "" },
+  ],
 };
 
-const toInt = (v: string) => {
-  if (!v?.trim()) return null;
-  const n = Number(v.replace(/[^\d]/g, ""));
-  return Number.isFinite(n) ? n : null;
-};
-
-const toFloat = (v: string) => {
-  if (!v?.trim()) return null;
-  const n = Number(v.replace(/[^\d.]/g, ""));
-  return Number.isFinite(n) ? n : null;
-};
+function toStr(n: any) {
+  if (n === null || n === undefined) return "";
+  const x = Number(n);
+  return Number.isFinite(x) ? String(x) : "";
+}
 
 export default function AudienceGlobalEditor() {
-  const { user, loading: authLoading } = useAuth();
   const { tick } = useRefreshSignal();
-
-  const [row, setRow] = useState<AudienceRow>(EMPTY_ROW);
+  const [form, setForm] = useState<FormState>(emptyForm);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
-  // Load the single (latest) audience row.
+  // Load existing global row
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -62,164 +51,150 @@ export default function AudienceGlobalEditor() {
       const { data, error } = await supabase
         .from("audience")
         .select("*")
-        .order("updated_at", { ascending: false })
-        .limit(1);
+        .eq("id", "global")
+        .limit(1)
+        .maybeSingle();
 
       if (!alive) return;
 
       if (error) {
-        setMsg(error.message);
-        setRow(EMPTY_ROW);
-      } else if (data && data.length > 0) {
-        // Normalize to our shape with safe fallbacks
-        const d = data[0] as any;
-        setRow({
-          id: d.id,
-          user_id: d.user_id ?? null,
-          gender: d.gender ?? { men: null, women: null },
-          age_bands: Array.isArray(d.age_bands)
-            ? d.age_bands
-            : EMPTY_ROW.age_bands,
-          countries: Array.isArray(d.countries)
-            ? d.countries
-            : EMPTY_ROW.countries,
-          cities: Array.isArray(d.cities) ? d.cities : EMPTY_ROW.cities,
-          updated_at: d.updated_at ?? null,
-        });
-      } else {
-        setRow(EMPTY_ROW);
+        console.error(error);
+        setLoading(false);
+        return;
       }
+
+      if (data) {
+        const gender_men = toStr(data.gender_men);
+        const gender_women = toStr(data.gender_women);
+
+        const ages = data.age_bands || {};
+        const countries = Array.isArray(data.countries) ? data.countries : [];
+        const cities = Array.isArray(data.cities) ? data.cities : [];
+
+        const next: FormState = {
+          gender: { men: gender_men, women: gender_women },
+          ages: {
+            "18-24": toStr(ages["18-24"] ?? ages["18_24"]),
+            "25-34": toStr(ages["25-34"] ?? ages["25_34"]),
+            "35-44": toStr(ages["35-44"] ?? ages["35_44"]),
+            "45-54": toStr(ages["45-54"] ?? ages["45_54"]),
+          },
+          countries: [
+            {
+              label: countries[0]?.label ?? countries[0]?.country ?? "",
+              pct: toStr(countries[0]?.pct ?? countries[0]?.percentage),
+            },
+            {
+              label: countries[1]?.label ?? countries[1]?.country ?? "",
+              pct: toStr(countries[1]?.pct ?? countries[1]?.percentage),
+            },
+            {
+              label: countries[2]?.label ?? countries[2]?.country ?? "",
+              pct: toStr(countries[2]?.pct ?? countries[2]?.percentage),
+            },
+            {
+              label: countries[3]?.label ?? countries[3]?.country ?? "",
+              pct: toStr(countries[3]?.pct ?? countries[3]?.percentage),
+            },
+          ],
+          cities: [
+            {
+              label: cities[0]?.label ?? cities[0]?.city ?? "",
+              pct: toStr(cities[0]?.pct ?? cities[0]?.percentage),
+            },
+            {
+              label: cities[1]?.label ?? cities[1]?.city ?? "",
+              pct: toStr(cities[1]?.pct ?? cities[1]?.percentage),
+            },
+            {
+              label: cities[2]?.label ?? cities[2]?.city ?? "",
+              pct: toStr(cities[2]?.pct ?? cities[2]?.percentage),
+            },
+            {
+              label: cities[3]?.label ?? cities[3]?.city ?? "",
+              pct: toStr(cities[3]?.pct ?? cities[3]?.percentage),
+            },
+          ],
+        };
+
+        setForm(next);
+      } else {
+        // ensure there is a row to upsert against
+        await supabase
+          .from("audience")
+          .upsert([{ id: "global" }], { onConflict: "id" });
+      }
+
       setLoading(false);
     })();
+
     return () => {
       alive = false;
     };
   }, []);
 
-  const genderTotal = useMemo(() => {
-    const m = row.gender.men ?? 0;
-    const w = row.gender.women ?? 0;
-    const total = (Number(m) || 0) + (Number(w) || 0);
-    return Number.isFinite(total) ? total : 0;
-  }, [row.gender.men, row.gender.women]);
+  // helpers for updating state
+  const setGender = (key: "men" | "women", v: string) =>
+    setForm((f) => ({ ...f, gender: { ...f.gender, [key]: v } }));
 
-  const setGender = (key: keyof Gender, val: string) =>
-    setRow((prev) => ({
-      ...prev,
-      gender: { ...prev.gender, [key]: toFloat(val) },
-    }));
+  const setAge = (key: keyof FormState["ages"], v: string) =>
+    setForm((f) => ({ ...f, ages: { ...f.ages, [key]: v } }));
 
-  const setAgeBand = (idx: number, key: keyof AgeBand, val: string) =>
-    setRow((prev) => {
-      const next = [...prev.age_bands];
-      next[idx] = {
-        ...next[idx],
-        [key]: key === "percentage" ? toFloat(val) : val,
-      };
-      return { ...prev, age_bands: next };
+  const setCountry = (i: number, key: "label" | "pct", v: string) =>
+    setForm((f) => {
+      const arr = [...f.countries];
+      arr[i] = { ...arr[i], [key]: v };
+      return { ...f, countries: arr };
     });
 
-  const addAgeBand = () =>
-    setRow((prev) => ({
-      ...prev,
-      age_bands: [...prev.age_bands, { range: "New", percentage: null }],
-    }));
-
-  const removeAgeBand = (idx: number) =>
-    setRow((prev) => ({
-      ...prev,
-      age_bands: prev.age_bands.filter((_, i) => i !== idx),
-    }));
-
-  const setCountry = (idx: number, key: keyof CountryPct, val: string) =>
-    setRow((prev) => {
-      const next = [...prev.countries];
-      next[idx] = {
-        ...next[idx],
-        [key]: key === "percentage" ? toFloat(val) : val,
-      } as CountryPct;
-      return { ...prev, countries: next };
+  const setCity = (i: number, key: "label" | "pct", v: string) =>
+    setForm((f) => {
+      const arr = [...f.cities];
+      arr[i] = { ...arr[i], [key]: v };
+      return { ...f, cities: arr };
     });
 
-  const addCountry = () =>
-    setRow((prev) => ({
-      ...prev,
-      countries: [...prev.countries, { country: "", percentage: null }],
-    }));
-
-  const removeCountry = (idx: number) =>
-    setRow((prev) => ({
-      ...prev,
-      countries: prev.countries.filter((_, i) => i !== idx),
-    }));
-
-  const setCity = (idx: number, val: string) =>
-    setRow((prev) => {
-      const next = [...prev.cities];
-      next[idx] = val;
-      return { ...prev, cities: next };
-    });
-
-  const addCity = () =>
-    setRow((prev) => ({ ...prev, cities: [...prev.cities, ""] }));
-
-  const removeCity = (idx: number) =>
-    setRow((prev) => ({
-      ...prev,
-      cities: prev.cities.filter((_, i) => i !== idx),
-    }));
-
-  const save = async () => {
+  // SAVE
+  const handleSave = async () => {
     setSaving(true);
     setMsg(null);
     try {
-      if (!user) {
-        setMsg("You must be signed in to save.");
-        setSaving(false);
-        return;
-      }
-
-      const payload: Omit<AudienceRow, "id"> = {
-        user_id: user.id,
-        gender: {
-          men: row.gender.men ?? null,
-          women: row.gender.women ?? null,
+      // Build a loose object reflecting the form, then normalize
+      const raw = {
+        gender: { men: form.gender.men, women: form.gender.women },
+        ages: {
+          "18-24": form.ages["18-24"],
+          "25-34": form.ages["25-34"],
+          "35-44": form.ages["35-44"],
+          "45-54": form.ages["45-54"],
         },
-        age_bands: (row.age_bands || []).map((a) => ({
-          range: a.range || "",
-          percentage: a.percentage ?? null,
-        })),
-        countries: (row.countries || []).map((c) => ({
-          country: c.country || "",
-          percentage: c.percentage ?? null,
-        })),
-        cities: (row.cities || []).map((c) => c || "").filter(Boolean),
+        countries: form.countries.map((c) => ({ label: c.label, pct: c.pct })),
+        cities: form.cities.map((c) => ({ label: c.label, pct: c.pct })),
       };
 
-      // If we have an existing row id, update by id; else insert a new one
-      if (row.id) {
-        const { error } = await supabase
-          .from("audience")
-          .update(payload as any)
-          .eq("id", row.id);
-        if (error) throw error;
-      } else {
-        const { data, error } = await supabase
-          .from("audience")
-          .insert(payload as any)
-          .select("id")
-          .limit(1)
-          .maybeSingle();
-        if (error) throw error;
-        if (data?.id) {
-          setRow((prev) => ({ ...prev, id: data.id }));
-        }
-      }
+      const normalized = normalizeAudiencePayload(raw);
 
-      setMsg("Audience saved ✅");
+      const payload = {
+        id: "global",
+        gender_men: normalized.gender_men,
+        gender_women: normalized.gender_women,
+        age_bands: normalized.age_bands,
+        countries: normalized.countries,
+        cities: normalized.cities,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase
+        .from("audience")
+        .upsert([payload], { onConflict: "id" });
+
+      if (error) throw error;
+
+      setMsg("Demographics saved ✅");
       tick();
     } catch (e: any) {
-      setMsg(e?.message || "Failed to save audience.");
+      console.error(e);
+      setMsg(e?.message || "Failed to save demographics.");
     } finally {
       setSaving(false);
     }
@@ -228,191 +203,130 @@ export default function AudienceGlobalEditor() {
   return (
     <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-neutral-50">
-            <Users size={16} className="text-neutral-700" />
-          </span>
-          <h2 className="text-sm font-semibold text-neutral-900">
-            Audience (Global)
-          </h2>
-        </div>
+        <h2 className="text-sm font-semibold text-neutral-900">
+          Audience Demographics (Global)
+        </h2>
         <button
-          onClick={save}
-          disabled={saving || loading || authLoading}
+          onClick={handleSave}
+          disabled={saving || loading}
           className="rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-300"
         >
-          {saving ? "Saving…" : "Save"}
+          {saving ? "Saving…" : "Save Demographics"}
         </button>
       </div>
 
       {/* Gender */}
-      <section className="mb-6 rounded-xl border border-neutral-200 p-4">
-        <h3 className="mb-3 text-sm font-semibold text-neutral-800">Gender</h3>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Field
-            label="Men (%)"
-            inputMode="numeric"
-            value={row.gender.men ?? ""}
-            onChange={(v) => setGender("men", v)}
-            alignRight
-          />
-          <Field
-            label="Women (%)"
-            inputMode="numeric"
-            value={row.gender.women ?? ""}
-            onChange={(v) => setGender("women", v)}
-            alignRight
-          />
-        </div>
-        <p className="mt-2 text-xs text-neutral-500">
-          Total:{" "}
-          <span
-            className={
-              genderTotal === 100 ? "text-emerald-600" : "text-amber-600"
-            }
-          >
-            {genderTotal}
-          </span>
-          %{genderTotal !== 100 ? " (ideally 100%)" : ""}
-        </p>
+      <section className="mb-6 grid grid-cols-2 gap-4">
+        <Field
+          label="Men %"
+          value={form.gender.men}
+          onChange={(v) => setGender("men", v)}
+          numeric
+        />
+        <Field
+          label="Women %"
+          value={form.gender.women}
+          onChange={(v) => setGender("women", v)}
+          numeric
+        />
       </section>
 
       {/* Age bands */}
-      <section className="mb-6 rounded-xl border border-neutral-200 p-4">
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-neutral-800">Age bands</h3>
-          <button
-            type="button"
-            onClick={addAgeBand}
-            className="rounded-md border border-neutral-300 px-2 py-1 text-xs hover:bg-neutral-50"
-          >
-            + Add band
-          </button>
-        </div>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          {row.age_bands.map((ab, i) => (
-            <div key={i} className="grid grid-cols-12 gap-2 items-end">
-              <div className="col-span-7">
-                <Field
-                  label="Range"
-                  value={ab.range}
-                  onChange={(v) => setAgeBand(i, "range", v)}
-                  placeholder="e.g. 25-34"
-                />
-              </div>
-              <div className="col-span-4">
-                <Field
-                  label="%"
-                  inputMode="numeric"
-                  value={ab.percentage ?? ""}
-                  onChange={(v) => setAgeBand(i, "percentage", v)}
-                  alignRight
-                />
-              </div>
-              <div className="col-span-1">
-                <IconButton onClick={() => removeAgeBand(i)} title="Remove" />
-              </div>
-            </div>
-          ))}
-        </div>
+      <section className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
+        <Field
+          label="18–24 %"
+          value={form.ages["18-24"]}
+          onChange={(v) => setAge("18-24", v)}
+          numeric
+        />
+        <Field
+          label="25–34 %"
+          value={form.ages["25-34"]}
+          onChange={(v) => setAge("25-34", v)}
+          numeric
+        />
+        <Field
+          label="35–44 %"
+          value={form.ages["35-44"]}
+          onChange={(v) => setAge("35-44", v)}
+          numeric
+        />
+        <Field
+          label="45–54 %"
+          value={form.ages["45-54"]}
+          onChange={(v) => setAge("45-54", v)}
+          numeric
+        />
       </section>
 
       {/* Countries */}
-      <section className="mb-6 rounded-xl border border-neutral-200 p-4">
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-neutral-800">
-            Top countries
-          </h3>
-          <button
-            type="button"
-            onClick={addCountry}
-            className="rounded-md border border-neutral-300 px-2 py-1 text-xs hover:bg-neutral-50"
-          >
-            + Add country
-          </button>
-        </div>
-        <div className="space-y-3">
-          {row.countries.map((c, i) => (
-            <div key={i} className="grid grid-cols-12 gap-2 items-end">
-              <div className="col-span-7">
-                <Field
-                  label="Country"
-                  value={c.country}
-                  onChange={(v) => setCountry(i, "country", v)}
-                  placeholder="e.g. Australia"
-                />
-              </div>
-              <div className="col-span-4">
-                <Field
-                  label="%"
-                  inputMode="numeric"
-                  value={c.percentage ?? ""}
-                  onChange={(v) => setCountry(i, "percentage", v)}
-                  alignRight
-                />
-              </div>
-              <div className="col-span-1">
-                <IconButton onClick={() => removeCountry(i)} title="Remove" />
-              </div>
+      <section className="mb-6">
+        <h3 className="mb-2 text-xs font-medium text-neutral-600">
+          Top countries
+        </h3>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          {form.countries.map((c, i) => (
+            <div key={i} className="grid grid-cols-6 gap-2">
+              <input
+                className="col-span-4 h-9 w-full rounded-md border border-neutral-300 px-3 text-sm outline-none focus:border-neutral-500"
+                placeholder={`Country ${i + 1}`}
+                value={c.label}
+                onChange={(e) => setCountry(i, "label", e.target.value)}
+              />
+              <input
+                className="col-span-2 h-9 w-full rounded-md border border-neutral-300 px-3 text-right text-sm outline-none focus:border-neutral-500"
+                placeholder="%"
+                inputMode="numeric"
+                value={c.pct}
+                onChange={(e) => setCountry(i, "pct", e.target.value)}
+              />
             </div>
           ))}
         </div>
       </section>
 
       {/* Cities */}
-      <section className="rounded-xl border border-neutral-200 p-4">
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-neutral-800">Top cities</h3>
-          <button
-            type="button"
-            onClick={addCity}
-            className="rounded-md border border-neutral-300 px-2 py-1 text-xs hover:bg-neutral-50"
-          >
-            + Add city
-          </button>
-        </div>
+      <section className="mb-2">
+        <h3 className="mb-2 text-xs font-medium text-neutral-600">
+          Top cities
+        </h3>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          {row.cities.map((city, i) => (
-            <div key={i} className="grid grid-cols-12 gap-2 items-end">
-              <div className="col-span-11">
-                <Field
-                  label="City"
-                  value={city}
-                  onChange={(v) => setCity(i, v)}
-                />
-              </div>
-              <div className="col-span-1">
-                <IconButton onClick={() => removeCity(i)} title="Remove" />
-              </div>
+          {form.cities.map((c, i) => (
+            <div key={i} className="grid grid-cols-6 gap-2">
+              <input
+                className="col-span-4 h-9 w-full rounded-md border border-neutral-300 px-3 text-sm outline-none focus:border-neutral-500"
+                placeholder={`City ${i + 1}`}
+                value={c.label}
+                onChange={(e) => setCity(i, "label", e.target.value)}
+              />
+              <input
+                className="col-span-2 h-9 w-full rounded-md border border-neutral-300 px-3 text-right text-sm outline-none focus:border-neutral-500"
+                placeholder="%"
+                inputMode="numeric"
+                value={c.pct}
+                onChange={(e) => setCity(i, "pct", e.target.value)}
+              />
             </div>
           ))}
         </div>
       </section>
 
-      {row.updated_at && (
-        <p className="mt-4 text-xs text-neutral-500">
-          Last updated: {new Date(row.updated_at).toLocaleString()}
-        </p>
-      )}
-      {msg && <p className="mt-3 text-sm text-neutral-600">{msg}</p>}
+      {msg && <p className="mt-4 text-sm text-neutral-600">{msg}</p>}
     </div>
   );
 }
 
+/** Small input primitive used above */
 function Field({
   label,
   value,
   onChange,
-  placeholder,
-  inputMode,
-  alignRight,
+  numeric,
 }: {
   label: string;
-  value: string | number;
+  value: string;
   onChange: (v: string) => void;
-  placeholder?: string;
-  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
-  alignRight?: boolean;
+  numeric?: boolean;
 }) {
   return (
     <label className="block">
@@ -420,34 +334,12 @@ function Field({
         {label}
       </span>
       <input
-        className={[
-          "h-9 w-full rounded-md border border-neutral-300 px-3 text-sm outline-none focus:border-neutral-500",
-          alignRight ? "text-right" : "",
-        ].join(" ")}
-        value={value as any}
-        inputMode={inputMode}
-        placeholder={placeholder}
+        className="h-9 w-full rounded-md border border-neutral-300 px-3 text-sm outline-none focus:border-neutral-500"
+        placeholder="0"
+        inputMode={numeric ? "numeric" : undefined}
+        value={value}
         onChange={(e) => onChange(e.target.value)}
       />
     </label>
-  );
-}
-
-function IconButton({
-  onClick,
-  title,
-}: {
-  onClick: () => void;
-  title: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={title}
-      className="h-9 w-full rounded-md border border-neutral-300 text-xs hover:bg-neutral-50"
-    >
-      ✕
-    </button>
   );
 }

@@ -1,71 +1,115 @@
-import React from "react";
-import SoftCard from "./SoftCard";
+// src/hooks/usePlatformStats.ts
+import { useEffect, useState } from "react";
+import { supabase } from "@supabaseClient";
 
-type Stat = {
-  label: string;
-  value: string;
-  sublabel: string;
-  trend?: string; // e.g. "+2.3%"
-  trendPositive?: boolean;
+type Platform = "instagram" | "youtube" | "tiktok";
+
+type Row = {
+  platform: Platform;
+  followers: number | null;
+  monthly_views: number | null;
+  engagement: number | null;
+  updated_at?: string | null;
 };
 
-type Props = {
-  stats?: Stat[];
-};
+const PLATFORMS: Platform[] = ["instagram", "youtube", "tiktok"];
 
-const DEFAULT_STATS: Stat[] = [
-  {
-    label: "Total Reach",
-    value: "48,910",
-    sublabel: "Cross-platform followers",
-    trend: "+2.3%",
-    trendPositive: true,
-  },
-  {
-    label: "Monthly Views",
-    value: "854K",
-    sublabel: "Combined platforms",
-    trend: "+15.7%",
-    trendPositive: true,
-  },
-  {
-    label: "Engagement Rate",
-    value: "2.01%",
-    sublabel: "Instagram latest",
-    trend: "+0.5%",
-    trendPositive: true,
-  },
-  {
-    label: "Weekly Growth",
-    value: "+2.3%",
-    sublabel: "Rolling 7-day",
-    trend: "+2.3%",
-    trendPositive: true,
-  },
-];
+function empty() {
+  return { followers: 0, monthly_views: 0, engagement: 0 };
+}
 
-export default function PlatformStats({ stats = DEFAULT_STATS }: Props) {
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-      {stats.map((s, i) => (
-        <SoftCard key={i} className="p-4">
-          <div className="text-sm text-muted-foreground mb-1">{s.label}</div>
-          <div className="text-2xl font-semibold">{s.value}</div>
-          <div className="mt-1 flex items-center gap-2">
-            {s.trend && (
-              <span
-                className={
-                  "text-xs font-medium " +
-                  (s.trendPositive ? "text-emerald-600" : "text-red-600")
-                }
-              >
-                {s.trend}
-              </span>
-            )}
-            <span className="text-xs text-muted-foreground">{s.sublabel}</span>
-          </div>
-        </SoftCard>
-      ))}
-    </div>
-  );
+export function usePlatformStats() {
+  const [stats, setStats] = useState<Record<Platform, Row>>({
+    instagram: { platform: "instagram", ...empty() },
+    youtube: { platform: "youtube", ...empty() },
+    tiktok: { platform: "tiktok", ...empty() },
+  });
+  const [deltas, setDeltas] = useState<
+    Record<
+      Platform,
+      {
+        followers: number | null;
+        monthly_views: number | null;
+        engagement: number | null;
+      }
+    >
+  >({
+    instagram: { followers: null, monthly_views: null, engagement: null },
+    youtube: { followers: null, monthly_views: null, engagement: null },
+    tiktok: { followers: null, monthly_views: null, engagement: null },
+  });
+  const [updatedAt, setUpdatedAt] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      setLoading(true);
+
+      // Latest stats
+      const { data, error } = await supabase
+        .from("platform_stats")
+        .select("platform, followers, monthly_views, engagement, updated_at")
+        .in("platform", PLATFORMS);
+
+      if (error) {
+        console.error("platform_stats error:", error.message);
+        setLoading(false);
+        return;
+      }
+
+      const next = {
+        instagram: { platform: "instagram", ...empty() },
+        youtube: { platform: "youtube", ...empty() },
+        tiktok: { platform: "tiktok", ...empty() },
+      } as Record<Platform, Row>;
+
+      let latestUpdate: string | null = null;
+
+      (data ?? []).forEach((r: any) => {
+        const p = r.platform as Platform;
+        if (!PLATFORMS.includes(p)) return;
+        next[p] = {
+          platform: p,
+          followers: Number(r.followers ?? 0),
+          monthly_views: Number(r.monthly_views ?? 0),
+          engagement: Number(r.engagement ?? 0),
+          updated_at: r.updated_at ?? null,
+        };
+        if (r.updated_at && (!latestUpdate || r.updated_at > latestUpdate)) {
+          latestUpdate = r.updated_at;
+        }
+      });
+
+      // Optional: deltas table (if you haven’t built it, these remain null)
+      const { data: deltaData } = await supabase
+        .from("platform_stats_deltas")
+        .select("platform, followers, monthly_views, engagement")
+        .in("platform", PLATFORMS);
+
+      const nextDeltas = { ...deltas };
+      (deltaData ?? []).forEach((d: any) => {
+        const p = d.platform as Platform;
+        if (!PLATFORMS.includes(p)) return;
+        nextDeltas[p] = {
+          followers: typeof d.followers === "number" ? d.followers : null,
+          monthly_views:
+            typeof d.monthly_views === "number" ? d.monthly_views : null,
+          engagement: typeof d.engagement === "number" ? d.engagement : null,
+        };
+      });
+
+      if (!alive) return;
+      setStats(next);
+      setDeltas(nextDeltas);
+      setUpdatedAt(latestUpdate);
+      setLoading(false);
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  return { stats, deltas, updatedAt, loading };
 }

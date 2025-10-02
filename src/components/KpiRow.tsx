@@ -1,39 +1,56 @@
+// src/components/KpiRow.tsx
 import React from "react";
-
-const KPICard = ({
-  label,
-  value,
-  sub,
-  up = true,
-}: {
-  label: string;
-  value: string;
-  sub: string;
-  up?: boolean;
-}) => (
-  <div className="rounded-xl border border-border/50 bg-card p-4 shadow-sm">
-    <div className="text-xs text-muted-foreground mb-1">{label}</div>
-    <div className="text-2xl font-semibold">{value}</div>
-    <div
-      className={`mt-1 text-xs font-medium ${
-        up ? "text-emerald-600" : "text-red-600"
-      }`}
-    >
-      {up ? "▲" : "▼"} {sub}
-    </div>
-  </div>
-);
+import KpiCard from "@/components/ui/KpiCard";
+import { usePlatformStats } from "@/hooks";
 
 export default function KpiRow() {
+  const { stats, deltas, updatedAt, loading } = usePlatformStats();
+
+  // super defensive fallback in case a different hook slips in later
+  const safe = (p: any) => ({
+    followers: Number(p?.followers ?? 0),
+    monthly_views: Number(p?.monthly_views ?? 0),
+    engagement: Number(p?.engagement ?? 0),
+  });
+  const ig = safe((stats as any)?.instagram);
+  const yt = safe((stats as any)?.youtube);
+  const tt = safe((stats as any)?.tiktok);
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <KPICard label="Total Reach" value="48,910" sub="+2.3%" />
-      <KPICard label="Monthly Views" value="854K" sub="+15.7%" />
-      <KPICard label="Engagement Rate" value="2.01%" sub="+0.5%" />
-      <KPICard label="Weekly Growth" value="+2.3%" sub="+2.3%" />
-    </div>
+    <section className="grid grid-cols-1 gap-6 md:grid-cols-3">
+      <KpiCard
+        platform="instagram"
+        followers={ig.followers}
+        monthlyViews={ig.monthly_views}
+        engagementPct={ig.engagement}
+        followersDelta={(deltas as any)?.instagram?.followers ?? null}
+        monthlyViewsDelta={(deltas as any)?.instagram?.monthly_views ?? null}
+        engagementDelta={(deltas as any)?.instagram?.engagement ?? null}
+        updatedAt={updatedAt}
+        loading={loading}
+      />
+      <KpiCard
+        platform="youtube"
+        followers={yt.followers}
+        monthlyViews={yt.monthly_views}
+        engagementPct={yt.engagement}
+        followersDelta={(deltas as any)?.youtube?.followers ?? null}
+        monthlyViewsDelta={(deltas as any)?.youtube?.monthly_views ?? null}
+        engagementDelta={(deltas as any)?.youtube?.engagement ?? null}
+        updatedAt={updatedAt}
+        loading={loading}
+      />
+      <KpiCard
+        platform="tiktok"
+        followers={tt.followers}
+        monthlyViews={tt.monthly_views}
+        engagementPct={tt.engagement}
+        followersDelta={(deltas as any)?.tiktok?.followers ?? null}
+        monthlyViewsDelta={(deltas as any)?.tiktok?.monthly_views ?? null}
+        engagementDelta={(deltas as any)?.tiktok?.engagement ?? null}
+        updatedAt={updatedAt}
+        loading={loading}
+      />
+    </section>
   );
 }
-<div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-content mx-auto">
-  {/* cards */}
-</div>;

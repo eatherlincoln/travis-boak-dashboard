@@ -10,6 +10,7 @@ export { usePlatformAudience } from "./usePlatformAudience";
 // Top content
 export { useInstagramTopPosts } from "./useInstagramTopPosts";
 export { useYouTubeTopVideos } from "./useYouTubeTopVideos";
+export { useTikTokTopPosts } from "./useTikTokTopPosts"; // ✅ add this
 
 // (keep any other exports you rely on below)
 export { useInstagramMonthlyLikes } from "./useInstagramMonthlyLikes";

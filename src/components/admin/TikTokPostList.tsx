@@ -5,27 +5,28 @@ import { recalcEngagement } from "@/lib/engagement";
 import ThumbnailPicker from "@/components/admin/ThumbnailPicker";
 import {
   Music2,
-  Link2,
   Image as ImageIcon,
+  Link2,
   Heart,
   MessageCircle,
   Share2,
 } from "lucide-react";
 
-type PostRow = {
+type PostRowUI = {
   url: string;
-  caption?: string;
-  image_url?: string;
-  likes?: number | string | null;
-  comments?: number | string | null;
-  shares?: number | string | null;
+  caption: string;
+  image_url: string;
+  likes: string; // raw string
+  comments: string; // raw string
+  shares: string; // raw string
 };
 
 const RANKS = [1, 2, 3, 4];
 
-const toInt = (v: any): number | null => {
-  if (v === null || v === undefined || v === "") return null;
-  const n = Number(String(v).replace(/[^\d]/g, ""));
+const toInt = (v: string): number | null => {
+  const s = (v ?? "").trim();
+  if (!s) return null;
+  const n = Number(s.replace(/[^\d]/g, ""));
   return Number.isFinite(n) ? n : null;
 };
 
@@ -34,14 +35,42 @@ export default function TikTokPostList() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
-  const [rows, setRows] = useState<Record<number, PostRow>>({
-    1: { url: "", caption: "", image_url: "" },
-    2: { url: "", caption: "", image_url: "" },
-    3: { url: "", caption: "", image_url: "" },
-    4: { url: "", caption: "", image_url: "" },
+  const [rows, setRows] = useState<Record<number, PostRowUI>>({
+    1: {
+      url: "",
+      caption: "",
+      image_url: "",
+      likes: "",
+      comments: "",
+      shares: "",
+    },
+    2: {
+      url: "",
+      caption: "",
+      image_url: "",
+      likes: "",
+      comments: "",
+      shares: "",
+    },
+    3: {
+      url: "",
+      caption: "",
+      image_url: "",
+      likes: "",
+      comments: "",
+      shares: "",
+    },
+    4: {
+      url: "",
+      caption: "",
+      image_url: "",
+      likes: "",
+      comments: "",
+      shares: "",
+    },
   });
 
-  const setField = (rank: number, key: keyof PostRow, val: string) =>
+  const setField = (rank: number, key: keyof PostRowUI, val: string) =>
     setRows((prev) => ({ ...prev, [rank]: { ...prev[rank], [key]: val } }));
 
   const save = async () => {
@@ -54,8 +83,8 @@ export default function TikTokPostList() {
           platform: "tiktok" as const,
           rank: RANKS[idx],
           url: r.url.trim(),
-          caption: r.caption?.trim() || null,
-          image_url: r.image_url?.trim() || null,
+          caption: r.caption.trim() || null,
+          image_url: r.image_url.trim() || null,
           likes: toInt(r.likes),
           comments: toInt(r.comments),
           shares: toInt(r.shares),
@@ -73,7 +102,7 @@ export default function TikTokPostList() {
 
       if (error) throw error;
 
-      // 👉 update engagement for tiktok
+      // recalc engagement (likes+comments+shares) / followers * 100
       await recalcEngagement(supabase, "tiktok");
 
       setMsg("TikTok posts saved ✅");
@@ -126,7 +155,7 @@ export default function TikTokPostList() {
                 <Field
                   icon={<Link2 size={14} className="text-neutral-500" />}
                   label="Post URL"
-                  placeholder="https://www.tiktok.com/@user/video/…"
+                  placeholder="https://www.tiktok.com/@…/video/…"
                   value={r.url}
                   onChange={(v) => setField(rank, "url", v)}
                 />
@@ -135,7 +164,7 @@ export default function TikTokPostList() {
                   icon={<ImageIcon size={14} className="text-neutral-500" />}
                   label="Caption (optional)"
                   placeholder="Optional caption"
-                  value={r.caption || ""}
+                  value={r.caption}
                   onChange={(v) => setField(rank, "caption", v)}
                 />
 
@@ -143,19 +172,19 @@ export default function TikTokPostList() {
                   <Metric
                     icon={<Heart size={14} className="text-pink-600" />}
                     label="Likes"
-                    value={r.likes ?? ""}
+                    value={r.likes}
                     onChange={(v) => setField(rank, "likes", v)}
                   />
                   <Metric
                     icon={<MessageCircle size={14} className="text-sky-600" />}
                     label="Comments"
-                    value={r.comments ?? ""}
+                    value={r.comments}
                     onChange={(v) => setField(rank, "comments", v)}
                   />
                   <Metric
                     icon={<Share2 size={14} className="text-emerald-600" />}
                     label="Shares"
-                    value={r.shares ?? ""}
+                    value={r.shares}
                     onChange={(v) => setField(rank, "shares", v)}
                   />
                 </div>
@@ -166,7 +195,7 @@ export default function TikTokPostList() {
                   </span>
                   <ThumbnailPicker
                     platform="tiktok"
-                    value={r.image_url || ""}
+                    value={r.image_url}
                     onChange={(publicUrl) =>
                       setField(rank, "image_url", publicUrl)
                     }
@@ -229,7 +258,7 @@ function Metric({
 }: {
   icon?: React.ReactNode;
   label: string;
-  value: any;
+  value: string;
   onChange: (v: string) => void;
 }) {
   return (
@@ -244,12 +273,13 @@ function Metric({
           </span>
         )}
         <input
+          type="text"
           inputMode="numeric"
           className={[
             "h-9 w-full rounded-md border border-neutral-300 px-3 text-right text-sm outline-none focus:border-neutral-500",
             icon ? "pl-8" : "",
           ].join(" ")}
-          value={value as any}
+          value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="0"
         />

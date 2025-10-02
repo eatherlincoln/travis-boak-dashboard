@@ -1,213 +1,295 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { supabase } from "@supabaseClient";
-import { Users } from "lucide-react";
+// src/components/AudienceDemographics.tsx
+import React, { useMemo } from "react";
+import { usePlatformAudience } from "@/hooks";
+import { MapPin, Users } from "lucide-react";
 
-type Gender = { men?: number | null; women?: number | null };
-type AgeBand = { range: string; percentage: number | null };
-type CountryPct = { country: string; percentage: number | null };
+// ──────────────────────────────────────────────────────────────────────────────
+// Helpers
 
-type AudienceRow = {
-  gender: Gender;
-  age_bands: AgeBand[];
-  countries: CountryPct[];
-  cities: string[];
-  updated_at?: string | null;
+const clampPct = (n: any) => {
+  const v = Number(n);
+  if (!Number.isFinite(v)) return 0;
+  return Math.max(0, Math.min(100, Math.round(v)));
 };
 
-const EMPTY: AudienceRow = {
-  gender: { men: null, women: null },
-  age_bands: [],
-  countries: [],
-  cities: [],
+/** Accept 31, "31", "31%" → 31 */
+const parsePct = (x: any) => {
+  if (x == null) return 0;
+  if (typeof x === "number") return clampPct(x);
+  if (typeof x === "string") {
+    const m = x.match(/-?\d+(\.\d+)?/);
+    return clampPct(m ? Number(m[0]) : 0);
+  }
+  return 0;
 };
+
+/** ISO2 → emoji flag (e.g., "AU" → 🇦🇺) */
+const flagFromIso2 = (iso2: string) =>
+  iso2
+    .toUpperCase()
+    .replace(/[^A-Z]/g, "")
+    .split("")
+    .map((c) => String.fromCodePoint(0x1f1e6 - 65 + c.charCodeAt(0)))
+    .join("");
+
+/** name → ISO2 (extend anytime) */
+const ISO2_BY_NAME: Record<string, string> = {
+  australia: "AU",
+  "united states": "US",
+  usa: "US",
+  japan: "JP",
+  brazil: "BR",
+  "united kingdom": "GB",
+  uk: "GB",
+  canada: "CA",
+  germany: "DE",
+  france: "FR",
+  italy: "IT",
+  spain: "ES",
+  "new zealand": "NZ",
+};
+
+const countryFlag = (name: string) => {
+  const iso =
+    ISO2_BY_NAME[name.toLowerCase()] ?? (name.length === 2 ? name : "");
+  return iso ? flagFromIso2(iso) : "🌐";
+};
+
+/** read an age band value from multiple possible keys */
+function getAge(a: any, dash: string, underscore: string) {
+  if (!a) return 0;
+  const v =
+    a?.[dash] ??
+    a?.[underscore] ??
+    a?.[dash.replace("–", "-")] ??
+    a?.[underscore.replace("–", "_")];
+  return parsePct(v);
+}
+
+/** Turn unknown collection into an array */
+function toArraySafe(x: any): Array<any> {
+  if (Array.isArray(x)) return x;
+  if (x && typeof x === "object")
+    return Object.entries(x).map(([k, v]) => ({ label: k, pct: v as any }));
+  if (typeof x === "string")
+    return x.trim() ? [{ label: x.trim(), pct: 0 }] : [];
+  return [];
+}
+
+/** Normalize locations → [{label, pct}] */
+function normList(arr?: any[]) {
+  const list = toArraySafe(arr);
+  return list
+    .map((it) => {
+      const rawLabel =
+        it?.country ??
+        it?.city ??
+        it?.label ??
+        it?.name ??
+        it?.title ??
+        (typeof it === "string" ? it : "");
+      const rawPct =
+        it?.percentage ??
+        it?.pct ??
+        it?.value ??
+        (typeof it === "number" ? it : 0);
+
+      const label = String(rawLabel || "").trim();
+      const pct = parsePct(rawPct);
+      return label ? { label, pct } : null;
+    })
+    .filter(Boolean) as { label: string; pct: number }[];
+}
+
+function fmtDate(ts?: string | Date | null) {
+  if (!ts) return "";
+  const d = new Date(ts);
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleDateString(undefined, {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
+// simple progress bar
+function Bar({ value, className = "" }: { value: number; className?: string }) {
+  return (
+    <div className={`h-2 w-full rounded-full bg-neutral-100 ${className}`}>
+      <div
+        className="h-2 rounded-full bg-teal-500 transition-[width]"
+        style={{ width: `${clampPct(value)}%` }}
+      />
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Component
 
 export default function AudienceDemographics() {
-  const [data, setData] = useState<AudienceRow>(EMPTY);
-  const [loading, setLoading] = useState(true);
+  const { audience, loading } = usePlatformAudience(); // expects global audience
 
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("audience")
-        .select("*")
-        .order("updated_at", { ascending: false })
-        .limit(1);
+  const data = useMemo(() => {
+    const root = audience ?? {};
 
-      if (!alive) return;
-      if (error) {
-        setData(EMPTY);
-      } else if (data && data.length > 0) {
-        const d = data[0] as any;
-        setData({
-          gender: d.gender ?? { men: null, women: null },
-          age_bands: Array.isArray(d.age_bands) ? d.age_bands : [],
-          countries: Array.isArray(d.countries) ? d.countries : [],
-          cities: Array.isArray(d.cities) ? d.cities : [],
-          updated_at: d.updated_at ?? null,
-        });
-      } else {
-        setData(EMPTY);
-      }
-      setLoading(false);
-    })();
-    return () => {
-      alive = false;
+    // Gender
+    const g = root.gender ?? root;
+    let men = parsePct(g?.men ?? g?.gender_men);
+    let women = parsePct(g?.women ?? g?.gender_women);
+    if (!women && men) women = clampPct(100 - men);
+    if (!men && women) men = clampPct(100 - women);
+
+    // Ages
+    const agesSrc = root.age_bands ?? root.ages ?? {};
+    const ages = {
+      "25–34": getAge(agesSrc, "25-34", "25_34"),
+      "18–24": getAge(agesSrc, "18-24", "18_24"),
+      "35–44": getAge(agesSrc, "35-44", "35_44"),
+      "45–54": getAge(agesSrc, "45-54", "45_54"),
     };
-  }, []);
 
-  const malePct = data.gender.men ?? 0;
-  const femalePct = data.gender.women ?? 0;
+    // Locations
+    const countries = normList(root.countries ?? root.top_countries);
+    const cities = normList(root.cities ?? root.top_cities);
 
-  const topAges = useMemo(
-    () =>
-      (data.age_bands || [])
-        .filter((a) => (a.percentage ?? 0) > 0)
-        .sort((a, b) => (b.percentage ?? 0) - (a.percentage ?? 0))
-        .slice(0, 5),
-    [data.age_bands]
-  );
+    const updatedAt = root.updated_at ?? root.updatedAt ?? null;
 
-  const topCountries = useMemo(
-    () =>
-      (data.countries || [])
-        .filter((c) => (c.percentage ?? 0) > 0)
-        .sort((a, b) => (b.percentage ?? 0) - (a.percentage ?? 0))
-        .slice(0, 5),
-    [data.countries]
-  );
+    return { men, women, ages, countries, cities, updatedAt };
+  }, [audience]);
 
-  const cities = (data.cities || []).slice(0, 6);
+  if (loading) {
+    return (
+      <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+        <p className="text-sm text-neutral-600">Loading audience…</p>
+      </div>
+    );
+  }
+
+  const { men, women, ages, countries, cities, updatedAt } = data;
 
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-sm">
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-neutral-50">
-            <Users size={16} className="text-neutral-700" />
-          </span>
-          <h2 className="text-sm font-semibold text-neutral-900">
-            Audience Demographics
-          </h2>
-        </div>
-        {data.updated_at && (
+    <div className="rounded-2xl border border-neutral-200 bg-white p-6 sm:p-8 shadow-sm">
+      {/* Header */}
+      <div className="mb-5 flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-neutral-900">
+          Audience Demographics
+        </h2>
+        {updatedAt && (
           <span className="text-xs text-neutral-500">
-            Updated {new Date(data.updated_at).toLocaleDateString()}
+            Updated {fmtDate(updatedAt)}
           </span>
         )}
       </div>
 
-      {loading ? (
-        <p className="text-sm text-neutral-500">Loading…</p>
-      ) : (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          {/* Gender */}
-          <section className="rounded-xl border border-neutral-200 p-4">
-            <h3 className="mb-3 text-xs font-semibold text-neutral-700">
-              Gender
-            </h3>
-            <div className="mb-2 flex items-center justify-between text-sm">
-              <span className="text-neutral-600">Men</span>
-              <span className="font-medium">{malePct ?? 0}%</span>
-            </div>
-            <div className="mb-4 h-2 w-full rounded-full bg-neutral-100">
-              <div
-                className="h-2 rounded-full bg-blue-500"
-                style={{
-                  width: `${Math.max(0, Math.min(100, malePct || 0))}%`,
-                }}
-              />
-            </div>
+      {/* Gender */}
+      <div className="mb-6">
+        <div className="mb-2 flex items-center gap-2 text-sm font-medium text-neutral-700">
+          <Users size={16} />
+          Gender Split
+        </div>
+        <div className="relative">
+          <div className="h-3 w-full overflow-hidden rounded-full bg-neutral-100">
+            <div
+              className="h-3 bg-sky-600"
+              style={{ width: `${clampPct(men)}%` }}
+            />
+            <div
+              className="h-3 bg-pink-500"
+              style={{ width: `${clampPct(women)}%` }}
+            />
+          </div>
+          <div className="mt-2 flex justify-between text-xs text-neutral-600">
+            <span>{clampPct(men)}% Men</span>
+            <span>{clampPct(women)}% Women</span>
+          </div>
+        </div>
+      </div>
 
-            <div className="mb-2 flex items-center justify-between text-sm">
-              <span className="text-neutral-600">Women</span>
-              <span className="font-medium">{femalePct ?? 0}%</span>
+      {/* Ages */}
+      <div className="mb-6">
+        <div className="mb-3 text-sm font-medium text-neutral-700">
+          Age Groups
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {Object.entries(ages).map(([label, pct]) => (
+            <div
+              key={label}
+              className="rounded-xl border border-neutral-200 p-4"
+            >
+              <div className="mb-2 text-sm font-medium text-neutral-700">
+                {label}
+              </div>
+              <Bar value={pct} />
+              <div className="mt-2 text-sm font-semibold text-neutral-900">
+                {clampPct(pct)}%
+              </div>
             </div>
-            <div className="h-2 w-full rounded-full bg-neutral-100">
-              <div
-                className="h-2 rounded-full bg-pink-500"
-                style={{
-                  width: `${Math.max(0, Math.min(100, femalePct || 0))}%`,
-                }}
-              />
-            </div>
-          </section>
+          ))}
+        </div>
+      </div>
 
-          {/* Age bands */}
+      {/* Locations */}
+      <div>
+        <div className="mb-3 flex items-center gap-2 text-sm font-medium text-neutral-700">
+          <MapPin size={16} />
+          Top Locations
+        </div>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {/* Countries */}
           <section className="rounded-xl border border-neutral-200 p-4">
-            <h3 className="mb-3 text-xs font-semibold text-neutral-700">Age</h3>
-            <div className="space-y-2">
-              {topAges.length === 0 ? (
-                <p className="text-sm text-neutral-500">No age data yet.</p>
-              ) : (
-                topAges.map((a, i) => (
-                  <div key={i}>
-                    <div className="mb-1 flex items-center justify-between text-sm">
-                      <span className="text-neutral-600">{a.range}</span>
-                      <span className="font-medium">{a.percentage}%</span>
-                    </div>
-                    <div className="h-2 w-full rounded-full bg-neutral-100">
-                      <div
-                        className="h-2 rounded-full bg-neutral-800"
-                        style={{
-                          width: `${Math.max(
-                            0,
-                            Math.min(100, a.percentage || 0)
-                          )}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
+            <div className="mb-3 text-sm font-medium text-neutral-700">
+              Top countries
+            </div>
+            <ul className="space-y-2">
+              {countries.length ? (
+                countries.map((c, i) => (
+                  <li
+                    key={`${c.label}-${i}`}
+                    className="flex items-center justify-between rounded-lg border border-neutral-200 px-4 py-3 text-sm"
+                  >
+                    <span className="text-neutral-800">
+                      <span className="mr-2">{countryFlag(c.label)}</span>
+                      {c.label}
+                    </span>
+                    <span className="font-medium text-neutral-900">
+                      {clampPct(c.pct)}%
+                    </span>
+                  </li>
                 ))
+              ) : (
+                <li className="text-sm text-neutral-500">No countries</li>
               )}
-            </div>
+            </ul>
           </section>
 
-          {/* Countries + Cities */}
+          {/* Cities */}
           <section className="rounded-xl border border-neutral-200 p-4">
-            <h3 className="mb-3 text-xs font-semibold text-neutral-700">
-              Countries & Cities
-            </h3>
-
-            <div className="mb-4">
-              <h4 className="mb-2 text-xs font-medium text-neutral-600">
-                Top countries
-              </h4>
-              {topCountries.length === 0 ? (
-                <p className="text-sm text-neutral-500">No country data yet.</p>
-              ) : (
-                <ul className="space-y-1">
-                  {topCountries.map((c, i) => (
-                    <li
-                      key={i}
-                      className="flex items-center justify-between text-sm"
-                    >
-                      <span className="text-neutral-700">{c.country}</span>
-                      <span className="font-medium">{c.percentage}%</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
+            <div className="mb-3 text-sm font-medium text-neutral-700">
+              Top cities
             </div>
-
-            <div>
-              <h4 className="mb-2 text-xs font-medium text-neutral-600">
-                Top cities
-              </h4>
-              {cities.length === 0 ? (
-                <p className="text-sm text-neutral-500">No city data yet.</p>
+            <ul className="space-y-2">
+              {cities.length ? (
+                cities.map((c, i) => (
+                  <li
+                    key={`${c.label}-${i}`}
+                    className="flex items-center justify-between rounded-lg border border-neutral-200 px-4 py-3 text-sm"
+                  >
+                    <span className="text-neutral-800">{c.label}</span>
+                    {/* If pct missing it will render 0%, which is fine.
+                        If you prefer no number when 0, wrap with a conditional */}
+                    <span className="font-medium text-neutral-900">
+                      {clampPct(c.pct)}%
+                    </span>
+                  </li>
+                ))
               ) : (
-                <ul className="grid grid-cols-2 gap-x-3 gap-y-1 text-sm text-neutral-700">
-                  {cities.map((city, i) => (
-                    <li key={i}>• {city}</li>
-                  ))}
-                </ul>
+                <li className="text-sm text-neutral-500">No cities</li>
               )}
-            </div>
+            </ul>
           </section>
         </div>
-      )}
+      </div>
     </div>
   );
 }

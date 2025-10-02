@@ -2,64 +2,77 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "@supabaseClient";
 import { useRefreshSignal } from "@/hooks/useAutoRefresh";
 import { BarChart2, Instagram, Youtube, Music2 } from "lucide-react";
-import { recalcEngagement } from "@/lib/engagement";
 
 type Platform = "instagram" | "youtube" | "tiktok";
-type StatRow = {
+
+type StatRowUI = {
   platform: Platform;
-  followers: number | null;
-  monthly_views: number | null;
-  engagement: number | null; // percent
+  followers: string; // raw string for input
+  monthly_views: string; // raw string for input
+  engagement: string; // raw string for input (we still allow manual edits)
 };
 
 const PLATFORMS: Platform[] = ["instagram", "youtube", "tiktok"];
-const empty = (p: Platform): StatRow => ({
-  platform: p,
-  followers: null,
-  monthly_views: null,
-  engagement: null,
+
+const emptyRow = (platform: Platform): StatRowUI => ({
+  platform,
+  followers: "",
+  monthly_views: "",
+  engagement: "",
 });
 
-const toInt = (v: string) => {
-  if (!v?.trim()) return null;
-  const n = Number(v.replace(/[^\d]/g, ""));
+const toInt = (v: string): number | null => {
+  const s = (v ?? "").trim();
+  if (!s) return null;
+  const n = Number(s.replace(/[^\d]/g, ""));
   return Number.isFinite(n) ? n : null;
 };
-const toFloat = (v: string) => {
-  if (!v?.trim()) return null;
-  const n = Number(v.replace(/[^\d.]/g, ""));
+
+const toFloat = (v: string): number | null => {
+  const s = (v ?? "").trim();
+  if (!s) return null;
+  const n = Number(s.replace(/[^\d.]/g, ""));
   return Number.isFinite(n) ? n : null;
 };
 
 export default function StatsForm() {
   const { tick } = useRefreshSignal();
-  const [rows, setRows] = useState<Record<Platform, StatRow>>({
-    instagram: empty("instagram"),
-    youtube: empty("youtube"),
-    tiktok: empty("tiktok"),
+
+  const [rows, setRows] = useState<Record<Platform, StatRowUI>>({
+    instagram: emptyRow("instagram"),
+    youtube: emptyRow("youtube"),
+    tiktok: emptyRow("tiktok"),
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
+  // Load current stats
   useEffect(() => {
     let alive = true;
     (async () => {
       setLoading(true);
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("platform_stats")
         .select("*")
         .in("platform", PLATFORMS);
+
+      if (error) {
+        console.error(error.message);
+        setLoading(false);
+        return;
+      }
       if (!alive) return;
+
       const next = { ...rows };
       for (const p of PLATFORMS) {
-        const hit = data?.find((d: any) => d.platform === p);
+        const hit = (data || []).find((d: any) => d.platform === p);
         if (hit) {
           next[p] = {
             platform: p,
-            followers: hit.followers ?? null,
-            monthly_views: hit.monthly_views ?? null,
-            engagement: hit.engagement ?? null,
+            followers: (hit.followers ?? "").toString(),
+            monthly_views: (hit.monthly_views ?? "").toString(),
+            engagement: (hit.engagement ?? "").toString(),
           };
         }
       }
@@ -73,16 +86,13 @@ export default function StatsForm() {
   }, []);
 
   const setField = (
-    p: Platform,
-    key: keyof Omit<StatRow, "platform">,
+    platform: Platform,
+    key: keyof Omit<StatRowUI, "platform">,
     val: string
   ) => {
     setRows((prev) => ({
       ...prev,
-      [p]: {
-        ...prev[p],
-        [key]: key === "engagement" ? toFloat(val) : toInt(val),
-      },
+      [platform]: { ...prev[platform], [key]: val },
     }));
   };
 
@@ -90,21 +100,21 @@ export default function StatsForm() {
     setSaving(true);
     setMsg(null);
     try {
-      const payload = PLATFORMS.map((p) => rows[p]);
+      const payload = PLATFORMS.map((p) => ({
+        platform: p,
+        followers: toInt(rows[p].followers),
+        monthly_views: toInt(rows[p].monthly_views),
+        engagement: toFloat(rows[p].engagement), // optional; admin may type or leave blank
+      }));
+
       const { error } = await supabase
         .from("platform_stats")
         .upsert(payload, { onConflict: "platform" });
+
       if (error) throw error;
 
-      // Recompute engagement from posts & persist (parallel)
-      await Promise.all([
-        recalcEngagement("instagram"),
-        recalcEngagement("youtube"),
-        recalcEngagement("tiktok"),
-      ]);
-
       setMsg("Metrics saved ✅");
-      tick();
+      tick(); // refresh public KPIs
     } catch (e: any) {
       setMsg(e?.message || "Failed to save metrics.");
     } finally {
@@ -133,21 +143,21 @@ export default function StatsForm() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <Card
+        <PlatformCard
           icon={<Instagram size={16} className="text-pink-600" />}
           title="Instagram"
           row={rows.instagram}
           onChange={setField}
           disabled={loading}
         />
-        <Card
+        <PlatformCard
           icon={<Youtube size={16} className="text-red-600" />}
           title="YouTube"
           row={rows.youtube}
           onChange={setField}
           disabled={loading}
         />
-        <Card
+        <PlatformCard
           icon={<Music2 size={16} className="text-emerald-600" />}
           title="TikTok"
           row={rows.tiktok}
@@ -155,12 +165,13 @@ export default function StatsForm() {
           disabled={loading}
         />
       </div>
+
       {msg && <p className="mt-4 text-sm text-neutral-600">{msg}</p>}
     </div>
   );
 }
 
-function Card({
+function PlatformCard({
   icon,
   title,
   row,
@@ -169,11 +180,11 @@ function Card({
 }: {
   icon: React.ReactNode;
   title: string;
-  row: StatRow;
+  row: StatRowUI;
   onChange: (
-    p: Platform,
-    k: keyof Omit<StatRow, "platform">,
-    v: string
+    platform: Platform,
+    key: keyof Omit<StatRowUI, "platform">,
+    val: string
   ) => void;
   disabled?: boolean;
 }) {
@@ -185,24 +196,29 @@ function Card({
         </span>
         <h3 className="text-sm font-semibold text-neutral-800">{title}</h3>
       </div>
+
       <div className="space-y-3">
         <Field
           label="Followers"
-          value={row.followers ?? ""}
+          placeholder="e.g. 38700"
+          value={row.followers}
           onChange={(v) => onChange(row.platform, "followers", v)}
           disabled={disabled}
           alignRight
         />
         <Field
           label="Monthly views"
-          value={row.monthly_views ?? ""}
+          placeholder="e.g. 730000"
+          value={row.monthly_views}
           onChange={(v) => onChange(row.platform, "monthly_views", v)}
           disabled={disabled}
           alignRight
         />
         <Field
-          label="Engagement (%)"
-          value={row.engagement ?? ""}
+          label="Engagement"
+          placeholder="e.g. 2.01"
+          suffix="%"
+          value={row.engagement}
           onChange={(v) => onChange(row.platform, "engagement", v)}
           disabled={disabled}
           alignRight
@@ -216,12 +232,16 @@ function Field({
   label,
   value,
   onChange,
+  placeholder,
+  suffix,
   disabled,
   alignRight,
 }: {
   label: string;
-  value: string | number;
+  value: string;
   onChange: (v: string) => void;
+  placeholder?: string;
+  suffix?: string;
   disabled?: boolean;
   alignRight?: boolean;
 }) {
@@ -230,16 +250,24 @@ function Field({
       <span className="mb-1 block text-xs font-medium text-neutral-600">
         {label}
       </span>
-      <input
-        className={[
-          "h-9 w-full rounded-md border border-neutral-300 px-3 text-sm outline-none focus:border-neutral-500",
-          alignRight ? "text-right" : "",
-        ].join(" ")}
-        value={value as any}
-        onChange={(e) => onChange(e.target.value)}
-        inputMode="numeric"
-        disabled={disabled}
-      />
+      <div className="relative">
+        <input
+          type="text"
+          className={[
+            "h-9 w-full rounded-md border border-neutral-300 px-3 text-sm outline-none focus:border-neutral-500",
+            alignRight ? "pr-8 text-right" : "",
+          ].join(" ")}
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          disabled={disabled}
+        />
+        {suffix && (
+          <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-neutral-500">
+            {suffix}
+          </span>
+        )}
+      </div>
     </label>
   );
 }

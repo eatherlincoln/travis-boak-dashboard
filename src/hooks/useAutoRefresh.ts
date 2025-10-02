@@ -1,7 +1,11 @@
 // src/hooks/useAutoRefresh.ts
-import { useCallback, useRef, useSyncExternalStore } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 
-/** Tiny global tick store to notify listeners (hooks) to refetch */
+/**
+ * Tiny global refresh bus that also works across tabs / HMR bundles
+ * using BroadcastChannel (when available) and localStorage 'storage' events.
+ */
+
 let _version = 0;
 const listeners = new Set<() => void>();
 
@@ -13,30 +17,74 @@ function getSnapshot() {
   return _version;
 }
 
-/** Call this in components that should refetch when admin saves */
-export function useRefreshSignal() {
-  const v = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-  const tick = useCallback(() => {
+// --- Cross-tab wiring ---
+let bc: BroadcastChannel | null = null;
+try {
+  // Safari doesn’t support BroadcastChannel in all versions — so wrap in try/catch
+  bc = new BroadcastChannel("sheldon-refresh-bus");
+} catch (_) {
+  bc = null;
+}
+
+function fanout() {
+  // bump local listeners
+  _version++;
+  for (const l of listeners) l();
+
+  const stamp = Date.now().toString();
+
+  // BroadcastChannel
+  try {
+    bc?.postMessage(stamp);
+  } catch {}
+
+  // localStorage fallback (fires 'storage' in other tabs)
+  try {
+    localStorage.setItem("__sheldon_refresh_bus__", stamp);
+  } catch {}
+}
+
+// listen to BroadcastChannel + storage events
+if (bc) {
+  bc.onmessage = () => {
     _version++;
     for (const l of listeners) l();
+  };
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (e) => {
+    if (e.key === "__sheldon_refresh_bus__") {
+      _version++;
+      for (const l of listeners) l();
+    }
+  });
+}
+
+/** Use this in components that should refetch when admin saves */
+export function useRefreshSignal() {
+  const v = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+
+  // tick now fans out across tabs
+  const tick = useCallback(() => {
+    fanout();
   }, []);
+
   return { tick, version: v };
 }
 
-/** Convenience: auto refetch on a timer (optional) */
+/** Optional: simple timer-based refresher if you want periodic pulls */
 export function useAutoRefresh(ms = 0) {
-  const id = useRef<number | null>(null);
+  let id: number | null = null;
   const { tick } = useRefreshSignal();
   return {
     start() {
-      if (ms > 0 && id.current == null) {
-        id.current = window.setInterval(tick, ms);
-      }
+      if (ms > 0 && id == null) id = window.setInterval(tick, ms);
     },
     stop() {
-      if (id.current != null) {
-        clearInterval(id.current);
-        id.current = null;
+      if (id != null) {
+        clearInterval(id);
+        id = null;
       }
     },
   };
