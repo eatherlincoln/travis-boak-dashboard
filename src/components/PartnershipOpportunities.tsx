@@ -26,16 +26,16 @@ export default function PartnershipOpportunities() {
         </h2>
         <p className="text-white/90 text-center max-w-4xl mx-auto mb-6 md:mb-8">
           Partner with Travis Boak — a rising force in surf media whose
-          authentic lifestyle content and world-class surfing consistently
+          authentic lifestyle content and world-class AFL'ing consistently
           engage audiences. With proven performance metrics and a loyal
-          following, Sheldon delivers both reach and real impact.
+          following, Travis delivers both reach and real impact.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
           <Tile
             n={1}
             title="Content Collaborations"
-            body="Custom video and photo content with your brand naturally integrated into Sheldon's lifestyle."
+            body="Custom video and photo content with your brand naturally integrated into Travis' lifestyle."
           />
           <Tile
             n={2}

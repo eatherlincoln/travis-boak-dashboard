@@ -34,7 +34,7 @@ export default function TopYouTubeContent() {
             ? `${v.image_url}${
                 v.image_url.includes("?") ? "&" : "?"
               }v=${new Date(v.updated_at).getTime()}`
-            : "/sheldon-profile.png";
+            : "/travis-boak-profile.png";
 
         return (
           <article

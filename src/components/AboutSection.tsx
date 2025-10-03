@@ -1,6 +1,6 @@
 import React from "react";
 
-const AVATAR = "/lovable-uploads/sheldon-profile.png";
+const AVATAR = "/lovable-uploads/travis-boak-profile.png";
 
 export default function AboutSection() {
   return (
@@ -13,11 +13,11 @@ export default function AboutSection() {
 
       <div className="flex-1">
         <h2 className="text-lg sm:text-xl font-semibold text-neutral-900">
-          About Sheldon
+          About Travis
         </h2>
 
         <p className="mt-1 text-[13.5px] sm:text-sm leading-relaxed text-neutral-700">
-          Travis Boak is a professional surfer with a proven global reach, a
+          Travis Boak is a retired AFL Player with a proven global reach, a
           trusted voice in surf culture, and a track record of delivering
           measurable value for partners. His ability to combine high-performance
           surfing with authentic, creative storytelling has established him as a
@@ -27,7 +27,7 @@ export default function AboutSection() {
 
         <div className="mt-3 flex flex-wrap gap-2">
           <span className="rounded-full bg-blue-50 px-3 py-1 text-[11px] font-medium text-blue-600">
-            Professional Surfer
+            Retired Hall of Famer AFL Player
           </span>
           <span className="rounded-full bg-green-50 px-3 py-1 text-[11px] font-medium text-green-600">
             Content Creator

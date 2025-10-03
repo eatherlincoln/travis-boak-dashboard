@@ -24,7 +24,7 @@ export default function InstagramTopPosts() {
                 ? `${p.image_url}${
                     p.image_url.includes("?") ? "&" : "?"
                   }v=${new Date(p.updated_at).getTime()}`
-                : "/sheldon-profile.png";
+                : "/travis-boak-profile.png";
 
             return (
               <article

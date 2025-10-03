@@ -1,15 +1,16 @@
-# Sheldon Social Media Dashboard
+# Travis Boak Social Media Dashboard
 
 ## Project Info
+
 **Production URL**: https://travis-boak-dashboard.vercel.app  
 **Lovable Project**: https://lovable.dev/projects/bdf643ad-290d-438c-ba2c-38a826a4baec  
-**Repo**: https://github.com/eatherlincoln/travis-boak-dashboard  
+**Repo**: https://github.com/eatherlincoln/travis-boak-dashboard
 
 ---
 
 ## How to Run Locally
 
-```sh
+````sh
 # Step 1: Clone the repository
 git clone https://github.com/eatherlincoln/travis-boak-dashboard.git
 
@@ -21,7 +22,7 @@ npm install
 
 # Step 4: Start the dev server
 npm run dev
-➡️ After pasting that whole thing, hit **Enter**, then type `MARK` on a new line and hit Enter again.  
+➡️ After pasting that whole thing, hit **Enter**, then type `MARK` on a new line and hit Enter again.
 This saves the new README.md.
 
 ---
@@ -52,8 +53,8 @@ cat > SCHEMA.md <<'MARK'
 | updated_at   | timestamptz | default now()                     |
 
 #### Indexes & Constraints
-- `unique(platform, rank)` → ensures slot consistency  
-- `unique(platform, url)` → prevents duplicates  
+- `unique(platform, rank)` → ensures slot consistency
+- `unique(platform, url)` → prevents duplicates
 
 ---
 
@@ -80,28 +81,29 @@ cat > SCHEMA.md <<'MARK'
 
 ## Storage
 - **Bucket:** `thumbnails`
-- Policy: authenticated users can upload  
-- Public read allowed  
+- Policy: authenticated users can upload
+- Public read allowed
 
 ---
 
 ## RLS Policies
 ### `top_posts`
-- `select`: `true` (all can read)  
-- `insert/update/delete`: only authenticated  
+- `select`: `true` (all can read)
+- `insert/update/delete`: only authenticated
 
 ### `platform_stats`
-- `select`: `true`  
-- `insert/update`: only authenticated  
+- `select`: `true`
+- `insert/update`: only authenticated
 
 ### `audience`
-- `select`: `true`  
-- `insert/update/delete`: only authenticated  
+- `select`: `true`
+- `insert/update/delete`: only authenticated
 
 ---
 
 ## Dedupe Playbook
-- Posts must always be saved with `(platform, rank)`  
-- IG/TikTok = 4 slots, YT = 2 slots  
-- URLs must be unique per platform  
-- Re-upload replaces old post in same slot  
+- Posts must always be saved with `(platform, rank)`
+- IG/TikTok = 4 slots, YT = 2 slots
+- URLs must be unique per platform
+- Re-upload replaces old post in same slot
+````

@@ -41,7 +41,7 @@ export default function TikTokTopPosts() {
 
       <div className="grid grid-cols-2 gap-4">
         {posts.map((p) => {
-          const base = p.image_url || "/sheldon-profile.png";
+          const base = p.image_url || "/travis-boak-profile.png";
           const src =
             p.image_url && p.updated_at
               ? `${base}${base.includes("?") ? "&" : "?"}v=${new Date(
