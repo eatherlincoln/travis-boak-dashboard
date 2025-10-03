@@ -25,7 +25,7 @@ export default function HeroSection() {
           {/* Title block */}
           <div className="mb-5 md:mb-6">
             <h1 className="text-white text-3xl md:text-5xl font-bold leading-tight drop-shadow-sm">
-              Sheldon Simkus
+              Travis Boak
             </h1>
             <p className="mt-2 text-white/90 text-base md:text-lg drop-shadow-sm">
               Professional Surfer &amp; Content Creator

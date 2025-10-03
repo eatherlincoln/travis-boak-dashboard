@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
     // Security: restrict to your domain(s)
     const origin = req.headers.get('origin') ?? '';
     const allowedOrigins = [
-      'https://sheldon-social-media.lovable.app',
+      'https://travis-boak-dashboard.lovable.app',
       'https://lovable.dev',
       'http://localhost:8080', // For local development
       'https://gmprigvmotrdrayxacnl.lovable.app' // Your current domain

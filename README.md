@@ -1,9 +1,9 @@
 # Sheldon Social Media Dashboard
 
 ## Project Info
-**Production URL**: https://sheldon-social-media.vercel.app  
+**Production URL**: https://travis-boak-dashboard.vercel.app  
 **Lovable Project**: https://lovable.dev/projects/bdf643ad-290d-438c-ba2c-38a826a4baec  
-**Repo**: https://github.com/eatherlincoln/sheldon-social-media  
+**Repo**: https://github.com/eatherlincoln/travis-boak-dashboard  
 
 ---
 
@@ -11,10 +11,10 @@
 
 ```sh
 # Step 1: Clone the repository
-git clone https://github.com/eatherlincoln/sheldon-social-media.git
+git clone https://github.com/eatherlincoln/travis-boak-dashboard.git
 
 # Step 2: Navigate to the project directory
-cd sheldon-social-media
+cd travis-boak-dashboard
 
 # Step 3: Install dependencies
 npm install

@@ -25,7 +25,7 @@ export default function PartnershipOpportunities() {
           Partnership Opportunities
         </h2>
         <p className="text-white/90 text-center max-w-4xl mx-auto mb-6 md:mb-8">
-          Partner with Sheldon Simkus — a rising force in surf media whose
+          Partner with Travis Boak — a rising force in surf media whose
           authentic lifestyle content and world-class surfing consistently
           engage audiences. With proven performance metrics and a loyal
           following, Sheldon delivers both reach and real impact.

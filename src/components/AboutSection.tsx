@@ -7,7 +7,7 @@ export default function AboutSection() {
     <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-5">
       <img
         src={AVATAR}
-        alt="Sheldon Simkus"
+        alt="Travis Boak"
         className="h-14 w-14 sm:h-16 sm:w-16 rounded-full object-cover ring-1 ring-black/5"
       />
 
@@ -17,7 +17,7 @@ export default function AboutSection() {
         </h2>
 
         <p className="mt-1 text-[13.5px] sm:text-sm leading-relaxed text-neutral-700">
-          Sheldon Simkus is a professional surfer with a proven global reach, a
+          Travis Boak is a professional surfer with a proven global reach, a
           trusted voice in surf culture, and a track record of delivering
           measurable value for partners. His ability to combine high-performance
           surfing with authentic, creative storytelling has established him as a

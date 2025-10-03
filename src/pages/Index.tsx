@@ -69,7 +69,7 @@ export default function Index() {
                 Partnership Opportunities
               </h2>
               <p className="mt-1 text-sm text-neutral-600">
-                Partner with Sheldon Simkus — authentic lifestyle content,
+                Partner with Travis Boak — authentic lifestyle content,
                 world-class surfing, and proven audience growth.
               </p>
             </div>
